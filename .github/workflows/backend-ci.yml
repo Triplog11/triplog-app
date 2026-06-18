@@ -66,5 +66,20 @@ jobs:
       - name: gradlew 권한 부여
         run: chmod +x ./gradlew
 
-      - name: gradle 빌드
-        run: ./gradlew clean build
+      - name: 테스트
+        run: ./gradlew test
+        env:
+          SPRING_PROFILES_ACTIVE: test-dev
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          DB_URL_TEST: ${{ secrets.DB_URL_TEST }}
+          DB_USERNAME_TEST: ${{ secrets.DB_USERNAME_TEST }}
+          DB_PASSWORD_TEST: ${{ secrets.DB_PASSWORD_TEST }}
+
+      - name: 빌드
+        run: ./gradlew build -x test
+        env:
+          SPRING_PROFILES_ACTIVE: dev
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
