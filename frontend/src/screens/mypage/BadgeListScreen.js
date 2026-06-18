@@ -1,20 +1,25 @@
 import React from 'react';
-import { StyleSheet, Text, View, FlatList, SafeAreaView } from 'react-native';
+import { StyleSheet, View, FlatList, SafeAreaView } from 'react-native';
+import CustomText from '../../components/common/CustomText';
 
 const DUMMY_BADGES = [
-  { id: '1', name: '첫 걸음마', desc: '첫 번째 장소 방문 인증 성공', earned: true, icon: '👣' },
-  { id: '2', name: '수원의 지배자', desc: '수원 화성 내 모든 랜드마크 인증', earned: true, icon: '🏯' },
-  { id: '3', name: '올빼미 여행자', desc: '야간 시간대(20시 이후) 인증 완료', earned: true, icon: '🦉' },
-  { id: '4', name: '소통왕', desc: '커뮤니티 후기 글 10개 이상 작성', earned: false, icon: '💬' },
-  { id: '5', name: '프로 정복자', desc: '누적 인증 점수 10,000 XP 돌파', earned: false, icon: '👑' },
+  { id: '1', name: '첫 걸음마', desc: '첫 번째 장소 방문 인증 성공', earned: true, icon: '👣', color: '#EFF6FF', textColor: '#1D4ED8' },
+  { id: '2', name: '수원의 지배자', desc: '수원 화성 내 모든 랜드마크 인증', earned: true, icon: '🏯', color: '#FEF3C7', textColor: '#D97706' },
+  { id: '3', name: '올빼미 여행자', desc: '야간 시간대(20시 이후) 인증 완료', earned: true, icon: '🦉', color: '#F3E8FF', textColor: '#7C3AED' },
+  { id: '4', name: '소통왕', desc: '커뮤니티 후기 글 10개 이상 작성', earned: false, icon: '💬', color: '#F1F5F9', textColor: '#64748B' },
+  { id: '5', name: '프로 정복자', desc: '누적 인증 점수 10,000 XP 돌파', earned: false, icon: '👑', color: '#F1F5F9', textColor: '#64748B' },
 ];
 
 export default function BadgeListScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>획득 배지 보관함 🏆</Text>
-        <Text style={styles.subtitle}>인증 달성 조건에 맞춰 해금한 뱃지들입니다.</Text>
+        <CustomText variant="Heading/H2" color="#0F172A">
+          획득 배지 보관함 🏆
+        </CustomText>
+        <CustomText variant="Body/Small" color="#64748B" style={styles.headerSubtitle}>
+          인증 달성 조건에 맞춰 해금한 뱃지들입니다.
+        </CustomText>
       </View>
 
       <FlatList 
@@ -23,13 +28,30 @@ export default function BadgeListScreen() {
         numColumns={2}
         contentContainerStyle={styles.listContainer}
         columnWrapperStyle={styles.columnWrapper}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <View style={[styles.badgeCard, !item.earned && styles.disabledCard]}>
-            <Text style={styles.badgeIcon}>{item.icon}</Text>
-            <Text style={styles.badgeName}>{item.name}</Text>
-            <Text style={styles.badgeDesc}>{item.desc}</Text>
-            <View style={[styles.statusTag, item.earned ? styles.earnedTag : styles.lockedTag]}>
-              <Text style={styles.statusText}>{item.earned ? '획득 완료' : '잠김'}</Text>
+            <View style={[styles.iconWrapper, { backgroundColor: item.earned ? item.color : '#F1F5F9' }]}>
+              <CustomText style={styles.badgeIcon}>{item.icon}</CustomText>
+            </View>
+            <CustomText variant="Heading/H5" color="#1E293B" style={styles.badgeName}>
+              {item.name}
+            </CustomText>
+            <CustomText variant="Body/Small" color="#64748B" style={styles.badgeDesc}>
+              {item.desc}
+            </CustomText>
+            
+            <View style={[
+              styles.statusTag, 
+              item.earned ? styles.earnedTag : styles.lockedTag
+            ]}>
+              <CustomText 
+                variant="Label/Small" 
+                color={item.earned ? '#059669' : '#64748B'}
+                style={styles.statusText}
+              >
+                {item.earned ? '획득 완료' : '잠김'}
+              </CustomText>
             </View>
           </View>
         )}
@@ -41,58 +63,62 @@ export default function BadgeListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#F8FAFC', // Slate-50 공통 배경
   },
   header: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 10,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#F8FAFC',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
+  headerSubtitle: {
     marginTop: 6,
+    fontWeight: '500',
   },
   listContainer: {
     paddingHorizontal: 24,
     gap: 16,
-    paddingBottom: 24,
+    paddingBottom: 40,
   },
   columnWrapper: {
     justifyContent: 'space-between',
   },
   badgeCard: {
     width: '47%',
-    backgroundColor: '#1E293B',
-    padding: 16,
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    padding: 18,
+    borderRadius: 22,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   disabledCard: {
-    opacity: 0.5,
+    opacity: 0.55,
+  },
+  iconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   badgeIcon: {
-    fontSize: 40,
-    marginBottom: 10,
+    fontSize: 32,
   },
   badgeName: {
-    fontSize: 14,
     fontWeight: 'bold',
-    color: '#F8FAFC',
     textAlign: 'center',
   },
   badgeDesc: {
-    fontSize: 11,
-    color: '#94A3B8',
     textAlign: 'center',
     marginTop: 6,
-    marginBottom: 12,
-    lineHeight: 15,
+    marginBottom: 14,
+    lineHeight: 16,
   },
   statusTag: {
     paddingHorizontal: 10,
@@ -100,14 +126,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   earnedTag: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#ECFDF5', // Light green tag
   },
   lockedTag: {
-    backgroundColor: '#475569',
+    backgroundColor: '#F1F5F9',
   },
   statusText: {
-    color: '#FFFFFF',
-    fontSize: 10,
     fontWeight: 'bold',
   },
 });

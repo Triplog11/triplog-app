@@ -1,34 +1,52 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, SafeAreaView } from 'react-native';
+import CustomText from '../../components/common/CustomText';
 
 export default function LoginScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.brandContainer}>
-        <Text style={styles.logoText}>TRIP LOG</Text>
-        <Text style={styles.subtitle}>여행 기록 및 방문 인증 게이미피케이션</Text>
+        {/* 세련된 로고 디자인 */}
+        <CustomText variant="Display/Medium" color="#3B82F6" style={styles.logoText}>
+          TRIP LOG
+        </CustomText>
+        <CustomText variant="Body/Small" color="#64748B" style={styles.subtitle}>
+          여행 기록 및 방문 인증 게이미피케이션
+        </CustomText>
       </View>
 
       <View style={styles.buttonContainer}>
+        {/* 카카오 로그인 */}
         <TouchableOpacity 
           style={[styles.socialButton, styles.kakaoButton]} 
           onPress={() => navigation.navigate('Terms')}
+          activeOpacity={0.85}
         >
-          <Text style={styles.kakaoText}>카카오로 시작하기</Text>
+          <CustomText variant="UI/Button" color="#3A1D1D" style={styles.buttonText}>
+            카카오로 시작하기
+          </CustomText>
         </TouchableOpacity>
 
+        {/* 네이버 로그인 */}
         <TouchableOpacity 
           style={[styles.socialButton, styles.naverButton]} 
           onPress={() => navigation.navigate('Terms')}
+          activeOpacity={0.85}
         >
-          <Text style={styles.naverText}>네이버로 시작하기</Text>
+          <CustomText variant="UI/Button" color="#FFFFFF" style={styles.buttonText}>
+            네이버로 시작하기
+          </CustomText>
         </TouchableOpacity>
 
+        {/* 구글 로그인 */}
         <TouchableOpacity 
           style={[styles.socialButton, styles.googleButton]} 
           onPress={() => navigation.navigate('Terms')}
+          activeOpacity={0.85}
         >
-          <Text style={styles.googleText}>구글로 시작하기</Text>
+          <CustomText variant="UI/Button" color="#1E293B" style={styles.buttonText}>
+            구글로 시작하기
+          </CustomText>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -38,28 +56,25 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1E293B', // Sleek dark slate
+    backgroundColor: '#FFFFFF', // 순백색 배경
     justifyContent: 'space-between',
     paddingVertical: 50,
   },
   brandContainer: {
     alignItems: 'center',
-    marginTop: 80,
+    marginTop: 120,
   },
   logoText: {
-    fontSize: 42,
     fontWeight: '900',
-    color: '#38BDF8', // Sky blue
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
     marginTop: 12,
+    fontWeight: '500',
   },
   buttonContainer: {
     paddingHorizontal: 24,
-    gap: 12,
+    gap: 14,
     marginBottom: 40,
   },
   socialButton: {
@@ -67,36 +82,24 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
     elevation: 3,
   },
   kakaoButton: {
     backgroundColor: '#FEE500',
   },
-  kakaoText: {
-    color: '#3A1D1D',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
   naverButton: {
     backgroundColor: '#03C75A',
-  },
-  naverText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   googleButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  googleText: {
-    color: '#1E293B',
+  buttonText: {
     fontWeight: 'bold',
-    fontSize: 16,
   },
 });

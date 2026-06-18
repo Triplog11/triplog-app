@@ -1,38 +1,63 @@
 import React from 'react';
-import { StyleSheet, Text, View, FlatList, SafeAreaView } from 'react-native';
+import { StyleSheet, View, FlatList, SafeAreaView } from 'react-native';
+import CustomText from '../../components/common/CustomText';
 
 const DUMMY_RANKINGS = [
-  { rank: 1, name: '여행대장', level: 'Lv.99', xp: '99,200 XP' },
-  { rank: 2, name: '경기도정복자', level: 'Lv.88', xp: '82,400 XP' },
-  { rank: 3, name: '방문요정', level: 'Lv.76', xp: '71,100 XP' },
-  { rank: 4, name: '김준수 (나)', level: 'Lv.42', xp: '42,680 XP', isMe: true },
-  { rank: 5, name: '초보여행러', level: 'Lv.21', xp: '21,300 XP' },
+  { rank: 1, name: '여행대장 👑', level: 'Lv.99', xp: '99,200 XP', color: '#EAB308' }, // Gold
+  { rank: 2, name: '경기도정복자 🥈', level: 'Lv.88', xp: '82,400 XP', color: '#94A3B8' }, // Silver
+  { rank: 3, name: '방문요정 🥉', level: 'Lv.76', xp: '71,100 XP', color: '#B45309' }, // Bronze
+  { rank: 4, name: '김준수 (나) 🎒', level: 'Lv.42', xp: '42,680 XP', isMe: true, color: '#64748B' },
+  { rank: 5, name: '초보여행러 👣', level: 'Lv.21', xp: '21,300 XP', color: '#64748B' },
 ];
 
 export default function RankingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>유저 리그 랭킹 🏆</Text>
-        <Text style={styles.subtitle}>인증으로 모은 경험치 랭킹 경쟁입니다.</Text>
+        <CustomText variant="Heading/H2" color="#0F172A">
+          유저 리그 랭킹 🏆
+        </CustomText>
+        <CustomText variant="Body/Small" color="#64748B" style={styles.headerSubtitle}>
+          인증으로 모은 경험치 랭킹 경쟁입니다.
+        </CustomText>
       </View>
 
       <FlatList 
         data={DUMMY_RANKINGS}
         keyExtractor={(item) => item.rank.toString()}
         contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <View style={[styles.rankCard, item.isMe && styles.meCard]}>
+          <View style={[
+            styles.rankCard, 
+            item.isMe ? styles.meCard : styles.normalCard
+          ]}>
             <View style={styles.rankNumContainer}>
-              <Text style={[styles.rankNum, item.rank <= 3 && styles.topRankNum]}>
+              <CustomText 
+                variant={item.rank <= 3 ? 'Heading/H3' : 'Heading/H4'} 
+                color={item.rank <= 3 ? item.color : '#94A3B8'}
+                style={styles.rankNum}
+              >
                 {item.rank}
-              </Text>
+              </CustomText>
             </View>
+            
             <View style={styles.infoContainer}>
-              <Text style={styles.userName}>{item.name}</Text>
-              <Text style={styles.userLevel}>{item.level}</Text>
+              <CustomText 
+                variant="Heading/H5" 
+                color={item.isMe ? '#1D4ED8' : '#0F172A'} 
+                style={styles.userName}
+              >
+                {item.name}
+              </CustomText>
+              <CustomText variant="Caption" color="#64748B" style={styles.userLevel}>
+                {item.level}
+              </CustomText>
             </View>
-            <Text style={styles.xpText}>{item.xp}</Text>
+            
+            <CustomText variant="Label/Large" color="#3B82F6" style={styles.xpText}>
+              {item.xp}
+            </CustomText>
           </View>
         )}
       />
@@ -43,68 +68,67 @@ export default function RankingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#F8FAFC', // Slate-50 공통 배경
   },
   header: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#F8FAFC',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#94A3B8',
+  headerSubtitle: {
     marginTop: 6,
+    fontWeight: '500',
   },
   listContainer: {
     paddingHorizontal: 24,
     gap: 12,
+    paddingBottom: 40,
   },
   rankCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#334155',
+  },
+  normalCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#F1F5F9',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    elevation: 1,
   },
   meCard: {
-    borderColor: '#38BDF8',
-    backgroundColor: '#1E293B',
+    backgroundColor: '#EFF6FF', // Light blue tint for current user
+    borderColor: '#93C5FD', // Thicker blue border
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
   },
   rankNumContainer: {
-    width: 32,
+    width: 36,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   rankNum: {
-    fontSize: 18,
     fontWeight: 'bold',
-    color: '#94A3B8',
-  },
-  topRankNum: {
-    color: '#F59E0B',
-    fontSize: 22,
   },
   infoContainer: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: 14,
   },
   userName: {
-    color: '#F8FAFC',
     fontWeight: 'bold',
-    fontSize: 15,
   },
   userLevel: {
-    color: '#64748B',
-    fontSize: 12,
     marginTop: 2,
+    fontWeight: '500',
   },
   xpText: {
-    color: '#38BDF8',
     fontWeight: 'bold',
-    fontSize: 14,
   },
 });
