@@ -51,7 +51,7 @@
           ports:
             - 3306:3306
           options: >-
-            --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p${{ secrets.MYSQL_ROOT_PASSWORD_TEST }}"
+            --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD"
             --health-interval=10s
             --health-timeout=5s
             --health-retries=5
