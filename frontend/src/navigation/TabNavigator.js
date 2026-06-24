@@ -57,9 +57,9 @@ function MyPageStack() {
 }
 
 const stackOptions = {
-  headerStyle: { backgroundColor: '#0F172A' },
-  headerTintColor: '#F8FAFC',
-  headerTitleStyle: { fontWeight: 'bold' },
+  headerStyle: { backgroundColor: '#FFFFFF' },
+  headerTintColor: '#0F172A',
+  headerTitleStyle: { fontFamily: 'Pretendard-Bold', fontWeight: '700' },
   headerShadowVisible: false,
 };
 
@@ -69,17 +69,23 @@ export default function TabNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0F172A',
-          borderTopWidth: 0.5,
-          borderTopColor: '#1E293B',
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#F1F5F9',
           height: Platform.OS === 'ios' ? 88 : 68,
           paddingBottom: Platform.OS === 'ios' ? 28 : 12,
           paddingTop: 10,
+          shadowColor: '#0F172A',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.03,
+          shadowRadius: 10,
+          elevation: 5,
         },
-        tabBarActiveTintColor: '#38BDF8',
-        tabBarInactiveTintColor: '#64748B',
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#94A3B8',
         tabBarLabelStyle: {
           fontSize: 11,
+          fontFamily: 'Pretendard-Regular',
           fontWeight: '600',
           marginTop: 4,
         },

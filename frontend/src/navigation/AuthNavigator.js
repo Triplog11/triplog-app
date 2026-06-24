@@ -10,9 +10,9 @@ export default function AuthNavigator() {
   return (
     <Stack.Navigator 
       screenOptions={{
-        headerStyle: { backgroundColor: '#0F172A' },
-        headerTintColor: '#F8FAFC',
-        headerTitleStyle: { fontWeight: 'bold' },
+        headerStyle: { backgroundColor: '#FFFFFF' },
+        headerTintColor: '#0F172A',
+        headerTitleStyle: { fontFamily: 'Pretendard-Bold', fontWeight: '700' },
         headerShadowVisible: false,
       }}
     >
