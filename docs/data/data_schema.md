@@ -1,9 +1,18 @@
-
 # DDL 문서
 
-이 문서는 트립로그 서비스에서 사용하는 데이터베이스 테이블을 만드는 DDL 문서입니다.
+이 문서는 트립로그 서비스에서 사용하는 MySQL 데이터베이스 DDL 문서입니다.
 
-ERD를 기준으로 작성되었습니다.
+수정된 논리/물리 모델링을 기준으로 작성되었으며, 기존 DDL에서 누락되었던 카드, 지역 방문, 랜드마크 카드, 활동 로그 관련 테이블을 반영했습니다.
+
+## 반영 기준
+
+- `FK + UNIQUE` 제약조건은 `stats.users_id`에만 적용합니다.
+- 중간 테이블과 연결 테이블은 기본키와 FK 중심으로 구성하며, 별도의 복합 UNIQUE 제약조건은 추가하지 않습니다.
+- `users_id`를 참조하는 FK 컬럼은 `users.users_id`와 동일하게 `VARCHAR(36)`으로 통일합니다.
+- `region`, `landmark` 테이블에서 사용자별 방문 여부 컬럼은 제거하고, 사용자별 방문 정보는 별도 테이블에서 관리합니다.
+- 카드, 지역 방문, 랜드마크 카드, 활동 로그 관련 신규 테이블을 추가합니다.
+
+## DDL
 
 ```sql
 CREATE DATABASE IF NOT EXISTS `triplog`
@@ -44,8 +53,19 @@ CREATE TABLE IF NOT EXISTS `stats` (
   CONSTRAINT `fk_stats_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 활동 통계 정보';
 
+CREATE TABLE IF NOT EXISTS `users_level_log` (
+  `level_log_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '레벨 로그 식별자',
+  `users_id` VARCHAR(36) NOT NULL COMMENT '유저 식별자',
+  `level_log_created_at` DATETIME NOT NULL COMMENT '레벨 로그 생성일자',
+  `users_level_log_gain_xp` INT NOT NULL COMMENT '레벨 로그 받은 경험치',
+  `users_level_content` VARCHAR(500) NOT NULL COMMENT '레벨 로그 내용',
+  CONSTRAINT `pk_users_level_log` PRIMARY KEY (`level_log_id`),
+  INDEX `idx_users_level_log_users` (`users_id`),
+  CONSTRAINT `fk_users_level_log_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 레벨 변경 로그';
+
 -- =========================================================
--- 2. 정책 도메인
+-- 2. 정책 및 권한 도메인
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS `activity_policy` (
@@ -63,16 +83,14 @@ CREATE TABLE IF NOT EXISTS `level_policy` (
   `level_policy_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '레벨 정책 식별자',
   `level_policy_number` INT NOT NULL COMMENT '레벨',
   `level_policy_condition` INT NOT NULL COMMENT '레벨업 조건',
-  CONSTRAINT `pk_level_policy` PRIMARY KEY (`level_policy_id`),
-  CONSTRAINT `uk_level_policy_number` UNIQUE (`level_policy_number`)
+  CONSTRAINT `pk_level_policy` PRIMARY KEY (`level_policy_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='레벨업 조건 정책';
 
 CREATE TABLE IF NOT EXISTS `role` (
   `role_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '권한 식별자',
   `role_name` VARCHAR(10) NOT NULL COMMENT '권한 이름',
   `role_description` VARCHAR(255) NOT NULL COMMENT '권한 설명',
-  CONSTRAINT `pk_role` PRIMARY KEY (`role_id`),
-  CONSTRAINT `uk_role_name` UNIQUE (`role_name`)
+  CONSTRAINT `pk_role` PRIMARY KEY (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 권한 정보';
 
 CREATE TABLE IF NOT EXISTS `level_policy_role` (
@@ -80,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `level_policy_role` (
   `role_id` BIGINT NOT NULL COMMENT '권한 식별자',
   `level_policy_id` BIGINT NOT NULL COMMENT '레벨 식별자',
   CONSTRAINT `pk_level_policy_role` PRIMARY KEY (`level_policy_role_id`),
-  CONSTRAINT `uk_level_policy_role` UNIQUE (`role_id`, `level_policy_id`),
+  INDEX `idx_lpr_role` (`role_id`),
   INDEX `idx_lpr_level_policy` (`level_policy_id`),
   CONSTRAINT `fk_lpr_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_lpr_level_policy` FOREIGN KEY (`level_policy_id`) REFERENCES `level_policy` (`level_policy_id`) ON DELETE CASCADE
@@ -90,12 +108,11 @@ CREATE TABLE IF NOT EXISTS `rank_policy` (
   `rank_policy_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '랭크 정책 식별자',
   `rank_policy_tier` VARCHAR(10) NOT NULL COMMENT '랭크 정책 티어',
   `rank_policy_condition` INT NOT NULL COMMENT '랭크 정책 조건',
-  CONSTRAINT `pk_rank_policy` PRIMARY KEY (`rank_policy_id`),
-  CONSTRAINT `uk_rank_policy_tier` UNIQUE (`rank_policy_tier`)
+  CONSTRAINT `pk_rank_policy` PRIMARY KEY (`rank_policy_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='랭크 및 티어 정책';
 
 -- =========================================================
--- 3. 보상 도메인
+-- 3. 보상 및 칭호 도메인
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS `badge` (
@@ -108,16 +125,16 @@ CREATE TABLE IF NOT EXISTS `badge` (
   `badge_operator` VARCHAR(10) NOT NULL COMMENT '뱃지 연산자',
   `badge_value` INT NULL COMMENT '뱃지 값',
   `badge_filter` JSON NOT NULL COMMENT '뱃지 상세 조건',
-  CONSTRAINT `pk_badge` PRIMARY KEY (`badge_id`),
-  CONSTRAINT `uk_badge_name` UNIQUE (`badge_name`)
+  CONSTRAINT `pk_badge` PRIMARY KEY (`badge_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='뱃지 정보';
 
 CREATE TABLE IF NOT EXISTS `users_badge` (
   `users_badge_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 뱃지 식별자',
   `users_id` VARCHAR(36) NOT NULL COMMENT '유저 식별자',
   `badge_id` BIGINT NOT NULL COMMENT '뱃지 식별자',
+  `is_representative` BOOLEAN NOT NULL COMMENT '대표 뱃지 여부',
   CONSTRAINT `pk_users_badge` PRIMARY KEY (`users_badge_id`),
-  CONSTRAINT `uk_users_badge` UNIQUE (`users_id`, `badge_id`),
+  INDEX `idx_users_badge_users` (`users_id`),
   INDEX `idx_users_badge_badge` (`badge_id`),
   CONSTRAINT `fk_users_badge_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_users_badge_badge` FOREIGN KEY (`badge_id`) REFERENCES `badge` (`badge_id`) ON DELETE CASCADE
@@ -128,6 +145,7 @@ CREATE TABLE IF NOT EXISTS `users_badge_log` (
   `users_badge_id` BIGINT NOT NULL COMMENT '유저 뱃지 식별자',
   `users_badge_log_created_at` DATETIME NOT NULL COMMENT '유저 뱃지 로그 생성일자',
   `users_badge_content` VARCHAR(500) NOT NULL COMMENT '유저 뱃지 로그 내용',
+  `users_badge_gain_xp` INT NOT NULL COMMENT '받은 경험치',
   CONSTRAINT `pk_users_badge_log` PRIMARY KEY (`users_badge_log_id`),
   INDEX `idx_ubl_users_badge` (`users_badge_id`),
   CONSTRAINT `fk_ubl_users_badge` FOREIGN KEY (`users_badge_id`) REFERENCES `users_badge` (`users_badge_id`) ON DELETE CASCADE
@@ -142,8 +160,7 @@ CREATE TABLE IF NOT EXISTS `appellation` (
   `appellation_operator` VARCHAR(10) NOT NULL COMMENT '칭호 연산자',
   `appellation_value` INT NULL COMMENT '칭호 값',
   `appellation_filter` JSON NOT NULL COMMENT '칭호 상세 조건',
-  CONSTRAINT `pk_appellation` PRIMARY KEY (`appellation_id`),
-  CONSTRAINT `uk_appellation_name` UNIQUE (`appellation_name`)
+  CONSTRAINT `pk_appellation` PRIMARY KEY (`appellation_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='칭호 정보';
 
 CREATE TABLE IF NOT EXISTS `users_appellation` (
@@ -151,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `users_appellation` (
   `users_id` VARCHAR(36) NOT NULL COMMENT '유저 식별자',
   `appellation_id` BIGINT NOT NULL COMMENT '칭호 식별자',
   CONSTRAINT `pk_users_appellation` PRIMARY KEY (`users_appellation_id`),
-  CONSTRAINT `uk_users_appellation` UNIQUE (`users_id`, `appellation_id`),
+  INDEX `idx_ua_users` (`users_id`),
   INDEX `idx_ua_appellation` (`appellation_id`),
   CONSTRAINT `fk_ua_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ua_appellation` FOREIGN KEY (`appellation_id`) REFERENCES `appellation` (`appellation_id`) ON DELETE CASCADE
@@ -171,7 +188,7 @@ CREATE TABLE IF NOT EXISTS `notification_policy` (
   `default_enable` BOOLEAN NOT NULL COMMENT '기본 수신 여부',
   `is_active` BOOLEAN NOT NULL COMMENT '알림 정책 활성화 여부',
   CONSTRAINT `pk_notification_policy` PRIMARY KEY (`notification_policy_id`),
-  CONSTRAINT `uk_notification_policy_type` UNIQUE (`notification_type`)
+  CONSTRAINT `uk_notification_policy_notification_type` UNIQUE (`notification_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='알림 발송 정책';
 
 CREATE TABLE IF NOT EXISTS `notification` (
@@ -202,30 +219,26 @@ CREATE TABLE IF NOT EXISTS `fcm_token` (
   `device_name` VARCHAR(100) NOT NULL COMMENT '디바이스 이름',
   `fcm_token_created_at` DATETIME NOT NULL COMMENT '토큰 생성일자',
   CONSTRAINT `pk_fcm_token` PRIMARY KEY (`fcm_token_id`),
-  CONSTRAINT `uk_fcm_token_token` UNIQUE (`token`),
   INDEX `idx_fcm_token_users` (`users_id`),
   CONSTRAINT `fk_fcm_token_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='FCM 디바이스 토큰';
 
 -- =========================================================
--- 5. 지역 및 랜드마크 도메인
+-- 5. 지역, 랜드마크 및 카드 도메인
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS `region` (
   `region_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '지역 식별자',
-  `users_id` VARCHAR(36) NOT NULL COMMENT '유저 식별자',
-  `region_is_visited` BOOLEAN NOT NULL COMMENT '지역 방문여부',
+  `region_name` VARCHAR(100) NOT NULL COMMENT '지역 이름',
   `region_overview` TEXT NOT NULL COMMENT '지역 설명',
   `region_zipcode` VARCHAR(255) NOT NULL COMMENT '지역 법정동 코드',
-  CONSTRAINT `pk_region` PRIMARY KEY (`region_id`),
-  INDEX `idx_region_users` (`users_id`),
-  CONSTRAINT `fk_region_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE
+  CONSTRAINT `pk_region` PRIMARY KEY (`region_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='지역 정보';
 
 CREATE TABLE IF NOT EXISTS `landmark` (
   `landmark_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '랜드마크 식별자',
   `region_id` BIGINT NOT NULL COMMENT '지역 식별자',
-  `landmark_is_visited` BOOLEAN NOT NULL COMMENT '랜드마크 방문 여부',
+  `landmark_name` VARCHAR(100) NOT NULL COMMENT '랜드마크 이름',
   `content_id` VARCHAR(255) NOT NULL COMMENT 'tour api 식별자',
   `landmark_zipcode` VARCHAR(255) NOT NULL COMMENT '랜드마크 법정동 코드',
   CONSTRAINT `pk_landmark` PRIMARY KEY (`landmark_id`),
@@ -233,6 +246,65 @@ CREATE TABLE IF NOT EXISTS `landmark` (
   INDEX `idx_landmark_region` (`region_id`),
   CONSTRAINT `fk_landmark_region` FOREIGN KEY (`region_id`) REFERENCES `region` (`region_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='랜드마크 정보';
+
+CREATE TABLE IF NOT EXISTS `users_region` (
+  `users_region_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 지역 식별자',
+  `region_id` BIGINT NOT NULL COMMENT '지역 식별자',
+  `users_id` VARCHAR(36) NOT NULL COMMENT '유저 식별자',
+  `users_region_visited_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '방문일자',
+  `users_region_visited_count` INT NOT NULL DEFAULT 0 COMMENT '방문 횟수',
+  CONSTRAINT `pk_users_region` PRIMARY KEY (`users_region_id`),
+  INDEX `idx_users_region_region` (`region_id`),
+  INDEX `idx_users_region_users` (`users_id`),
+  CONSTRAINT `fk_users_region_region` FOREIGN KEY (`region_id`) REFERENCES `region` (`region_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_users_region_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 지역 방문 정보';
+
+CREATE TABLE IF NOT EXISTS `users_region_log` (
+  `users_region_log_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 지역 로그 식별자',
+  `users_region_id` BIGINT NOT NULL COMMENT '유저 지역 식별자',
+  `users_region_log_created_at` DATETIME NOT NULL COMMENT '유저 지역 로그 생성일자',
+  `users_region_log_content` VARCHAR(500) NOT NULL COMMENT '유저 지역 로그 내용',
+  `users_region_log_xp` INT NOT NULL COMMENT '유저 지역 로그 받은 경험치',
+  CONSTRAINT `pk_users_region_log` PRIMARY KEY (`users_region_log_id`),
+  INDEX `idx_users_region_log_users_region` (`users_region_id`),
+  CONSTRAINT `fk_users_region_log_users_region` FOREIGN KEY (`users_region_id`) REFERENCES `users_region` (`users_region_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 지역 방문 로그';
+
+CREATE TABLE IF NOT EXISTS `card` (
+  `card_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '카드 식별자',
+  `card_name` VARCHAR(100) NOT NULL COMMENT '카드 이름',
+  `card_tier` VARCHAR(10) NOT NULL COMMENT '카드 등급',
+  `card_url` VARCHAR(2048) NOT NULL COMMENT '카드 이미지',
+  CONSTRAINT `pk_card` PRIMARY KEY (`card_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='카드 정보';
+
+CREATE TABLE IF NOT EXISTS `users_card_landmark` (
+  `users_card_landmark_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 카드 랜드마크 식별자',
+  `landmark_id` BIGINT NOT NULL COMMENT '랜드마크 식별자',
+  `card_id` BIGINT NOT NULL COMMENT '카드 식별자',
+  `users_id` VARCHAR(36) NOT NULL COMMENT '유저 식별자',
+  `users_card_landmark_visited_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '유저 카드 랜드마크 방문 일자',
+  `users_card_landmark_count` INT NOT NULL DEFAULT 0 COMMENT '유저 카드 랜드마크 방문 횟수',
+  CONSTRAINT `pk_users_card_landmark` PRIMARY KEY (`users_card_landmark_id`),
+  INDEX `idx_ucl_landmark` (`landmark_id`),
+  INDEX `idx_ucl_card` (`card_id`),
+  INDEX `idx_ucl_users` (`users_id`),
+  CONSTRAINT `fk_ucl_landmark` FOREIGN KEY (`landmark_id`) REFERENCES `landmark` (`landmark_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ucl_card` FOREIGN KEY (`card_id`) REFERENCES `card` (`card_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ucl_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 랜드마크 카드 획득 정보';
+
+CREATE TABLE IF NOT EXISTS `users_card_landmark_log` (
+  `users_card_landmark_log_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 카드 랜드마크 로그 식별자',
+  `users_card_landmark_id` BIGINT NOT NULL COMMENT '유저 카드 랜드마크 식별자',
+  `users_card_landmark_log_created_at` DATETIME NOT NULL COMMENT '유저 카드 랜드마크 로그 생성일자',
+  `users_card_landmark_log_content` VARCHAR(500) NOT NULL COMMENT '유저 카드 랜드마크 로그 내용',
+  `users_card_landmark_log_gain_xp` INT NOT NULL COMMENT '유저 카드 랜드마크 받은 경험치',
+  CONSTRAINT `pk_users_card_landmark_log` PRIMARY KEY (`users_card_landmark_log_id`),
+  INDEX `idx_ucl_log_ucl` (`users_card_landmark_id`),
+  CONSTRAINT `fk_ucl_log_ucl` FOREIGN KEY (`users_card_landmark_id`) REFERENCES `users_card_landmark` (`users_card_landmark_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 랜드마크 카드 획득 로그';
 
 -- =========================================================
 -- 6. 이벤트 및 북마크 도메인
@@ -255,7 +327,8 @@ CREATE TABLE IF NOT EXISTS `bookmark` (
   `bookmark_type` ENUM('EVENT', 'REGION', 'LANDMARK') NOT NULL COMMENT '북마크 타입',
   `bookmark_identifier` BIGINT NOT NULL COMMENT '북마크 타입 식별자',
   CONSTRAINT `pk_bookmark` PRIMARY KEY (`bookmark_id`),
-  CONSTRAINT `uk_bookmark_users_target` UNIQUE (`users_id`, `bookmark_type`, `bookmark_identifier`),
+  INDEX `idx_bookmark_users` (`users_id`),
+  INDEX `idx_bookmark_target` (`bookmark_type`, `bookmark_identifier`),
   CONSTRAINT `fk_bookmark_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 북마크 정보';
 
@@ -286,6 +359,7 @@ CREATE TABLE IF NOT EXISTS `review_log` (
   `review_id` BIGINT NOT NULL COMMENT '리뷰 식별자',
   `review_created_at` DATETIME NOT NULL COMMENT '리뷰 생성일자',
   `review_log_content` VARCHAR(500) NOT NULL COMMENT '리뷰 로그 내용',
+  `review_gain_xp` INT NOT NULL COMMENT '리뷰 받은 경험치',
   CONSTRAINT `pk_review_log` PRIMARY KEY (`review_log_id`),
   INDEX `idx_review_log_review` (`review_id`),
   CONSTRAINT `fk_review_log_review` FOREIGN KEY (`review_id`) REFERENCES `review` (`review_id`) ON DELETE CASCADE
@@ -317,7 +391,7 @@ CREATE TABLE IF NOT EXISTS `mission` (
   `mission_operator` VARCHAR(10) NOT NULL COMMENT '미션 연산자',
   `mission_value` INT NULL COMMENT '미션 값',
   `mission_filter` JSON NOT NULL COMMENT '미션 상세 조건',
-  `mission_week_start` DATETIME NOT NULL COMMENT '주 간 미션 시작 날짜',
+  `mission_week_start` DATETIME NOT NULL COMMENT '주간 미션 시작 날짜',
   `mission_week_end` DATETIME NOT NULL COMMENT '주간 미션 종료 날짜',
   `mission_score` INT NOT NULL COMMENT '미션 점수',
   `mission_xp` INT NOT NULL COMMENT '미션 경험치',
@@ -330,10 +404,9 @@ CREATE TABLE IF NOT EXISTS `users_mission` (
   `mission_id` BIGINT NOT NULL COMMENT '미션 식별자',
   `users_mission_created_at` DATETIME NOT NULL COMMENT '유저 미션 생성 날짜',
   CONSTRAINT `pk_users_mission` PRIMARY KEY (`users_mission_id`),
-  CONSTRAINT `uk_users_mission` UNIQUE (`users_id`, `mission_id`),
+  INDEX `idx_users_mission_users` (`users_id`),
   INDEX `idx_users_mission_mission` (`mission_id`),
   CONSTRAINT `fk_users_mission_users` FOREIGN KEY (`users_id`) REFERENCES `users` (`users_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_users_mission_mission` FOREIGN KEY (`mission_id`) REFERENCES `mission` (`mission_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자와 미션 연결 중간 테이블';
-
 ```
