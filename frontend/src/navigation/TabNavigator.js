@@ -4,9 +4,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 
+import theme from '../theme/theme';
+
 // Screens
 import HomeScreen from '../screens/home/HomeScreen';
 import HistoryScreen from '../screens/home/HistoryScreen';
+import CollectionScreen from '../screens/collection/CollectionScreen';
 import MapScreen from '../screens/map/MapScreen';
 import DetailScreen from '../screens/map/DetailScreen';
 import VisitCertScreen from '../screens/record/VisitCertScreen';
@@ -28,21 +31,29 @@ function HomeStack() {
   );
 }
 
-function MapStack() {
+function CollectionStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
-      <Stack.Screen name="MapMain" component={MapScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CollectionMain" component={CollectionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Detail" component={DetailScreen} options={{ title: '지역 상세' }} />
-      <Stack.Screen name="VisitCert" component={VisitCertScreen} options={{ title: '방문 인증' }} />
+      <Stack.Screen name="MapMain" component={MapScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
 
-function SocialStack() {
+function RecordStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
-      <Stack.Screen name="CommunityMain" component={CommunityScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Ranking" component={RankingScreen} options={{ title: '유저 리그 랭킹' }} />
+      <Stack.Screen name="VisitCertMain" component={VisitCertScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
+function RankingStack() {
+  return (
+    <Stack.Navigator screenOptions={stackOptions}>
+      <Stack.Screen name="RankingMain" component={RankingScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Community" component={CommunityScreen} options={{ title: '여행 피드 커뮤니티' }} />
     </Stack.Navigator>
   );
 }
@@ -81,7 +92,7 @@ export default function TabNavigator() {
           shadowRadius: 10,
           elevation: 5,
         },
-        tabBarActiveTintColor: '#3B82F6',
+        tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: '#94A3B8',
         tabBarLabelStyle: {
           fontSize: 11,
@@ -102,22 +113,32 @@ export default function TabNavigator() {
         }}
       />
       <Tab.Screen 
-        name="Map" 
-        component={MapStack} 
+        name="Collection" 
+        component={CollectionStack} 
         options={{
-          tabBarLabel: '지도',
+          tabBarLabel: '도감',
           tabBarIcon: ({ color, size }) => (
-            <Feather name="map" size={22} color={color} />
+            <Feather name="book-open" size={22} color={color} />
           )
         }}
       />
       <Tab.Screen 
-        name="Social" 
-        component={SocialStack} 
+        name="Record" 
+        component={RecordStack} 
         options={{
-          tabBarLabel: '커뮤니티',
+          tabBarLabel: '인증',
           tabBarIcon: ({ color, size }) => (
-            <Feather name="message-square" size={22} color={color} />
+            <Feather name="camera" size={22} color={color} />
+          )
+        }}
+      />
+      <Tab.Screen 
+        name="Ranking" 
+        component={RankingStack} 
+        options={{
+          tabBarLabel: '랭킹',
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="award" size={22} color={color} />
           )
         }}
       />
@@ -125,7 +146,7 @@ export default function TabNavigator() {
         name="MyPage" 
         component={MyPageStack}
         options={{
-          tabBarLabel: '마이페이지',
+          tabBarLabel: '마이',
           tabBarIcon: ({ color, size }) => (
             <Feather name="user" size={22} color={color} />
           )
