@@ -1,108 +1,110 @@
-  name: 백엔드 테스트 및 빌드
+name: 백엔드 테스트 및 빌드
 
-  on:
-    pull_request:
-      branches:
-        - develop
-    push:
-      branches:
-        - develop
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+    branches:
+      - develop
 
-  permissions:
-    contents: read
-    pull-requests: read
+permissions:
+  contents: read
+  pull-requests: read
 
-  jobs:
-    changes:
-      name: 백엔드 변경 사항 확인
-      runs-on: ubuntu-latest
-      outputs:
-        backend: ${{ steps.filter.outputs.backend }}
-      steps:
-        - name: 저장소 코드 가져오기
-          uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
+jobs:
+  changes:
+    name: 백엔드 변경 사항 확인
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
 
-        - name: 변경된 파일 확인
-          id: filter
-          uses: dorny/paths-filter@v3
-          with:
-            base: develop
-            filters: |
-              backend:
-                - 'backend/**'
-                - '.github/workflows/backend-ci.yml'
+    steps:
+      - name: 저장소 코드 가져오기
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    backend-test:
-      name: 백엔드 테스트 및 빌드 실행
-      needs: changes
-      if: ${{ needs.changes.outputs.backend == 'true' }}
-      runs-on: ubuntu-latest
+      - name: 변경된 파일 확인
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          base: develop
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/backend-ci.yml'
 
-      defaults:
-        run:
-          working-directory: backend
+  backend-test:
+    name: 백엔드 테스트 및 빌드 실행
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
 
-      services:
-        mysql:
-          image: mysql:8.0
-          env:
-            MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE_TEST }}
-            MYSQL_USER: ${{ secrets.DB_USERNAME_TEST }}
-            MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD_TEST }}
-            MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD_TEST }}
-          ports:
-            - 3306:3306
-          options: >-
-            --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD"
-            --health-interval=10s
-            --health-timeout=5s
-            --health-retries=5
+    defaults:
+      run:
+        working-directory: backend
 
-        redis:
-          image: redis:7-alpine
-          ports:
-            - 6379:6379
-          options: >-
-            --health-cmd "redis-cli ping"
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE_TEST }}
+          MYSQL_USER: ${{ secrets.DB_USERNAME_TEST }}
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD_TEST }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD_TEST }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-      steps:
-        - name: 저장소 코드 가져오기
-          uses: actions/checkout@v4
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
-        - name: JDK 17 설정
-          uses: actions/setup-java@v4
-          with:
-            distribution: temurin
-            java-version: 17
+    steps:
+      - name: 저장소 코드 가져오기
+        uses: actions/checkout@v4
 
-        - name: Gradle 설정
-          uses: gradle/actions/setup-gradle@v4
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
-        - name: Gradle 실행 권한 부여
-          run: chmod +x ./gradlew
+      - name: Gradle 설정
+        uses: gradle/actions/setup-gradle@v4
 
-        - name: 테스트 실행
-          run: ./gradlew test
-          env:
-            SPRING_PROFILES_ACTIVE: test-dev
-            DB_URL_TEST: ${{ secrets.DB_URL_TEST }}
-            DB_USERNAME_TEST: ${{ secrets.DB_USERNAME_TEST }}
-            DB_PASSWORD_TEST: ${{ secrets.DB_PASSWORD_TEST }}
-            REDIS_HOST: localhost
-            REDIS_PORT: 6379
-            JPA_DDL_AUTO: create-drop
+      - name: Gradle 실행 권한 부여
+        run: chmod +x ./gradlew
 
-        - name: 빌드 실행
-          run: ./gradlew build -x test
-          env:
-            SPRING_PROFILES_ACTIVE: dev
-            DB_URL: ${{ secrets.DB_URL }}
-            DB_USERNAME: ${{ secrets.DB_USERNAME }}
-            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-            REDIS_HOST: localhost
-            REDIS_PORT: 6379
+      - name: 테스트 실행
+        run: ./gradlew test
+        env:
+          SPRING_PROFILES_ACTIVE: test-dev
+          DB_URL_TEST: jdbc:mysql://localhost:3306/${{ secrets.MYSQL_DATABASE_TEST }}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+          DB_USERNAME_TEST: ${{ secrets.DB_USERNAME_TEST }}
+          DB_PASSWORD_TEST: ${{ secrets.DB_PASSWORD_TEST }}
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JPA_DDL_AUTO: create-drop
+
+      - name: 빌드 실행
+        run: ./gradlew build -x test
+        env:
+          SPRING_PROFILES_ACTIVE: test-dev
+          DB_URL_TEST: jdbc:mysql://localhost:3306/${{ secrets.MYSQL_DATABASE_TEST }}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+          DB_USERNAME_TEST: ${{ secrets.DB_USERNAME_TEST }}
+          DB_PASSWORD_TEST: ${{ secrets.DB_PASSWORD_TEST }}
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JPA_DDL_AUTO: create-drop
