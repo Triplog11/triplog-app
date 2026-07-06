@@ -55,7 +55,6 @@ export default function CollectionScreen({ navigation }) {
       {activeSubTab === 'map' ? (
         <View style={styles.mapWrapper}>
           <ScrollView contentContainerStyle={styles.mapScroll} maximumZoomScale={2.5} minimumZoomScale={1} showsVerticalScrollIndicator={false}>
-            {/* SVG 한국 지도 로드 */}
             <KoreaMap 
               regions={regions} 
               onRegionPress={(regionName) => {

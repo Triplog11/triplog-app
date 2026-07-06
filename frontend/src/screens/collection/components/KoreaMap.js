@@ -1,197 +1,184 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import Svg, { G, Path, Rect } from 'react-native-svg';
+import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import theme from '../../../theme/theme';
+import { MAP_PATHS } from './mapPaths';
+
+const { width } = Dimensions.get('window');
+
+// 9개 전국 지도 조각 매핑
+const NATIONAL_SHAPE_REGIONS = [
+  '전라남도',
+  '전라북도',
+  '서울특별시',
+  '강원특별자치도',
+  '경기도',
+  '경상남도',
+  '경상북도',
+  '충청북도',
+  '제주특별자치도',
+];
+
+const PROVINCE_SVG_KEYS = {
+  '서울특별시': '서울특별시',
+  '부산광역시': '부산광역시',
+  '인천광역시': '인천광역시',
+  '대구광역시': '대구광역시',
+  '광주광역시': '광주광역시',
+  '대전광역시': '대전광역시',
+  '울산광역시': '울산광역시',
+  '세종특별자치시': '세종특별자치시',
+  '강원특별자치도': '강원도',
+  '강원도': '강원도',
+  '충청북도': '충청북도',
+  '충청남도': '충청남도',
+  '전라북도': '전라북도',
+  '전라남도': '전라남도',
+  '경상북도': '경상북도',
+  '경상남도': '경상남도',
+  '제주특별자치도': '제주특별자치도',
+  '경기도': 'gyeonggi',
+};
+
+// 틸그린 디자인 시스템 테마 색상 적용
+const MAP_UNVISITED = '#D4E6E4';
+const MAP_INPROGRESS = '#7BBDB8';
+const MAP_COMPLETED = '#3A8D84';
 
 export default function KoreaMap({ regions, onRegionPress }) {
-  const [isDaejeonZoomed, setIsDaejeonZoomed] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState(null);
 
-  // 더미 데이터 상태 매핑 헬퍼
+  // 방문 상태에 따른 색상 헬퍼
   const getFillColor = (regionName, isProvince = false) => {
     if (isProvince) {
-      // 대전의 경우, 하위 구들의 상태를 체크해 복합적인 색상을 반환
-      if (regionName === '대전') {
-        const daejeonSub = regions.filter(r => r.province === '대전광역시');
-        const completedAll = daejeonSub.every(r => r.completed);
-        const startedSome = daejeonSub.some(r => r.progress > 0);
-        if (completedAll) return theme.colors.success;
-        if (startedSome) return theme.colors.blueTint;
-        return theme.colors.surface;
-      }
-      // 기타 타 지역(아직 미구현 데이터)은 기본 미방문 색상
-      return theme.colors.surface;
+      // 대전, 서울 등 주요 도시/도의 전체 평균 상태로 색칠
+      const subRegions = regions.filter(r => r.province === regionName || r.name === regionName);
+      if (subRegions.length === 0) return MAP_UNVISITED;
+      
+      const completedCount = subRegions.filter(r => r.completed).length;
+      const startedCount = subRegions.filter(r => r.progress > 0).length;
+      
+      if (completedCount === subRegions.length) return MAP_COMPLETED;
+      if (startedCount > 0) return MAP_INPROGRESS;
+      return MAP_UNVISITED;
     }
 
-    // 시/군/구 단위 체크 (예: 유성구, 중구 등)
+    // 개별 자치구/시군구 단위
     const match = regions.find(r => r.name === regionName);
-    if (!match) return theme.colors.surface;
-    if (match.completed) return theme.colors.primary; // 완료는 트립로그 블루로 칠함
-    if (match.progress > 0) return theme.colors.blueTint; // 진행 중은 연한 블루
-    return theme.colors.surface; // 미방문은 회색
+    if (!match) return MAP_UNVISITED;
+    if (match.completed) return MAP_COMPLETED;
+    if (match.progress > 0) return MAP_INPROGRESS;
+    return MAP_UNVISITED;
   };
 
   const getStrokeColor = (regionName, isProvince = false) => {
-    if (isProvince) {
-      return '#CBD5E1';
-    }
+    if (isProvince) return '#B8CCC6';
     const match = regions.find(r => r.name === regionName);
     if (match && match.progress > 0) return theme.colors.primary;
-    return '#94A3B8';
+    return '#E8ECEB';
+  };
+
+  const handleNationalPress = (index) => {
+    const regionName = NATIONAL_SHAPE_REGIONS[index];
+    if (regionName) {
+      setSelectedProvince(regionName);
+    }
+  };
+
+  // 전국 지도 렌더링
+  const renderNationalMap = () => {
+    const mapData = MAP_PATHS['korea'];
+    if (!mapData) return null;
+
+    return (
+      <View style={styles.svgWrapper}>
+        <Text style={styles.mapTitle}>대한민국 전체 지도 🇰🇷</Text>
+        <Text style={styles.mapInstruction}>지역을 터치하면 세부 지도로 확대됩니다</Text>
+        
+        <Svg 
+          width={width - 48} 
+          height={380} 
+          viewBox={mapData.viewBox}
+          style={styles.svg}
+        >
+          {mapData.paths.map((d, index) => {
+            const regionName = NATIONAL_SHAPE_REGIONS[index] || '미지정';
+            const fillColor = getFillColor(regionName, true);
+            
+            return (
+              <Path
+                key={`national-${index}`}
+                d={d}
+                fill={fillColor}
+                stroke="#FFFFFF"
+                strokeWidth="1.5"
+                onPress={() => handleNationalPress(index)}
+              />
+            );
+          })}
+        </Svg>
+      </View>
+    );
+  };
+
+  // 시도 상세 지도 렌더링
+  const renderProvinceMap = () => {
+    const svgKey = PROVINCE_SVG_KEYS[selectedProvince];
+    const mapData = MAP_PATHS[svgKey];
+    if (!mapData) {
+      return (
+        <View style={styles.svgWrapper}>
+          <Text style={styles.mapTitle}>지도를 준비 중입니다</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedProvince(null)}>
+            <Text style={styles.backBtnText}>전국 지도로 돌아가기</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.svgWrapper}>
+        <View style={styles.zoomHeader}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedProvince(null)}>
+            <Text style={styles.backBtnText}>← 전국 지도</Text>
+          </TouchableOpacity>
+          <Text style={styles.mapTitle}>{selectedProvince} 상세 지도</Text>
+        </View>
+        <Text style={styles.mapInstruction}>각 구역을 탭하면 랜드마크 명세로 이동합니다</Text>
+
+        <Svg 
+          width={width - 48} 
+          height={320} 
+          viewBox={mapData.viewBox}
+          style={styles.svg}
+        >
+          {mapData.paths.map((d, index) => {
+            // 자치구 이름 매핑 (예시)
+            const subRegionName = `${selectedProvince} 구역 ${index + 1}`;
+            
+            return (
+              <Path
+                key={`province-${index}`}
+                d={d}
+                fill={getFillColor(subRegionName)}
+                stroke="#FFFFFF"
+                strokeWidth="1"
+                onPress={() => {
+                  if (onRegionPress) {
+                    onRegionPress(subRegionName);
+                  }
+                }}
+              />
+            );
+          })}
+        </Svg>
+      </View>
+    );
   };
 
   return (
     <View style={styles.mapContainer}>
-      {!isDaejeonZoomed ? (
-        // 1단계: 전국 시/도 지도
-        <View style={styles.svgWrapper}>
-          <Text style={styles.mapTitle}>대한민국 전체 지도 🇰🇷</Text>
-          <Text style={styles.mapInstruction}>'대전' 지역을 누르면 구별 도감 지도로 확대됩니다</Text>
-          <Svg width="300" height="420" viewBox="0 0 300 420">
-            {/* 강원도 */}
-            <Path
-              d="M170 30 L250 50 L240 120 L180 110 L150 70 Z"
-              fill={getFillColor('강원', true)}
-              stroke={getStrokeColor('강원', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('강원')}
-            />
-            {/* 경기도 */}
-            <Path
-              d="M100 60 L150 70 L180 110 L140 140 L100 120 L90 80 Z"
-              fill={getFillColor('경기', true)}
-              stroke={getStrokeColor('경기', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('경기')}
-            />
-            {/* 서울 (경기 내부에 노란색 포인트) */}
-            <Path
-              d="M125 85 L145 85 L140 98 L120 98 Z"
-              fill="#F59E0B"
-              stroke="#B45309"
-              strokeWidth="1.5"
-              onPress={() => onRegionPress('서울')}
-            />
-            {/* 충청북도 */}
-            <Path
-              d="M180 110 L210 130 L190 190 L140 170 L150 140 Z"
-              fill={getFillColor('충북', true)}
-              stroke={getStrokeColor('충북', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('충북')}
-            />
-            {/* 충청남도 */}
-            <Path
-              d="M75 130 L140 140 L150 170 L110 200 L70 170 Z"
-              fill={getFillColor('충남', true)}
-              stroke={getStrokeColor('충남', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('충남')}
-            />
-            {/* 대전광역시 (충남북 경계 사이 - 게임 속 시그니처 랜드마크처럼 처리) */}
-            <Path
-              d="M135 170 L155 170 L150 185 L130 185 Z"
-              fill={getFillColor('대전', true)}
-              stroke={theme.colors.primary}
-              strokeWidth="2.5"
-              onPress={() => setIsDaejeonZoomed(true)}
-            />
-            {/* 경상북도 */}
-            <Path
-              d="M210 130 L270 150 L280 230 L220 250 L190 190 Z"
-              fill={getFillColor('경북', true)}
-              stroke={getStrokeColor('경북', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('경북')}
-            />
-            {/* 전라북도 */}
-            <Path
-              d="M90 200 L150 200 L170 240 L110 260 L80 240 Z"
-              fill={getFillColor('전북', true)}
-              stroke={getStrokeColor('전북', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('전북')}
-            />
-            {/* 경상남도 */}
-            <Path
-              d="M170 240 L220 250 L260 260 L240 300 L170 280 Z"
-              fill={getFillColor('경남', true)}
-              stroke={getStrokeColor('경남', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('경남')}
-            />
-            {/* 전라남도 */}
-            <Path
-              d="M70 260 L110 260 L140 310 L150 330 L60 330 Z"
-              fill={getFillColor('전남', true)}
-              stroke={getStrokeColor('전남', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('전남')}
-            />
-            {/* 제주도 */}
-            <Path
-              d="M90 360 L150 360 L140 380 L80 380 Z"
-              fill={getFillColor('제주', true)}
-              stroke={getStrokeColor('제주', true)}
-              strokeWidth="2"
-              onPress={() => onRegionPress('제주')}
-            />
-          </Svg>
-        </View>
-      ) : (
-        // 2단계: 대전광역시 상세 구별 지도 (Zoom-in 모드)
-        <View style={styles.svgWrapper}>
-          <View style={styles.zoomHeader}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => setIsDaejeonZoomed(false)}>
-              <Text style={styles.backBtnText}>← 전국 지도</Text>
-            </TouchableOpacity>
-            <Text style={styles.mapTitle}>대전광역시 도감 지도 🏙️</Text>
-          </View>
-          <Text style={styles.mapInstruction}>각 구를 탭하여 해당 구의 랜드마크 명세로 이동하세요</Text>
-          
-          <Svg width="300" height="360" viewBox="0 0 300 360">
-            {/* 대덕구 (북쪽) */}
-            <Path
-              d="M140 30 L200 40 L190 130 L130 130 L120 70 Z"
-              fill={getFillColor('대덕구')}
-              stroke={getStrokeColor('대덕구')}
-              strokeWidth="2"
-              onPress={() => onRegionPress('대덕구')}
-            />
-            {/* 유성구 (서쪽) */}
-            <Path
-              d="M50 80 L130 80 L130 160 L100 240 L40 180 L30 120 Z"
-              fill={getFillColor('유성구')}
-              stroke={getStrokeColor('유성구')}
-              strokeWidth="2"
-              onPress={() => onRegionPress('유성구')}
-            />
-            {/* 서구 (남서쪽) */}
-            <Path
-              d="M100 240 L140 180 L150 250 L120 320 L70 310 Z"
-              fill={getFillColor('서구')}
-              stroke={getStrokeColor('서구')}
-              strokeWidth="2"
-              onPress={() => onRegionPress('서구')}
-            />
-            {/* 중구 (남쪽) */}
-            <Path
-              d="M140 180 L180 180 L200 290 L160 320 L150 250 Z"
-              fill={getFillColor('중구')}
-              stroke={getStrokeColor('중구')}
-              strokeWidth="2"
-              onPress={() => onRegionPress('중구')}
-            />
-            {/* 동구 (동쪽) */}
-            <Path
-              d="M190 130 L250 140 L260 250 L200 290 L180 180 L130 160 Z"
-              fill={getFillColor('동구')}
-              stroke={getStrokeColor('동구')}
-              strokeWidth="2"
-              onPress={() => onRegionPress('동구')}
-            />
-          </Svg>
-        </View>
-      )}
+      {!selectedProvince ? renderNationalMap() : renderProvinceMap()}
     </View>
   );
 }
@@ -200,7 +187,7 @@ const styles = StyleSheet.create({
   mapContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
+    width: '100%',
   },
   svgWrapper: {
     backgroundColor: '#FFFFFF',
@@ -208,17 +195,20 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#E8ECEB',
     width: '100%',
+  },
+  svg: {
+    alignSelf: 'center',
   },
   mapTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: theme.colors.textPrimary,
+    color: '#1F2937',
   },
   mapInstruction: {
     fontSize: 11,
-    color: theme.colors.textSecondary,
+    color: '#6B7280',
     marginTop: 4,
     marginBottom: 16,
   },
@@ -233,7 +223,7 @@ const styles = StyleSheet.create({
   backBtn: {
     position: 'absolute',
     left: 0,
-    backgroundColor: theme.colors.blueWash,
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: theme.rounded.sm,

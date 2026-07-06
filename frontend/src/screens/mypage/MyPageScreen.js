@@ -2,9 +2,10 @@ import React from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import CustomText from '../../components/common/CustomText';
+import theme from '../../theme/theme';
 
 export default function MyPageScreen({ navigation }) {
-  const { logout } = useAuth(); // AuthContext의 로그아웃 액션 호출
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
@@ -16,58 +17,58 @@ export default function MyPageScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* 프로필 요약 카드 */}
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <CustomText variant="Heading/H3" color="#3B82F6">JS</CustomText>
+            <CustomText variant="Heading/H3" color={theme.colors.primary}>JS</CustomText>
           </View>
-          <CustomText variant="Heading/H3" color="#0F172A" style={styles.username}>
+          <CustomText variant="Heading/H3" color={theme.colors.textPrimary} style={styles.username}>
             김준수
           </CustomText>
-          <CustomText variant="Body/Small" color="#64748B" style={styles.userEmail}>
+          <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.userEmail}>
             junsu@example.com
           </CustomText>
           <TouchableOpacity style={styles.editBtn} activeOpacity={0.8}>
-            <CustomText variant="UI/Button/Small" color="#475569">
+            <CustomText variant="UI/Button/Small" color={theme.colors.primary}>
               프로필 수정
             </CustomText>
           </TouchableOpacity>
         </View>
 
-        {/* 메뉴 리스트 컨테이너 */}
+        {/* 메뉴 리스트 */}
         <View style={styles.menuContainer}>
-          <TouchableOpacity 
-            style={styles.menuItem} 
+          <TouchableOpacity
+            style={styles.menuItem}
             onPress={() => navigation.navigate('BadgeList')}
             activeOpacity={0.7}
           >
-            <CustomText variant="Body/Medium" color="#334155" style={styles.menuItemText}>
+            <CustomText variant="Body/Medium" color={theme.colors.textBody} style={styles.menuItemText}>
               🏆   전체 배지 보관함
             </CustomText>
-            <CustomText variant="Caption" color="#94A3B8" style={styles.arrow}>❯</CustomText>
+            <CustomText variant="Caption" color={theme.colors.textTertiary} style={styles.arrow}>❯</CustomText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <CustomText variant="Body/Medium" color="#334155" style={styles.menuItemText}>
+            <CustomText variant="Body/Medium" color={theme.colors.textBody} style={styles.menuItemText}>
               ⚙️   푸시 알림 설정
             </CustomText>
-            <CustomText variant="Caption" color="#94A3B8" style={styles.arrow}>❯</CustomText>
+            <CustomText variant="Caption" color={theme.colors.textTertiary} style={styles.arrow}>❯</CustomText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <CustomText variant="Body/Medium" color="#334155" style={styles.menuItemText}>
+            <CustomText variant="Body/Medium" color={theme.colors.textBody} style={styles.menuItemText}>
               📖   서비스 이용 가이드
             </CustomText>
-            <CustomText variant="Caption" color="#94A3B8" style={styles.arrow}>❯</CustomText>
+            <CustomText variant="Caption" color={theme.colors.textTertiary} style={styles.arrow}>❯</CustomText>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.menuItem, styles.logoutItem]} 
+          <TouchableOpacity
+            style={[styles.menuItem, styles.logoutItem]}
             onPress={handleLogout}
             activeOpacity={0.7}
           >
-            <CustomText variant="Body/Medium" color="#EF4444" style={styles.logoutText}>
+            <CustomText variant="Body/Medium" color={theme.colors.error} style={styles.logoutText}>
               🚪   로그아웃
             </CustomText>
           </TouchableOpacity>
@@ -80,35 +81,35 @@ export default function MyPageScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Slate-50 공통 배경
+    backgroundColor: theme.colors.surface,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
     paddingBottom: 40,
   },
   profileCard: {
-    backgroundColor: '#FFFFFF',
-    padding: 24,
-    borderRadius: 24,
+    backgroundColor: theme.colors.canvas,
+    padding: theme.spacing.lg,
+    borderRadius: theme.rounded.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
+    borderColor: theme.colors.border,
+    shadowColor: theme.colors.textPrimary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.03,
     shadowRadius: 16,
     elevation: 2,
-    marginTop: 10,
+    marginTop: theme.spacing.sm,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#EFF6FF', // Light blue
+    backgroundColor: theme.colors.blueTint,
     borderWidth: 1.5,
-    borderColor: '#BFDBFE',
-    marginBottom: 16,
+    borderColor: theme.colors.primary,
+    marginBottom: theme.spacing.base,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -117,23 +118,25 @@ const styles = StyleSheet.create({
   },
   userEmail: {
     marginTop: 4,
-    marginBottom: 16,
+    marginBottom: theme.spacing.base,
     fontWeight: '500',
   },
   editBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#F1F5F9',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.rounded.pill,
+    backgroundColor: theme.colors.blueTint,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
   },
   menuContainer: {
-    marginTop: 24,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    marginTop: theme.spacing.lg,
+    backgroundColor: theme.colors.canvas,
+    borderRadius: theme.rounded.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
+    borderColor: theme.colors.border,
+    shadowColor: theme.colors.textPrimary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.03,
     shadowRadius: 16,
@@ -144,9 +147,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 18,
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: theme.colors.border,
   },
   menuItemText: {
     fontWeight: '500',
