@@ -1,6 +1,6 @@
 package triplog.backend.common.exception;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.ResponseEntity;
 
@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
  * {@code {"status": 400, "message": "..."}} 형태의 통일된 JSON 포맷으로 변환되어 응답됩니다.
  */
 @Getter
-@Builder
+@AllArgsConstructor
 public class ErrorResponse {
 
     private final int status;
@@ -28,11 +28,10 @@ public class ErrorResponse {
     public static ResponseEntity<ErrorResponse> toResponseEntity(BaseErrorCode errorCode) {
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
-                .body(ErrorResponse.builder()
-                        .status(errorCode.getHttpStatus().value())
-                        .message(errorCode.getMessage())
-                        .build()
-                );
+                .body(new ErrorResponse(
+                        errorCode.getHttpStatus().value(),
+                        errorCode.getMessage()
+                ));
     }
 
     /**
@@ -48,10 +47,9 @@ public class ErrorResponse {
     public static ResponseEntity<ErrorResponse> toResponseEntity(BaseErrorCode errorCode, String customMessage) {
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
-                .body(ErrorResponse.builder()
-                        .status(errorCode.getHttpStatus().value())
-                        .message(customMessage)
-                        .build()
-                );
+                .body(new ErrorResponse(
+                        errorCode.getHttpStatus().value(),
+                        customMessage
+                ));
     }
 }
