@@ -1,2 +1,10 @@
 .idea
 node_modules
+.agents/
+.claude/
+.codex/
+.opencode/
+.omd/
+# 로컬 전용 디자인 참고 자료 (Git 제외)
+_design_refs/
+

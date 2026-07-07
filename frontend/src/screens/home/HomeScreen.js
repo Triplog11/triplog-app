@@ -1,197 +1,174 @@
-import React from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
-import CustomText from '../../components/common/CustomText';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { StyleSheet, View, Text, StatusBar, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import KoreaMap from '../../components/map/KoreaMap';
+import Fab from '../../components/common/Fab';
+import LocationPermissionModal from './components/LocationPermissionModal';
+import theme from '../../theme/theme';
+import { REGIONS, getNationalStats } from '../../data/regions';
+import { resolveRegionName, formatPlaceLabel } from '../../utils/geo';
 
-const { width } = Dimensions.get('window');
-
+/**
+ * 홈 = 전국 지도
+ * - 첫 진입: 한국어 사전 안내 모달 → 시스템 위치 권한 → 실제 위경도 투영 마커 + 상세 위치 칩
+ * - 나침반 버튼: 탭하면 기기 방향(폰 y축 위쪽)에 맞춰 지도 회전, 다시 탭하면 북쪽 복귀
+ */
 export default function HomeScreen({ navigation }) {
-  // 모의 데이터 (Data Schema 명세 기반)
-  const userStats = {
-    nickname: '김준수',
-    level: 42,
-    xp: 680,
-    nextLevelXp: 1000,
-    tier: 'Gold',
-    appellation: '초보 방랑자 🎒', // 칭호
-    overallScore: 3420,
-    visitedCount: 128,
-    badgeCount: 15,
+  const stats = getNationalStats();
+  const mapRef = useRef(null);
+  const headingSub = useRef(null);
+
+  const [userRegion, setUserRegion] = useState(null);
+  const [userCoords, setUserCoords] = useState(null);
+  const [placeLabel, setPlaceLabel] = useState(null);
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [compassOn, setCompassOn] = useState(false);
+
+  const stopCompass = useCallback(() => {
+    headingSub.current?.remove();
+    headingSub.current = null;
+  }, []);
+
+  useEffect(() => () => stopCompass(), [stopCompass]);
+
+  const locate = useCallback(async () => {
+    try {
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const coords = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      };
+      setUserCoords(coords);
+
+      // 웹은 reverseGeocode 미지원 — 좌표 마커만 표시
+      if (Platform.OS === 'web') return coords;
+
+      const places = await Location.reverseGeocodeAsync(coords);
+      const place = places?.[0];
+      const region = resolveRegionName(place);
+      if (region) setUserRegion(region);
+      const label = formatPlaceLabel(place, region);
+      if (label) setPlaceLabel(label);
+      return coords;
+    } catch (error) {
+      console.warn('현재 위치를 확인하지 못했어요:', error);
+      return null;
+    }
+  }, []);
+
+  // 첫 진입: 권한 상태 확인 → 미허용이면 한국어 안내 모달부터
+  useEffect(() => {
+    (async () => {
+      const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
+      if (status === 'granted') {
+        setPermissionGranted(true);
+        locate();
+      } else if (canAskAgain) {
+        setShowPermissionModal(true);
+      }
+    })();
+  }, [locate]);
+
+  const handleAllowPermission = async () => {
+    setShowPermissionModal(false);
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
+      setPermissionGranted(true);
+      locate();
+    }
   };
 
-  const weeklyMissions = [
-    { id: 1, name: '경주 역사 유적 지구 방문하기', xp: 150, completed: true },
-    { id: 2, name: '인증 리뷰 1개 작성하기', xp: 50, completed: false },
-    { id: 3, name: '새로운 지역 지도 오픈하기', xp: 100, completed: false },
-  ];
+  const startCompass = async () => {
+    if (headingSub.current) return;
+    headingSub.current = await Location.watchHeadingAsync((h) => {
+      const deg = h.trueHeading >= 0 ? h.trueHeading : h.magHeading;
+      mapRef.current?.setHeading(deg);
+    });
+  };
 
-  const earnedBadges = [
-    { id: 1, name: '첫 걸음마 👣', color: '#EFF6FF', textColor: '#1D4ED8' },
-    { id: 2, name: '역사 탐험가 🏰', color: '#FEF3C7', textColor: '#D97706' },
-    { id: 3, name: '야경 사냥꾼 🌃', color: '#F3E8FF', textColor: '#7C3AED' },
-    { id: 4, name: '프로 리뷰어 ✍️', color: '#ECFDF5', textColor: '#059669' },
-  ];
+  // 나침반 토글: 켜면 폰이 향한 방향이 지도 위쪽이 되도록 회전, 끄면 북쪽 복귀
+  const handleCompassPress = async () => {
+    if (!permissionGranted) {
+      setShowPermissionModal(true);
+      return;
+    }
 
-  const recommendations = [
-    { id: 1, title: '수원 화성 행궁', location: '경기 수원시', color: '#FF8A8A' },
-    { id: 2, title: '광교 호수공원', location: '경기 수원시', color: '#68B0AB' },
-    { id: 3, title: '남한산성 도립공원', location: '경기 광주시', color: '#8FC0A9' },
-  ];
+    if (!compassOn) {
+      if (!userCoords) await locate();
+      mapRef.current?.enterCompass(); // 내 위치를 화면 중앙으로 + 줌인
+      await startCompass();
+      setCompassOn(true);
+    } else {
+      stopCompass();
+      mapRef.current?.resetHeading();
+      setCompassOn(false);
+    }
+  };
 
-  const xpPercentage = `${(userStats.xp / userStats.nextLevelXp) * 100}%`;
+  // 나침반 모드 중 지도를 만지면 즉시 해제 (회전 상태는 유지 — 더블탭으로 북쪽 복귀)
+  const handleMapGesture = useCallback(() => {
+    if (headingSub.current) {
+      stopCompass();
+      setCompassOn(false);
+    }
+  }, [stopCompass]);
+
+  const handleExplore = (regionName) => {
+    navigation.navigate('RegionDetail', { regionName });
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* 1. 상단 프로필 및 칭호 영역 */}
-        <View style={styles.profileSection}>
-          <View>
-            <CustomText variant="Body/Medium" color="#64748B">안녕하세요,</CustomText>
-            <View style={styles.nameRow}>
-              <CustomText variant="Heading/H2" color="#0F172A" style={styles.usernameText}>
-                {userStats.nickname}님
-              </CustomText>
-              <CustomText variant="Heading/H2" color="#3B82F6"> 👋</CustomText>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
+
+      <View style={styles.head}>
+        <Text style={styles.title}>어디로 떠나볼까요</Text>
+        <View style={styles.statsRow}>
+          <Text style={styles.statText}>
+            전국 <Text style={styles.statStrong}>{stats.percent}%</Text>
+          </Text>
+          <Text style={styles.statText}>
+            방문 <Text style={styles.statStrong}>{stats.collected}</Text>곳
+          </Text>
+          {placeLabel && (
+            <View style={styles.locationChip}>
+              <Feather name="map-pin" size={12} color={theme.colors.locationBlue} />
+              <Text style={styles.locationChipText} numberOfLines={1}>
+                {placeLabel}
+              </Text>
             </View>
-            <View style={styles.appellationContainer}>
-              <CustomText variant="Label/Small" color="#3B82F6" style={styles.appellationText}>
-                {userStats.appellation}
-              </CustomText>
-            </View>
-          </View>
-          
-          <View style={styles.tierBadge}>
-            <CustomText variant="UI/Button/Small" color="#FFFFFF" style={styles.tierText}>
-              {userStats.tier}
-            </CustomText>
-          </View>
+          )}
         </View>
+      </View>
 
-        {/* 2. 경험치 진행률 카드 */}
-        <View style={styles.card}>
-          <View style={styles.xpHeader}>
-            <View style={styles.levelRow}>
-              <CustomText variant="Heading/H4" color="#0F172A">LV.{userStats.level}</CustomText>
-              <CustomText variant="Caption" color="#94A3B8" style={styles.levelSubText}>레벨 업 도전 중</CustomText>
-            </View>
-            <CustomText variant="Label/Medium" color="#FF6B6B">
-              {userStats.xp} / {userStats.nextLevelXp} XP
-            </CustomText>
-          </View>
-          
-          <View style={styles.xpTrack}>
-            <View style={[styles.xpBar, { width: xpPercentage }]} />
-          </View>
-          <View style={styles.xpFooter}>
-            <CustomText variant="Caption" color="#94A3B8">다음 단계까지 {100 - (userStats.xp / userStats.nextLevelXp) * 100}% 남았습니다.</CustomText>
-          </View>
-        </View>
+      <KoreaMap
+        ref={mapRef}
+        regions={REGIONS}
+        onExplore={handleExplore}
+        userRegion={userRegion}
+        userCoords={userCoords}
+        compassActive={compassOn}
+        onUserGesture={handleMapGesture}
+      />
 
-        {/* 3. 활동 스탯 그리드 카드 */}
-        <View style={styles.statGrid}>
-          <TouchableOpacity 
-            style={[styles.statCard, styles.card]}
-            onPress={() => navigation.navigate('History')}
-            activeOpacity={0.8}
-          >
-            <CustomText variant="Heading/H1" color="#3B82F6" style={styles.statVal}>
-              {userStats.visitedCount}회
-            </CustomText>
-            <CustomText variant="Label/Medium" color="#64748B" style={styles.statLabel}>
-              방문 인증 📸
-            </CustomText>
-          </TouchableOpacity>
+      <Fab
+        icon={compassOn ? 'navigation' : 'compass'}
+        accessibilityLabel={compassOn ? '나침반 모드 끄기' : '내 방향으로 지도 회전'}
+        onPress={handleCompassPress}
+        style={styles.fab}
+        active={compassOn}
+      />
 
-          <View style={[styles.statCard, styles.card]}>
-            <CustomText variant="Heading/H1" color="#10B981" style={styles.statVal}>
-              {userStats.badgeCount}개
-            </CustomText>
-            <CustomText variant="Label/Medium" color="#64748B" style={styles.statLabel}>
-              획득 배지 🏆
-            </CustomText>
-          </View>
-        </View>
-
-        {/* 4. 주간 미션 영역 (DDL 미션 도메인 반영) */}
-        <View style={styles.sectionHeader}>
-          <CustomText variant="Heading/H3" color="#0F172A">주간 미션 🎯</CustomText>
-          <CustomText variant="Caption" color="#3B82F6">경험치 획득 기회</CustomText>
-        </View>
-        
-        <View style={styles.card}>
-          {weeklyMissions.map((mission, idx) => (
-            <View 
-              key={mission.id} 
-              style={[
-                styles.missionItem, 
-                idx < weeklyMissions.length - 1 && styles.borderBottom
-              ]}
-            >
-              <View style={styles.missionInfo}>
-                <View style={[styles.checkbox, mission.completed && styles.checkboxCompleted]}>
-                  {mission.completed && <CustomText variant="Label/Small" color="#FFFFFF">✓</CustomText>}
-                </View>
-                <CustomText 
-                  variant="Body/Small" 
-                  color={mission.completed ? '#94A3B8' : '#334155'}
-                  style={mission.completed && styles.completedText}
-                >
-                  {mission.name}
-                </CustomText>
-              </View>
-              <View style={[styles.xpTag, mission.completed && styles.xpTagCompleted]}>
-                <CustomText 
-                  variant="Caption" 
-                  color={mission.completed ? '#94A3B8' : '#3B82F6'}
-                  style={styles.xpTagText}
-                >
-                  +{mission.xp} XP
-                </CustomText>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* 5. 획득 뱃지 갤러리 */}
-        <View style={styles.sectionHeader}>
-          <CustomText variant="Heading/H3" color="#0F172A">대표 뱃지 🏆</CustomText>
-          <TouchableOpacity>
-            <CustomText variant="Label/Medium" color="#3B82F6">전체보기</CustomText>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgeScroll}>
-          {earnedBadges.map((badge) => (
-            <View key={badge.id} style={[styles.badgeItem, { backgroundColor: badge.color }]}>
-              <CustomText variant="Body/Medium" color={badge.textColor} style={styles.badgeName}>
-                {badge.name}
-              </CustomText>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* 6. 오늘의 추천 여행지 */}
-        <View style={styles.sectionHeader}>
-          <CustomText variant="Heading/H3" color="#0F172A">오늘의 추천 여행지 ✈️</CustomText>
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recommendScroll}>
-          {recommendations.map((item) => (
-            <TouchableOpacity key={item.id} style={[styles.recommendCard, styles.card]} activeOpacity={0.9}>
-              <View style={[styles.cardImagePlaceholder, { backgroundColor: item.color }]} />
-              <View style={styles.recommendInfo}>
-                <CustomText variant="Heading/H5" color="#1E293B" style={styles.cardTitle}>
-                  {item.title}
-                </CustomText>
-                <CustomText variant="Caption" color="#64748B" style={styles.cardSub}>
-                  {item.location}
-                </CustomText>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-      </ScrollView>
+      <LocationPermissionModal
+        visible={showPermissionModal}
+        onAllow={handleAllowPermission}
+        onLater={() => setShowPermissionModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -199,204 +176,64 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Slate-50: 매우 세련되고 밝은 그레이-화이트
+    backgroundColor: theme.colors.surface,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 40,
-  },
-  profileSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginTop: 15,
-    marginBottom: 20,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  usernameText: {
-    fontWeight: 'bold',
-  },
-  appellationContainer: {
-    backgroundColor: '#EFF6FF', // Light blue tint
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 6,
-    alignSelf: 'flex-start',
-  },
-  appellationText: {
-    fontWeight: '600',
-  },
-  tierBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: '#EAB308', // Gold Accent Color
-    shadowColor: '#EAB308',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tierText: {
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F1F5F9', // 아주 부드러운 외곽선
-  },
-  xpHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12,
-  },
-  levelRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-  },
-  levelSubText: {
-    fontWeight: '500',
-  },
-  xpTrack: {
-    height: 10,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  xpBar: {
-    height: '100%',
-    backgroundColor: '#FF6B6B', // 부드러운 코랄 핑크 게이지바
-    borderRadius: 6,
-  },
-  xpFooter: {
-    marginTop: 8,
-  },
-  statGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 20,
-    marginBottom: 25,
-  },
-  statCard: {
-    flex: 1,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  statVal: {
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 10,
-    marginBottom: 14,
-  },
-  missionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  borderBottom: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  missionInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
+  head: {
+    paddingTop: theme.spacing.md,
+    paddingHorizontal: theme.spacing.base,
+    paddingBottom: theme.spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxCompleted: {
-    borderColor: '#10B981',
-    backgroundColor: '#10B981',
+  title: {
+    fontFamily: theme.typography.fontFamily.bold,
+    fontSize: theme.typography.size.heading,
+    fontWeight: '700',
+    lineHeight: Math.round(theme.typography.size.heading * 1.4),
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
   },
-  completedText: {
-    textDecorationLine: 'line-through',
-  },
-  xpTag: {
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    maxWidth: '100%',
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#EFF6FF',
   },
-  xpTagCompleted: {
-    backgroundColor: '#F1F5F9',
+  statText: {
+    fontFamily: theme.typography.fontFamily.regular,
+    fontSize: theme.typography.size.body,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
   },
-  xpTagText: {
-    fontWeight: 'bold',
+  statStrong: {
+    fontFamily: theme.typography.fontFamily.bold,
+    fontSize: theme.typography.size.title,
+    fontWeight: '700',
+    color: theme.colors.primary,
   },
-  badgeScroll: {
-    gap: 12,
-    paddingBottom: 25,
-  },
-  badgeItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-    justifyContent: 'center',
+  locationChip: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: theme.colors.white,
     borderWidth: 1,
-    borderColor: '#FFFFFF',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.rounded.full,
+    flexShrink: 1,
   },
-  badgeName: {
+  locationChipText: {
+    fontFamily: theme.typography.fontFamily.regular,
+    fontSize: theme.typography.size.caption,
     fontWeight: '600',
+    color: theme.colors.textBody,
   },
-  recommendScroll: {
-    gap: 16,
-    paddingBottom: 20,
-  },
-  recommendCard: {
-    width: 200,
-    padding: 0, // 이미지 카드형태를 위해 전체 패딩 제거
-    overflow: 'hidden',
-  },
-  cardImagePlaceholder: {
-    height: 120,
-    width: '100%',
-  },
-  recommendInfo: {
-    padding: 14,
-  },
-  cardTitle: {
-    fontWeight: 'bold',
-  },
-  cardSub: {
-    marginTop: 4,
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 20,
   },
 });

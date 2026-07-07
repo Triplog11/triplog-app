@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -92,10 +93,12 @@ export default function App() {
   );
 
   return (
-    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      {SHOW_DESIGN_SYSTEM_TEST ? renderTestScreen() : <AppNavigator />}
-      <StatusBar style="auto" />
-    </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        {SHOW_DESIGN_SYSTEM_TEST ? renderTestScreen() : <AppNavigator />}
+        <StatusBar style="auto" />
+      </View>
+    </GestureHandlerRootView>
   );
 }
 

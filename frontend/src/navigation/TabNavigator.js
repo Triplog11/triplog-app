@@ -1,12 +1,15 @@
 import React from 'react';
-import { StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Feather } from '@expo/vector-icons';
+
+import theme from '../theme/theme';
+import TripLogTabBar from '../components/navigation/TripLogTabBar';
 
 // Screens
 import HomeScreen from '../screens/home/HomeScreen';
 import HistoryScreen from '../screens/home/HistoryScreen';
+import RegionDetailScreen from '../screens/home/RegionDetailScreen';
+import CollectionScreen from '../screens/collection/CollectionScreen';
 import MapScreen from '../screens/map/MapScreen';
 import DetailScreen from '../screens/map/DetailScreen';
 import VisitCertScreen from '../screens/record/VisitCertScreen';
@@ -23,26 +26,35 @@ function HomeStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="HomeMain" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="RegionDetail" component={RegionDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="History" component={HistoryScreen} options={{ title: '인증 히스토리' }} />
     </Stack.Navigator>
   );
 }
 
-function MapStack() {
+function CollectionStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
-      <Stack.Screen name="MapMain" component={MapScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CollectionMain" component={CollectionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Detail" component={DetailScreen} options={{ title: '지역 상세' }} />
-      <Stack.Screen name="VisitCert" component={VisitCertScreen} options={{ title: '방문 인증' }} />
+      <Stack.Screen name="MapMain" component={MapScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
 
-function SocialStack() {
+function RecordStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
-      <Stack.Screen name="CommunityMain" component={CommunityScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Ranking" component={RankingScreen} options={{ title: '유저 리그 랭킹' }} />
+      <Stack.Screen name="VisitCertMain" component={VisitCertScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+}
+
+function RankingStack() {
+  return (
+    <Stack.Navigator screenOptions={stackOptions}>
+      <Stack.Screen name="RankingMain" component={RankingScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Community" component={CommunityScreen} options={{ title: '여행 피드 커뮤니티' }} />
     </Stack.Navigator>
   );
 }
@@ -66,77 +78,17 @@ const stackOptions = {
 export default function TabNavigator() {
   return (
     <Tab.Navigator
+      tabBar={(props) => <TripLogTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#F1F5F9',
-          height: Platform.OS === 'ios' ? 88 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 12,
-          paddingTop: 10,
-          shadowColor: '#0F172A',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.03,
-          shadowRadius: 10,
-          elevation: 5,
-        },
-        tabBarActiveTintColor: '#3B82F6',
-        tabBarInactiveTintColor: '#94A3B8',
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontFamily: 'Pretendard-Regular',
-          fontWeight: '600',
-          marginTop: 4,
-        },
+        sceneStyle: { backgroundColor: theme.colors.surface },
       }}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeStack} 
-        options={{
-          tabBarLabel: '홈',
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="home" size={22} color={color} />
-          )
-        }}
-      />
-      <Tab.Screen 
-        name="Map" 
-        component={MapStack} 
-        options={{
-          tabBarLabel: '지도',
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="map" size={22} color={color} />
-          )
-        }}
-      />
-      <Tab.Screen 
-        name="Social" 
-        component={SocialStack} 
-        options={{
-          tabBarLabel: '커뮤니티',
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="message-square" size={22} color={color} />
-          )
-        }}
-      />
-      <Tab.Screen 
-        name="MyPage" 
-        component={MyPageStack}
-        options={{
-          tabBarLabel: '마이페이지',
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="user" size={22} color={color} />
-          )
-        }}
-      />
+      <Tab.Screen name="Home" component={HomeStack} />
+      <Tab.Screen name="Collection" component={CollectionStack} />
+      <Tab.Screen name="Record" component={RecordStack} />
+      <Tab.Screen name="Ranking" component={RankingStack} />
+      <Tab.Screen name="MyPage" component={MyPageStack} />
     </Tab.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  tabIcon: {
-    fontSize: 18,
-  },
-});
