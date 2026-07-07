@@ -2,7 +2,6 @@ package triplog.backend.users.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.util.UUID;
@@ -15,7 +14,6 @@ import java.util.UUID;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Table(name = "users")
 public class Users {
 
@@ -38,4 +36,12 @@ public class Users {
 
     @Column(name = "password", length = 255)
     private String password;
+
+    public Users(LoginType loginType, String nickname, String profileUrl, String email, String password) {
+        this.loginType = loginType;
+        this.nickname = nickname;
+        this.profileUrl = profileUrl;
+        this.email = email;
+        this.password = password;
+    }
 }
