@@ -20,9 +20,9 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * 애플리케이션의 보안 설정을 담당하는 구성 클래스입니다.
+ * 애플리케이션의 Spring Security 설정을 담당하는 구성 클래스입니다.
  * <p>
- * JWT 기반 인증을 사용하며, 로그인과 회원가입 추가정보 입력 API를 제외한 요청은 인증을 요구합니다.
+ * JWT 기반의 stateless 인증 방식을 사용하며, 로그인과 문서 접근처럼 인증 전에 필요한 요청만 허용합니다.
  */
 @Configuration
 @EnableWebSecurity
@@ -33,7 +33,13 @@ public class SecurityConfig {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * HTTP 요청에 대한 보안 필터 체인을 구성합니다.
+     * HTTP 요청에 적용할 보안 필터 체인을 구성합니다.
+     * <p>
+     * CSRF와 세션을 비활성화하고, 인증이 필요 없는 공개 경로를 제외한 모든 요청에 JWT 인증을 적용합니다.
+     *
+     * @param http Spring Security HTTP 보안 설정 객체
+     * @return 구성된 보안 필터 체인
+     * @throws Exception 보안 필터 체인 구성 중 오류가 발생한 경우
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/auth/oauth",
+                                "/auth/test-login",
+                                "/login/oauth2/**",
                                 "/auth/additional-info",
                                 "/scalar/**",
                                 "/v3/api-docs/**",
@@ -62,6 +70,8 @@ public class SecurityConfig {
 
     /**
      * 인증되지 않은 사용자가 보호된 리소스에 접근했을 때 401 응답을 반환합니다.
+     *
+     * @return 인증 실패 처리 핸들러
      */
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
@@ -71,6 +81,8 @@ public class SecurityConfig {
 
     /**
      * 인증된 사용자가 권한이 없는 리소스에 접근했을 때 403 응답을 반환합니다.
+     *
+     * @return 접근 거부 처리 핸들러
      */
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
@@ -78,6 +90,14 @@ public class SecurityConfig {
                 sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "접근 권한이 없습니다.");
     }
 
+    /**
+     * Spring Security 예외 응답을 공통 JSON 형식으로 작성합니다.
+     *
+     * @param response 클라이언트로 반환할 HTTP 응답
+     * @param status HTTP 상태 코드
+     * @param message 응답에 포함할 에러 메시지
+     * @throws IOException 응답 본문 작성 중 I/O 오류가 발생한 경우
+     */
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");

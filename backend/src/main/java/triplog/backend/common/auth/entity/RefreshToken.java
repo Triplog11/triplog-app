@@ -23,4 +23,15 @@ public class RefreshToken {
 
     @Indexed
     private String refreshToken;
+
+    /**
+     * Refresh Token 엔티티를 생성합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param refreshToken Refresh Token
+     */
+    public RefreshToken(String usersId, String refreshToken) {
+        this.usersId = usersId;
+        this.refreshToken = refreshToken;
+    }
 }

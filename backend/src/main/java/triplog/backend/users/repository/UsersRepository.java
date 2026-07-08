@@ -2,7 +2,10 @@ package triplog.backend.users.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import triplog.backend.users.entity.LoginType;
 import triplog.backend.users.entity.Users;
+
+import java.util.Optional;
 
 /**
  * 사용자(Users) 엔티티의 데이터 접근을 담당하는 JPA Repository입니다.
@@ -12,4 +15,13 @@ import triplog.backend.users.entity.Users;
  */
 @Repository
 public interface UsersRepository extends JpaRepository<Users, String> {
+
+    /**
+     * 이메일과 로그인 타입으로 사용자를 조회합니다.
+     *
+     * @param email 사용자 이메일
+     * @param loginType 로그인 타입
+     * @return 조회된 사용자
+     */
+    Optional<Users> findByEmailAndLoginType(String email, LoginType loginType);
 }

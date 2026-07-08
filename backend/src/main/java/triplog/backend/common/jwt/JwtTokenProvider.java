@@ -23,7 +23,7 @@ public class JwtTokenProvider {
     private final SecretKey key;
     private final long accessTokenValidity;
     private final long refreshTokenValidity;
-    private static final long TEMPORARY_TOKEN_VALIDITY = 1000 * 60 * 30;
+    private static final long TEMPORARY_TOKEN_VALIDITY = 1000 * 60 * 5;
 
     /**
      * 설정 파일의 JWT 프로퍼티를 주입받아 서명 키와 토큰 유효 시간을 초기화합니다.
@@ -61,6 +61,15 @@ public class JwtTokenProvider {
                 .expiration(validity)
                 .signWith(key)
                 .compact();
+    }
+
+    /**
+     * 임시 토큰 만료 시간을 초 단위로 반환합니다.
+     *
+     * @return 임시 토큰 만료 시간
+     */
+    public long getTemporaryTokenExpiresIn() {
+        return TEMPORARY_TOKEN_VALIDITY / 1000;
     }
 
     /**
