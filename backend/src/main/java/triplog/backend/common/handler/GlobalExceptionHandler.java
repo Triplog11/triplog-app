@@ -10,6 +10,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.common.exception.CommonErrorCode;
 import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.users.exception.UsersException;
@@ -35,6 +36,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UsersException.class)
     protected ResponseEntity<ErrorResponse> handleUsersException(UsersException e) {
         log.warn("사용자 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
+     * 인증(Auth) 도메인 비즈니스 로직에서 발생하는 {@link AuthException}을 처리합니다.
+     * @param e 인증 도메인에서 발생한 예외
+     * @return 인증 에러 코드에 해당하는 HTTP 상태 코드와 에러 메시지를 포함한 응답
+     */
+    @ExceptionHandler(AuthException.class)
+    protected ResponseEntity<ErrorResponse> handleAuthException(AuthException e) {
+        log.warn("인증 도메인 예외 발생: {}", e.getErrorCode());
         return toResponseEntity(e.getErrorCode());
     }
 
