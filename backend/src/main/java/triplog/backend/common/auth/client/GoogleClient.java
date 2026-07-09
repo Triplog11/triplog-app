@@ -43,7 +43,6 @@ public class GoogleClient implements SocialApiClient {
     private static final String GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token";
     private static final String AUTHORIZATION_CODE = "authorization_code";
     private static final String EMAIL_CLAIM = "email";
-
     private final RestClient restClient = RestClient.create();
 
     @Value("${google.client_id}")
