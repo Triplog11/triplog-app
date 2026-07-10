@@ -2,6 +2,8 @@ package triplog.backend.common.auth.service;
 
 import org.springframework.http.ResponseEntity;
 import triplog.backend.common.auth.dto.request.AuthRequest;
+import triplog.backend.common.auth.dto.response.AuthResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 
 /**
  * 인증(Auth) 도메인의 비즈니스 로직을 정의하는 Service 인터페이스입니다.
@@ -17,5 +19,5 @@ public interface AuthService {
      * @param request 로그인 요청 DTO
      * @return 로그인 성공 또는 추가 정보 입력용 임시 토큰 응답
      */
-    ResponseEntity<?> login(AuthRequest.LoginRequest request);
+    LoginResponse login(AuthRequest.LoginRequest request);
 }

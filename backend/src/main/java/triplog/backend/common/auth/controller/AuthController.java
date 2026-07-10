@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplog.backend.common.auth.dto.request.AuthRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse;
 import triplog.backend.common.auth.service.AuthService;
 import triplog.backend.common.exception.ErrorResponse;
@@ -45,11 +46,29 @@ public class AuthController {
             description = "로그인 제공자(provider)에 따라 소셜 로그인 또는 로컬 로그인을 처리하고, 기존 회원 로그인 또는 추가 정보 입력용 임시 토큰 발급을 처리합니다."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "로그인 성공 또는 추가 정보 입력 필요",
-                    content = {
-                            @Content(schema = @Schema(implementation = AuthResponse.LoginSuccessResponse.class)),
-                            @Content(schema = @Schema(implementation = AuthResponse.TemporaryTokenResponse.class))
-                    }),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "로그인 성공 또는 추가 정보 입력 필요",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(
+                                    oneOf = {
+                                            AuthResponse.LoginSuccessResponse.class,
+                                            AuthResponse.TemporaryTokenResponse.class
+                                    }
+                            ),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "로그인 성공",
+                                            value = "{\"usersId\": \"550e8400-e29b-41d4-a716-446655440000\", \"nickname\": \"여행자\", \"level\": 1, \"xp\": 0, \"tier\": \"BRONZE\", \"accessToken\": \"access-token\", \"refreshToken\": \"refresh-token\"}"
+                                    ),
+                                    @ExampleObject(
+                                            name = "추가 정보 입력 필요",
+                                            value = "{\"expiresIn\": 300, \"temporaryToken\": \"temporary-token\"}"
+                                    )
+                            }
+                    )
+            ),
             @ApiResponse(responseCode = "400", description = "잘못된 로그인 요청입니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -72,8 +91,10 @@ public class AuthController {
                             examples = @ExampleObject(name = "500 Internal Server Error", value = "{\"status\": 500, \"message\": \"서버 내부 오류가 발생했습니다.\"}")))
     })
     @PostMapping("/oauth")
-    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest.LoginRequest request) {
+    public ResponseEntity<AuthResponse.LoginResponse> login(
+            @Valid @RequestBody LoginRequest request
+    ) {
         log.info("로그인 요청 수신: provider={}", request.getProvider());
-        return authService.login(request);
+        return ResponseEntity.ok(authService.login(request));
     }
 }

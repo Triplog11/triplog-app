@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.common.auth.client.SocialApiClient;
 import triplog.backend.common.auth.dto.request.AuthRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 import triplog.backend.common.auth.entity.RefreshToken;
 import triplog.backend.common.auth.exception.AuthErrorCode;
 import triplog.backend.common.auth.exception.AuthException;
@@ -51,25 +52,20 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     @Transactional
-    public ResponseEntity<?> login(AuthRequest.LoginRequest request) {
+    public AuthResponse.LoginResponse login(AuthRequest.LoginRequest request) {
         log.info("로그인 처리 시작: provider={}", request.getProvider());
-
-        if (!LoginType.GOOGLE.equals(request.getProvider())) {
-            log.warn("지원하지 않는 로그인 방식 요청: provider={}", request.getProvider());
-            throw new AuthException(UNSUPPORTED_LOGIN_TYPE);
-        }
 
         SocialApiClient socialApiClient = getSocialApiClient(request.getProvider());
         String email = socialApiClient.getEmail(request.getCode());
 
         return usersService.findByEmailAndLoginType(email, request.getProvider())
-                .<ResponseEntity<?>>map(user -> {
+                .<AuthResponse.LoginResponse>map(user -> {
                     log.info("기존 회원 로그인 처리: provider={}", request.getProvider());
-                    return ResponseEntity.ok(loginExistingUser(user));
+                    return loginExistingUser(user);
                 })
                 .orElseGet(() -> {
                     log.info("추가 정보 입력 필요 사용자 로그인 처리: provider={}", request.getProvider());
-                    return ResponseEntity.ok(createTemporaryToken(email));
+                    return createTemporaryToken(email);
                 });
     }
 
