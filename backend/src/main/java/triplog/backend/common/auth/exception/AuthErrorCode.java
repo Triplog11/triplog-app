@@ -43,7 +43,27 @@ public enum AuthErrorCode implements BaseErrorCode {
     /**
      * Google ID Token에서 이메일을 찾을 수 없는 경우 사용합니다.
      */
-    GOOGLE_EMAIL_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Google 계정 이메일을 찾을 수 없습니다.");
+    GOOGLE_EMAIL_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Google 계정 이메일을 찾을 수 없습니다."),
+
+    /**
+     * Naver 토큰 발급 요청이 실패한 경우 사용합니다.
+     */
+    NAVER_TOKEN_REQUEST_FAILED(HttpStatus.UNAUTHORIZED, "Naver 토큰 발급에 실패했습니다."),
+
+    /**
+     * Naver 토큰 발급 응답이 비어 있거나 필수 값이 없는 경우 사용합니다.
+     */
+    NAVER_TOKEN_RESPONSE_INVALID(HttpStatus.UNAUTHORIZED, "Naver 토큰 응답이 올바르지 않습니다."),
+
+    /**
+     * Naver 사용자 정보 요청이 실패한 경우 사용합니다.
+     */
+    NAVER_USER_INFO_REQUEST_FAILED(HttpStatus.UNAUTHORIZED, "Naver 사용자 정보 조회에 실패했습니다."),
+
+    /**
+     * Naver 사용자 정보 응답에서 이메일을 찾을 수 없는 경우 사용합니다.
+     */
+    NAVER_EMAIL_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Naver 계정 이메일을 찾을 수 없습니다.");
 
     /**
      * 클라이언트에게 응답할 HTTP 상태 코드입니다.

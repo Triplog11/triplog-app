@@ -40,7 +40,7 @@ public class AuthTestPageController {
     @GetMapping("/auth/test-login")
     public String testLoginPage(@RequestParam(required = false) String code, Model model) {
         log.info("로그인 테스트 페이지 요청 수신");
-        addLoginTestAttributes(code, model);
+        addLoginTestAttributes(code, "google", model);
         return "auth/login-test";
     }
 
@@ -54,21 +54,37 @@ public class AuthTestPageController {
     @GetMapping("/login/oauth2/code/google")
     public String googleCallbackPage(@RequestParam(required = false) String code, Model model) {
         log.info("Google 로그인 테스트 callback 요청 수신");
-        addLoginTestAttributes(code, model);
+        addLoginTestAttributes(code, "google", model);
+        return "auth/login-test";
+    }
+
+    /**
+     * Naver OAuth redirect URI 요청을 로그인 테스트 페이지로 연결합니다.
+     *
+     * @param code Naver 로그인 완료 후 전달되는 인가 코드
+     * @param model 화면 렌더링에 사용할 모델
+     * @return 로그인 테스트 페이지 템플릿
+     */
+    @GetMapping("/login/oauth2/code/naver")
+    public String naverCallbackPage(@RequestParam(required = false) String code, Model model) {
+        log.info("Naver 로그인 테스트 callback 요청 수신");
+        addLoginTestAttributes(code, "naver", model);
         return "auth/login-test";
     }
 
     /**
      * 로그인 테스트 페이지에 필요한 모델 속성을 추가합니다.
      *
-     * @param code Google 로그인 완료 후 전달되는 인가 코드
+     * @param code 소셜 로그인 완료 후 전달되는 인가 코드
+     * @param provider 화면에서 기본 선택할 로그인 제공자
      * @param model 화면 렌더링에 사용할 모델
      */
-    private void addLoginTestAttributes(String code, Model model) {
+    private void addLoginTestAttributes(String code, String provider, Model model) {
         model.addAttribute("googleClientId", googleClientId);
         model.addAttribute("googleRedirectUri", googleRedirectUri);
         model.addAttribute("naverClientId", naverClientId);
         model.addAttribute("naverRedirectUri", naverRedirectUri);
         model.addAttribute("code", code);
+        model.addAttribute("provider", provider);
     }
 }

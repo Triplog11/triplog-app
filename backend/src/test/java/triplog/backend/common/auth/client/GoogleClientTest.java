@@ -11,8 +11,14 @@ import triplog.backend.users.entity.LoginType;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.util.ReflectionTestUtils.invokeMethod;
+import static triplog.backend.common.auth.exception.AuthErrorCode.AUTHORIZATION_CODE_REQUIRED;
+import static triplog.backend.common.auth.exception.AuthErrorCode.GOOGLE_EMAIL_NOT_FOUND;
+import static triplog.backend.users.entity.LoginType.*;
+import static triplog.backend.users.entity.LoginType.LOCAL;
 
 /**
  * GoogleClient의 Google 로그인 처리 기능을 검증하는 테스트입니다.
@@ -30,7 +36,7 @@ class GoogleClientTest {
         GoogleClient googleClient = new GoogleClient();
 
         // when
-        boolean result = googleClient.supports(LoginType.GOOGLE);
+        boolean result = googleClient.supports(GOOGLE);
 
         // then
         assertThat(result).isTrue();
@@ -47,7 +53,7 @@ class GoogleClientTest {
         GoogleClient googleClient = new GoogleClient();
 
         // when
-        boolean result = googleClient.supports(LoginType.LOCAL);
+        boolean result = googleClient.supports(LOCAL);
 
         // then
         assertThat(result).isFalse();
@@ -68,7 +74,7 @@ class GoogleClientTest {
         assertThatThrownBy(() -> googleClient.getEmail(" "))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorCode")
-                .isEqualTo(AuthErrorCode.AUTHORIZATION_CODE_REQUIRED);
+                .isEqualTo(AUTHORIZATION_CODE_REQUIRED);
         log.info("Google 인가 코드 누락 예외 검증 성공");
     }
 
@@ -84,7 +90,7 @@ class GoogleClientTest {
         String idToken = createIdToken("{\"email\":\"" + expectedEmail + "\"}");
 
         // when
-        String email = ReflectionTestUtils.invokeMethod(googleClient, "extractEmail", idToken);
+        String email = invokeMethod(googleClient, "extractEmail", idToken);
 
         // then
         assertThat(email).isEqualTo(expectedEmail);
@@ -103,10 +109,10 @@ class GoogleClientTest {
 
         // when
         // then
-        assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(googleClient, "extractEmail", idToken))
+        assertThatThrownBy(() -> invokeMethod(googleClient, "extractEmail", idToken))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorCode")
-                .isEqualTo(AuthErrorCode.GOOGLE_EMAIL_NOT_FOUND);
+                .isEqualTo(GOOGLE_EMAIL_NOT_FOUND);
         log.info("Google ID Token 이메일 누락 예외 검증 성공");
     }
 
@@ -133,6 +139,6 @@ class GoogleClientTest {
     private String encode(String value) {
         return Base64.getUrlEncoder()
                 .withoutPadding()
-                .encodeToString(value.getBytes(StandardCharsets.UTF_8));
+                .encodeToString(value.getBytes(UTF_8));
     }
 }

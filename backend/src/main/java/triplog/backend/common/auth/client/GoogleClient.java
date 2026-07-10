@@ -77,7 +77,7 @@ public class GoogleClient implements SocialApiClient {
 
         if (!hasText(code)) {
             log.warn("Google 인가 코드 누락");
-            throw new AuthException(AuthErrorCode.AUTHORIZATION_CODE_REQUIRED);
+            throw new AuthException(AUTHORIZATION_CODE_REQUIRED);
         }
 
         GoogleTokenResponse tokenResponse = requestToken(code);

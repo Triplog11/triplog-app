@@ -38,6 +38,47 @@ public class AuthResponse {
     }
 
     /**
+     * Naver 토큰 발급 API 응답 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    public static class NaverTokenResponse {
+
+        @JsonProperty("access_token")
+        private String accessToken;
+
+        @JsonProperty("refresh_token")
+        private String refreshToken;
+
+        @JsonProperty("expires_in")
+        private Long expiresIn;
+
+        @JsonProperty("token_type")
+        private String tokenType;
+    }
+
+    /**
+     * Naver 사용자 정보 API 응답 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    public static class NaverUserInfoResponse {
+
+        private String resultcode;
+
+        private String message;
+
+        private Response response;
+
+        @Getter
+        @NoArgsConstructor
+        public static class Response {
+
+            private String email;
+        }
+    }
+
+    /**
      * 기존 회원 로그인 성공 응답 DTO입니다.
      */
     @Getter

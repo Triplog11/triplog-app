@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import triplog.backend.common.auth.dto.request.AuthRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse;
 import triplog.backend.common.auth.service.AuthService;
 import triplog.backend.common.exception.ErrorResponse;
 
@@ -53,8 +55,8 @@ public class AuthController {
                             mediaType = "application/json",
                             schema = @Schema(
                                     oneOf = {
-                                            AuthResponse.LoginSuccessResponse.class,
-                                            AuthResponse.TemporaryTokenResponse.class
+                                            LoginSuccessResponse.class,
+                                            TemporaryTokenResponse.class
                                     }
                             ),
                             examples = {
@@ -76,14 +78,18 @@ public class AuthController {
                                     @ExampleObject(name = "인가 코드 누락", value = "{\"status\": 400, \"message\": \"소셜 로그인 인가 코드는 필수입니다.\"}"),
                                     @ExampleObject(name = "지원하지 않는 로그인 방식", value = "{\"status\": 400, \"message\": \"지원하지 않는 로그인 방식입니다.\"}")
                             })),
-            @ApiResponse(responseCode = "401", description = "Google 인증 처리에 실패했습니다.",
+            @ApiResponse(responseCode = "401", description = "소셜 인증 처리에 실패했습니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(name = "Google 토큰 발급 실패", value = "{\"status\": 401, \"message\": \"Google 토큰 발급에 실패했습니다.\"}"),
                                     @ExampleObject(name = "Google 토큰 응답 오류", value = "{\"status\": 401, \"message\": \"Google 토큰 응답이 올바르지 않습니다.\"}"),
                                     @ExampleObject(name = "Google ID Token 오류", value = "{\"status\": 401, \"message\": \"Google ID Token이 올바르지 않습니다.\"}"),
-                                    @ExampleObject(name = "Google 이메일 없음", value = "{\"status\": 401, \"message\": \"Google 계정 이메일을 찾을 수 없습니다.\"}")
+                                    @ExampleObject(name = "Google 이메일 없음", value = "{\"status\": 401, \"message\": \"Google 계정 이메일을 찾을 수 없습니다.\"}"),
+                                    @ExampleObject(name = "Naver 토큰 발급 실패", value = "{\"status\": 401, \"message\": \"Naver 토큰 발급에 실패했습니다.\"}"),
+                                    @ExampleObject(name = "Naver 토큰 응답 오류", value = "{\"status\": 401, \"message\": \"Naver 토큰 응답이 올바르지 않습니다.\"}"),
+                                    @ExampleObject(name = "Naver 사용자 정보 조회 실패", value = "{\"status\": 401, \"message\": \"Naver 사용자 정보 조회에 실패했습니다.\"}"),
+                                    @ExampleObject(name = "Naver 이메일 없음", value = "{\"status\": 401, \"message\": \"Naver 계정 이메일을 찾을 수 없습니다.\"}")
                             })),
             @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
                     content = @Content(mediaType = "application/json",
@@ -91,7 +97,7 @@ public class AuthController {
                             examples = @ExampleObject(name = "500 Internal Server Error", value = "{\"status\": 500, \"message\": \"서버 내부 오류가 발생했습니다.\"}")))
     })
     @PostMapping("/oauth")
-    public ResponseEntity<AuthResponse.LoginResponse> login(
+    public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request
     ) {
         log.info("로그인 요청 수신: provider={}", request.getProvider());
