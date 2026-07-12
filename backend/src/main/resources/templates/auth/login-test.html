@@ -77,7 +77,7 @@
                     <span class="block text-[15px] font-black">Naver</span>
                     <span class="mt-1 block text-xs font-medium leading-snug text-slate-500">네이버 로그인</span>
                 </span>
-                <span class="inline-flex h-6 items-center rounded-full bg-slate-100 px-2.5 text-xs font-black text-slate-500">예정</span>
+                <span class="inline-flex h-6 items-center rounded-full bg-triplog-100 px-2.5 text-xs font-black text-triplog-600">구현</span>
             </button>
 
             <button type="button" class="provider-button group mt-2.5 grid min-h-[84px] w-full grid-cols-[48px_1fr_auto] items-center gap-3 rounded-lg border border-transparent bg-transparent p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:bg-triplog-50 hover:shadow-lg" data-provider="local">
@@ -113,7 +113,7 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-[13px] font-black text-slate-500" for="googleCode">Authorization Code</label>
-                        <input class="h-[42px] w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-[13px] text-slate-950 outline-none transition focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" id="googleCode" th:value="${code}" placeholder="Google 로그인 후 자동 입력됩니다.">
+                        <input class="h-[42px] w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-[13px] text-slate-950 outline-none transition focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" id="googleCode" th:value="${provider == 'google' ? code : ''}" placeholder="Google 로그인 후 자동 입력됩니다.">
                     </div>
                 </div>
 
@@ -135,7 +135,7 @@
                     </div>
                     <div class="flex flex-wrap justify-end gap-2 max-md:mt-3">
                         <span class="inline-flex min-h-7 items-center rounded-full bg-emerald-50 px-2.5 text-xs font-black text-emerald-700">provider NAVER</span>
-                        <span class="inline-flex min-h-7 items-center rounded-full bg-emerald-50 px-2.5 text-xs font-black text-emerald-700">미구현</span>
+                        <span class="inline-flex min-h-7 items-center rounded-full bg-emerald-50 px-2.5 text-xs font-black text-emerald-700">Authorization Code</span>
                     </div>
                 </div>
 
@@ -146,13 +146,13 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-[13px] font-black text-slate-500" for="naverCode">Authorization Code</label>
-                        <input class="h-[42px] w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-[13px] text-slate-950 outline-none transition focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" id="naverCode" placeholder="네이버 구현 후 사용합니다.">
+                        <input class="h-[42px] w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-[13px] text-slate-950 outline-none transition focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" id="naverCode" th:value="${provider == 'naver' ? code : ''}" placeholder="Naver 로그인 후 자동 입력됩니다.">
                     </div>
                 </div>
 
                 <div class="mt-5 flex flex-wrap gap-2.5">
-                    <button type="button" class="disabled-action h-[42px] rounded-md bg-naver px-4 text-sm font-black text-white opacity-60" id="naverLoginButton">Naver Login</button>
-                    <button type="button" class="disabled-action h-[42px] rounded-md bg-triplog-50 px-4 text-sm font-black text-triplog-600 opacity-60" id="requestNaverButton">Request Login API</button>
+                    <button type="button" class="h-[42px] rounded-md bg-naver px-4 text-sm font-black text-white shadow-[0_10px_22px_rgba(3,199,90,0.18)] transition hover:-translate-y-0.5 hover:shadow-xl" id="naverLoginButton">Naver Login</button>
+                    <button type="button" class="h-[42px] rounded-md bg-triplog-50 px-4 text-sm font-black text-triplog-600 transition hover:-translate-y-0.5 hover:bg-triplog-100" id="requestNaverButton">Request Login API</button>
                 </div>
             </div>
 
@@ -196,13 +196,20 @@
 
 <input type="hidden" id="googleClientIdValue" th:value="${googleClientId}">
 <input type="hidden" id="googleRedirectUriValue" th:value="${googleRedirectUri}">
+<input type="hidden" id="naverClientIdValue" th:value="${naverClientId}">
+<input type="hidden" id="naverRedirectUriValue" th:value="${naverRedirectUri}">
 <input type="hidden" id="initialCodeValue" th:value="${code}">
+<input type="hidden" id="initialProviderValue" th:value="${provider}">
 
 <script>
     const googleClientId = document.getElementById("googleClientIdValue").value;
     const googleRedirectUri = document.getElementById("googleRedirectUriValue").value;
+    const naverClientId = document.getElementById("naverClientIdValue").value;
+    const naverRedirectUri = document.getElementById("naverRedirectUriValue").value;
     const initialCode = document.getElementById("initialCodeValue").value;
+    const initialProvider = document.getElementById("initialProviderValue").value || "google";
     const googleCode = document.getElementById("googleCode");
+    const naverCode = document.getElementById("naverCode");
     const result = document.getElementById("result");
     const message = document.getElementById("message");
     const activeClasses = {
@@ -302,8 +309,54 @@
         setMessage("Google 로그인 API 응답을 받았습니다.", response.ok ? "success" : "error");
     });
 
+    document.getElementById("naverLoginButton").addEventListener("click", () => {
+        const state = crypto.randomUUID();
+        sessionStorage.setItem("naverOAuthState", state);
+
+        const params = new URLSearchParams({
+            response_type: "code",
+            client_id: naverClientId,
+            redirect_uri: naverRedirectUri,
+            state
+        });
+
+        window.location.href = `https://nid.naver.com/oauth2.0/authorize?${params}`;
+    });
+
+    document.getElementById("requestNaverButton").addEventListener("click", async () => {
+        const code = naverCode.value.trim();
+        const state = sessionStorage.getItem("naverOAuthState") || "";
+
+        if (!code) {
+            setMessage("Authorization Code가 필요합니다.", "error");
+            return;
+        }
+
+        setMessage("Naver 로그인 API 요청 중입니다.", "");
+
+        const response = await fetch("/auth/oauth", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                provider: "NAVER",
+                code,
+                state
+            })
+        });
+
+        const body = await response.json();
+        writeResult({
+            status: response.status,
+            body
+        });
+        setMessage("Naver 로그인 API 응답을 받았습니다.", response.ok ? "success" : "error");
+    });
+
     document.getElementById("clearButton").addEventListener("click", () => {
         googleCode.value = "";
+        naverCode.value = "";
         clearSharedState();
     });
 
@@ -316,6 +369,8 @@
             });
         });
     });
+
+    setActiveProvider(initialProvider);
 
     if (initialCode) {
         writeResult({code: initialCode});

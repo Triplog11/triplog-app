@@ -34,6 +34,9 @@ public class AuthRequest {
         @Schema(description = "소셜 인가 코드", example = "authorization-code-value")
         private String code;
 
+        @Schema(description = "소셜 로그인 CSRF 방지 state 값", example = "naver-state-value")
+        private String state;
+
         @Schema(description = "유저 이메일", example = "test@test.com")
         private String email;
 

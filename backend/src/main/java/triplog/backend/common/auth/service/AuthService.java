@@ -2,6 +2,7 @@ package triplog.backend.common.auth.service;
 
 import org.springframework.http.ResponseEntity;
 import triplog.backend.common.auth.dto.request.AuthRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 
@@ -19,5 +20,5 @@ public interface AuthService {
      * @param request 로그인 요청 DTO
      * @return 로그인 성공 또는 추가 정보 입력용 임시 토큰 응답
      */
-    LoginResponse login(AuthRequest.LoginRequest request);
+    LoginResponse login(LoginRequest request);
 }

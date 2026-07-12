@@ -2,13 +2,15 @@ package triplog.backend.common.auth.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplog.backend.common.auth.client.NaverClient;
 import triplog.backend.common.auth.client.SocialApiClient;
 import triplog.backend.common.auth.dto.request.AuthRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse;
 import triplog.backend.common.auth.entity.RefreshToken;
 import triplog.backend.common.auth.exception.AuthErrorCode;
 import triplog.backend.common.auth.exception.AuthException;
@@ -52,14 +54,14 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     @Transactional
-    public AuthResponse.LoginResponse login(AuthRequest.LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         log.info("로그인 처리 시작: provider={}", request.getProvider());
 
         SocialApiClient socialApiClient = getSocialApiClient(request.getProvider());
-        String email = socialApiClient.getEmail(request.getCode());
+        String email = getSocialEmail(socialApiClient, request);
 
         return usersService.findByEmailAndLoginType(email, request.getProvider())
-                .<AuthResponse.LoginResponse>map(user -> {
+                .<LoginResponse>map(user -> {
                     log.info("기존 회원 로그인 처리: provider={}", request.getProvider());
                     return loginExistingUser(user);
                 })
@@ -80,7 +82,22 @@ public class AuthServiceImpl implements AuthService {
         return socialApiClients.stream()
                 .filter(client -> client.supports(provider))
                 .findFirst()
-                .orElseThrow(() -> new AuthException(AuthErrorCode.UNSUPPORTED_LOGIN_TYPE));
+                .orElseThrow(() -> new AuthException(UNSUPPORTED_LOGIN_TYPE));
+    }
+
+    /**
+     * 소셜 로그인 Client를 통해 로그인 식별용 이메일을 조회합니다.
+     *
+     * @param socialApiClient 소셜 로그인 Client
+     * @param request 로그인 요청 DTO
+     * @return 소셜 계정 이메일
+     */
+    private String getSocialEmail(SocialApiClient socialApiClient, LoginRequest request) {
+        if (socialApiClient instanceof NaverClient naverClient) {
+            return naverClient.getEmail(request.getCode(), request.getState());
+        }
+
+        return socialApiClient.getEmail(request.getCode());
     }
 
     /**
@@ -113,9 +130,9 @@ public class AuthServiceImpl implements AuthService {
      * @param email 사용자 이메일
      * @return 임시 토큰 응답 DTO
      */
-    private AuthResponse.TemporaryTokenResponse createTemporaryToken(String email) {
+    private TemporaryTokenResponse createTemporaryToken(String email) {
         log.debug("추가 정보 입력용 임시 토큰 발급 시작");
-        return AuthResponse.TemporaryTokenResponse.toDto(
+        return TemporaryTokenResponse.toDto(
                 jwtTokenProvider.getTemporaryTokenExpiresIn(),
                 jwtTokenProvider.createTemporaryToken(email)
         );
