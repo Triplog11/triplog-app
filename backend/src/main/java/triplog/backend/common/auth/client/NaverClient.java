@@ -17,5 +17,5 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class NaverClient implements SocialApiClient {
+public class NaverClient {
 }
