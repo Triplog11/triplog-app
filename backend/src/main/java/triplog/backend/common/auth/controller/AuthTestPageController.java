@@ -33,7 +33,7 @@ public class AuthTestPageController {
     /**
      * 로그인 테스트 시작 페이지를 반환합니다.
      *
-     * @param code Google 로그인 완료 후 전달되는 인가 코드
+     * @param code 소셜 로그인 완료 후 전달되는 인가 코드
      * @param model 화면 렌더링에 사용할 모델
      * @return 로그인 테스트 페이지 템플릿
      */

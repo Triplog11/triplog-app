@@ -75,10 +75,13 @@ public class AuthController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
-                                    @ExampleObject(name = "인가 코드 누락", value = "{\"status\": 400, \"message\": \"소셜 로그인 인가 코드는 필수입니다.\"}"),
+                                    @ExampleObject(name = "소셜 인가 코드 누락", value = "{\"status\": 400, \"message\": \"소셜 로그인 인가 코드는 필수입니다.\"}"),
+                                    @ExampleObject(name = "Naver state 누락", value = "{\"status\": 400, \"message\": \"Naver 로그인 state 값은 필수입니다.\"}"),
+                                    @ExampleObject(name = "자체 로그인 이메일 누락", value = "{\"status\": 400, \"message\": \"자체 로그인 이메일은 필수입니다.\"}"),
+                                    @ExampleObject(name = "자체 로그인 비밀번호 누락", value = "{\"status\": 400, \"message\": \"자체 로그인 비밀번호는 필수입니다.\"}"),
                                     @ExampleObject(name = "지원하지 않는 로그인 방식", value = "{\"status\": 400, \"message\": \"지원하지 않는 로그인 방식입니다.\"}")
                             })),
-            @ApiResponse(responseCode = "401", description = "소셜 인증 처리에 실패했습니다.",
+            @ApiResponse(responseCode = "401", description = "로그인 인증 처리에 실패했습니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
@@ -89,7 +92,8 @@ public class AuthController {
                                     @ExampleObject(name = "Naver 토큰 발급 실패", value = "{\"status\": 401, \"message\": \"Naver 토큰 발급에 실패했습니다.\"}"),
                                     @ExampleObject(name = "Naver 토큰 응답 오류", value = "{\"status\": 401, \"message\": \"Naver 토큰 응답이 올바르지 않습니다.\"}"),
                                     @ExampleObject(name = "Naver 사용자 정보 조회 실패", value = "{\"status\": 401, \"message\": \"Naver 사용자 정보 조회에 실패했습니다.\"}"),
-                                    @ExampleObject(name = "Naver 이메일 없음", value = "{\"status\": 401, \"message\": \"Naver 계정 이메일을 찾을 수 없습니다.\"}")
+                                    @ExampleObject(name = "Naver 이메일 없음", value = "{\"status\": 401, \"message\": \"Naver 계정 이메일을 찾을 수 없습니다.\"}"),
+                                    @ExampleObject(name = "자체 로그인 인증 실패", value = "{\"status\": 401, \"message\": \"이메일 또는 비밀번호가 올바르지 않습니다.\"}")
                             })),
             @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
                     content = @Content(mediaType = "application/json",

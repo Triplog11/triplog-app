@@ -86,7 +86,7 @@
                     <span class="block text-[15px] font-black">Local</span>
                     <span class="mt-1 block text-xs font-medium leading-snug text-slate-500">우리 서비스 로그인</span>
                 </span>
-                <span class="inline-flex h-6 items-center rounded-full bg-slate-100 px-2.5 text-xs font-black text-slate-500">예정</span>
+                <span class="inline-flex h-6 items-center rounded-full bg-triplog-100 px-2.5 text-xs font-black text-triplog-600">구현</span>
             </button>
         </aside>
 
@@ -167,7 +167,7 @@
                     </div>
                     <div class="flex flex-wrap justify-end gap-2 max-md:mt-3">
                         <span class="inline-flex min-h-7 items-center rounded-full bg-triplog-50 px-2.5 text-xs font-black text-triplog-600">provider LOCAL</span>
-                        <span class="inline-flex min-h-7 items-center rounded-full bg-triplog-50 px-2.5 text-xs font-black text-triplog-600">미구현</span>
+                        <span class="inline-flex min-h-7 items-center rounded-full bg-triplog-50 px-2.5 text-xs font-black text-triplog-600">Email Password</span>
                     </div>
                 </div>
 
@@ -178,12 +178,12 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-[13px] font-black text-slate-500" for="localPassword">Password</label>
-                        <input class="h-[42px] w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-[13px] text-slate-950 outline-none transition focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" id="localPassword" type="password" placeholder="RSA 암호화 테스트 값">
+                        <input class="h-[42px] w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-[13px] text-slate-950 outline-none transition focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" id="localPassword" type="password" placeholder="원문 비밀번호">
                     </div>
                 </div>
 
                 <div class="mt-5 flex flex-wrap gap-2.5">
-                    <button type="button" class="disabled-action h-[42px] rounded-md bg-triplog-50 px-4 text-sm font-black text-triplog-600 opacity-60" id="requestLocalButton">Request Login API</button>
+                    <button type="button" class="h-[42px] rounded-md bg-triplog-500 px-4 text-sm font-black text-white shadow-[0_10px_22px_rgba(16,182,192,0.18)] transition hover:-translate-y-0.5 hover:shadow-xl" id="requestLocalButton">Request Login API</button>
                 </div>
             </div>
 
@@ -210,6 +210,8 @@
     const initialProvider = document.getElementById("initialProviderValue").value || "google";
     const googleCode = document.getElementById("googleCode");
     const naverCode = document.getElementById("naverCode");
+    const localEmail = document.getElementById("localEmail");
+    const localPassword = document.getElementById("localPassword");
     const result = document.getElementById("result");
     const message = document.getElementById("message");
     const activeClasses = {
@@ -354,21 +356,51 @@
         setMessage("Naver 로그인 API 응답을 받았습니다.", response.ok ? "success" : "error");
     });
 
+
+    document.getElementById("requestLocalButton").addEventListener("click", async () => {
+        const email = localEmail.value.trim();
+        const password = localPassword.value;
+
+        if (!email) {
+            setMessage("Email이 필요합니다.", "error");
+            return;
+        }
+
+        if (!password) {
+            setMessage("Password가 필요합니다.", "error");
+            return;
+        }
+
+        setMessage("Local 로그인 API 요청 중입니다.", "");
+
+        const response = await fetch("/auth/oauth", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                provider: "LOCAL",
+                email,
+                password
+            })
+        });
+
+        const body = await response.json();
+        writeResult({
+            status: response.status,
+            body
+        });
+        setMessage("Local 로그인 API 응답을 받았습니다.", response.ok ? "success" : "error");
+    });
+
     document.getElementById("clearButton").addEventListener("click", () => {
         googleCode.value = "";
         naverCode.value = "";
+        localEmail.value = "";
+        localPassword.value = "";
         clearSharedState();
     });
 
-    document.querySelectorAll(".disabled-action").forEach((button) => {
-        button.addEventListener("click", () => {
-            setMessage("아직 구현되지 않은 로그인 방식입니다.", "error");
-            writeResult({
-                status: "NOT_IMPLEMENTED",
-                message: "화면 구성만 준비되어 있습니다."
-            });
-        });
-    });
 
     setActiveProvider(initialProvider);
 

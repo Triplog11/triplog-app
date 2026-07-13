@@ -10,6 +10,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -31,6 +33,18 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * 자체 로그인 비밀번호 검증에 사용할 비밀번호 인코더를 등록합니다.
+     * <p>
+     * 회원 비밀번호는 BCrypt 해시로 저장되어 있어야 하며, 로그인 시 입력 비밀번호와 저장된 해시를 비교하는 데 사용합니다.
+     *
+     * @return BCrypt 기반 비밀번호 인코더
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     /**
      * HTTP 요청에 적용할 보안 필터 체인을 구성합니다.
