@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import triplog.backend.common.auth.exception.AuthException;
+import triplog.backend.badge.exception.BadgeException;
 import triplog.backend.common.exception.CommonErrorCode;
 import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.users.exception.UsersException;
@@ -26,6 +27,12 @@ import static triplog.backend.common.exception.ErrorResponse.toResponseEntity;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BadgeException.class)
+    protected ResponseEntity<ErrorResponse> handleBadgeException(BadgeException e) {
+        log.warn("배지 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
 
     /**
      * 사용자(Users) 도메인 비즈니스 로직에서 발생하는 {@link UsersException}을 처리합니다.
