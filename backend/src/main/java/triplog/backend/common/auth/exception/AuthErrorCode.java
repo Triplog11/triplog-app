@@ -26,6 +26,26 @@ public enum AuthErrorCode implements BaseErrorCode {
     UNSUPPORTED_LOGIN_TYPE(HttpStatus.BAD_REQUEST, "지원하지 않는 로그인 방식입니다."),
 
     /**
+     * 자체 로그인 이메일이 비어 있는 경우 사용합니다.
+     */
+    LOCAL_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "자체 로그인 이메일은 필수입니다."),
+
+    /**
+     * 자체 로그인 비밀번호가 비어 있는 경우 사용합니다.
+     */
+    LOCAL_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "자체 로그인 비밀번호는 필수입니다."),
+
+    /**
+     * 자체 로그인 이메일 또는 비밀번호가 일치하지 않는 경우 사용합니다.
+     */
+    LOCAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
+
+    /**
+     * Naver 소셜 로그인 state 값이 비어 있는 경우 사용합니다.
+     */
+    NAVER_STATE_REQUIRED(HttpStatus.BAD_REQUEST, "Naver 로그인 state 값은 필수입니다."),
+
+    /**
      * Google 토큰 발급 요청이 실패한 경우 사용합니다.
      */
     GOOGLE_TOKEN_REQUEST_FAILED(HttpStatus.UNAUTHORIZED, "Google 토큰 발급에 실패했습니다."),

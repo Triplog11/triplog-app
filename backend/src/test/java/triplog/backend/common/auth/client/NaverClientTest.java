@@ -16,6 +16,7 @@ import static org.springframework.test.util.ReflectionTestUtils.invokeMethod;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static triplog.backend.common.auth.exception.AuthErrorCode.AUTHORIZATION_CODE_REQUIRED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.NAVER_EMAIL_NOT_FOUND;
+import static triplog.backend.common.auth.exception.AuthErrorCode.NAVER_STATE_REQUIRED;
 import static triplog.backend.users.entity.LoginType.LOCAL;
 import static triplog.backend.users.entity.LoginType.NAVER;
 
@@ -75,6 +76,24 @@ class NaverClientTest {
                 .extracting("errorCode")
                 .isEqualTo(AUTHORIZATION_CODE_REQUIRED);
         log.info("Naver 인가 코드 누락 예외 검증 성공");
+    }
+
+    /**
+     * Naver state 값이 비어 있으면 인증 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("Naver state 값이 비어 있으면 예외가 발생한다")
+    void Naver_state_값이_비어_있으면_예외가_발생한다() {
+        // given
+        NaverClient naverClient = new NaverClient();
+
+        // when
+        // then
+        assertThatThrownBy(() -> naverClient.getEmail("authorization-code", " "))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorCode")
+                .isEqualTo(NAVER_STATE_REQUIRED);
+        log.info("Naver state 누락 예외 검증 성공");
     }
 
     /**

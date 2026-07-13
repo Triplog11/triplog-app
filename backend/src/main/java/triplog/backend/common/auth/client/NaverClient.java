@@ -79,6 +79,11 @@ public class NaverClient implements SocialApiClient {
             throw new AuthException(AUTHORIZATION_CODE_REQUIRED);
         }
 
+        if (!hasText(state)) {
+            log.warn("Naver state 값 누락");
+            throw new AuthException(NAVER_STATE_REQUIRED);
+        }
+
         NaverTokenResponse tokenResponse = requestToken(code, state);
         NaverUserInfoResponse userInfoResponse = requestUserInfo(tokenResponse.getAccessToken());
         return extractEmail(userInfoResponse);
@@ -98,9 +103,7 @@ public class NaverClient implements SocialApiClient {
         body.add("client_id", clientId);
         body.add("client_secret", clientSecret);
         body.add("code", code);
-        if (hasText(state)) {
-            body.add("state", state);
-        }
+        body.add("state", state);
 
         NaverTokenResponse tokenResponse = restClient.post()
                 .uri(NAVER_TOKEN_URI)

@@ -31,16 +31,16 @@ public class AuthRequest {
         @Schema(description = "로그인 제공자", example = "GOOGLE")
         private LoginType provider;
 
-        @Schema(description = "소셜 인가 코드", example = "authorization-code-value")
+        @Schema(description = "소셜 로그인(GOOGLE, NAVER)에서 사용하는 인가 코드", example = "authorization-code-value")
         private String code;
 
-        @Schema(description = "소셜 로그인 CSRF 방지 state 값", example = "naver-state-value")
+        @Schema(description = "Naver 소셜 로그인 CSRF 방지 state 값", example = "naver-state-value")
         private String state;
 
-        @Schema(description = "유저 이메일", example = "test@test.com")
+        @Schema(description = "자체 로그인(LOCAL)에서 사용하는 이메일", example = "test@test.com")
         private String email;
 
-        @Schema(description = "유저 비밀번호", example = "344rsdkf")
+        @Schema(description = "자체 로그인(LOCAL)에서 사용하는 비밀번호", example = "344rsdkf")
         private String password;
     }
 }
