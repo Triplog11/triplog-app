@@ -13,6 +13,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.common.exception.CommonErrorCode;
 import triplog.backend.common.exception.ErrorResponse;
+import triplog.backend.stats.exception.StatsException;
 import triplog.backend.users.exception.UsersException;
 
 import static triplog.backend.common.exception.ErrorResponse.toResponseEntity;
@@ -47,6 +48,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthException.class)
     protected ResponseEntity<ErrorResponse> handleAuthException(AuthException e) {
         log.warn("인증 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
+     * 사용자 통계(Stats) 도메인 비즈니스 로직에서 발생하는
+     * {@link StatsException}을 처리합니다.
+     *
+     * @param e 사용자 통계 도메인에서 발생한 예외
+     * @return 사용자 통계 에러 코드에 해당하는 HTTP 상태 코드와
+     * 에러 메시지를 포함한 응답
+     */
+    @ExceptionHandler(StatsException.class)
+    protected ResponseEntity<ErrorResponse> handleStatsException(StatsException e) {
+        log.warn("사용자 통계 도메인 예외 발생: {}", e.getErrorCode());
         return toResponseEntity(e.getErrorCode());
     }
 

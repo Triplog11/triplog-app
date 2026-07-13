@@ -62,7 +62,7 @@ public class AuthController {
                             examples = {
                                     @ExampleObject(
                                             name = "로그인 성공",
-                                            value = "{\"usersId\": \"550e8400-e29b-41d4-a716-446655440000\", \"nickname\": \"여행자\", \"level\": 1, \"xp\": 0, \"tier\": \"BRONZE\", \"accessToken\": \"access-token\", \"refreshToken\": \"refresh-token\"}"
+                                            value = "{\"nickname\": \"여행자\", \"level\": 1, \"xp\": 0, \"tier\": \"BRONZE\", \"accessToken\": \"access-token\", \"refreshToken\": \"refresh-token\"}"
                                     ),
                                     @ExampleObject(
                                             name = "추가 정보 입력 필요",

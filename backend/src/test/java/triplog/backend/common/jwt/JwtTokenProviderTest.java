@@ -99,6 +99,25 @@ class JwtTokenProviderTest {
     /**
      * 테스트용 JwtTokenProvider를 생성합니다.
      */
+
+    /**
+     * 회원가입용 임시 토큰에서 로그인 타입을 추출하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("temporaryToken에서 로그인 타입을 추출한다")
+    void temporaryToken_loginType_extract() {
+        // given
+        JwtTokenProvider jwtTokenProvider = createJwtTokenProvider();
+        String email = "test@example.com";
+        String loginType = "GOOGLE";
+        String temporaryToken = jwtTokenProvider.createTemporaryToken(email, loginType);
+
+        // when
+        String extractedLoginType = jwtTokenProvider.getLoginTypeFromTemporaryToken(temporaryToken);
+
+        // then
+        assertThat(extractedLoginType).isEqualTo(loginType);
+    }
     private JwtTokenProvider createJwtTokenProvider() {
         return new JwtTokenProvider(SECRET, ACCESS_TOKEN_VALIDITY, REFRESH_TOKEN_VALIDITY);
     }

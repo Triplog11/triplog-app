@@ -93,7 +93,6 @@ class AuthServiceImplTest {
         LoginSuccessResponse response = (LoginSuccessResponse) authService.login(request);
 
         // then
-        assertThat(response.getUsersId()).isEqualTo(user.getUsersId());
         assertThat(response.getNickname()).isEqualTo("로컬회원");
         assertThat(response.getAccessToken()).isEqualTo(ACCESS_TOKEN);
         assertThat(response.getRefreshToken()).isEqualTo(REFRESH_TOKEN);

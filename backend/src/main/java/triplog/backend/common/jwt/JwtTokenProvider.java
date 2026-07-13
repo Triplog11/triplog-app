@@ -50,17 +50,28 @@ public class JwtTokenProvider {
      * 회원가입 진행을 위해 이메일 정보를 담은 임시 토큰을 생성합니다.
      */
     public String createTemporaryToken(String email) {
+        return createTemporaryToken(email, null);
+    }
+
+    /**
+     * 회원가입 진행을 위해 이메일과 로그인 타입을 담은 임시 토큰을 생성합니다.
+     */
+    public String createTemporaryToken(String email, String loginType) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + TEMPORARY_TOKEN_VALIDITY);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject("register-process")
                 .claim("type", "REGISTER")
                 .claim("email", email)
                 .issuedAt(now)
-                .expiration(validity)
-                .signWith(key)
-                .compact();
+                .expiration(validity);
+
+        if (loginType != null) {
+            builder.claim("loginType", loginType);
+        }
+
+        return builder.signWith(key).compact();
     }
 
     /**
@@ -98,6 +109,19 @@ public class JwtTokenProvider {
         }
 
         return claims.get("email", String.class);
+    }
+
+    /**
+     * 회원가입용 임시 토큰에서 로그인 타입을 추출합니다.
+     */
+    public String getLoginTypeFromTemporaryToken(String temporaryToken) {
+        Claims claims = getClaims(temporaryToken);
+
+        if (!"REGISTER".equals(claims.get("type", String.class))) {
+            throw new IllegalArgumentException("유효하지 않은 회원가입용 임시 토큰입니다.");
+        }
+
+        return claims.get("loginType", String.class);
     }
 
     /**

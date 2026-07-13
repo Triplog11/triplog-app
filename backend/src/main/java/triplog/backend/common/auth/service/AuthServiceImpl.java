@@ -79,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
                 })
                 .orElseGet(() -> {
                     log.info("추가 정보 입력 필요 사용자 로그인 처리: provider={}", request.getProvider());
-                    return createTemporaryToken(email);
+                    return createTemporaryToken(email, request.getProvider());
                 });
     }
 
@@ -156,7 +156,6 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(new RefreshToken(users.getUsersId(), tokenRecord.refreshToken()));
 
         return AuthResponse.LoginSuccessResponse.toDto(
-                users.getUsersId(),
                 users.getNickname(),
                 DEFAULT_LEVEL,
                 DEFAULT_XP,
@@ -172,11 +171,11 @@ public class AuthServiceImpl implements AuthService {
      * @param email 소셜 계정 이메일
      * @return 임시 토큰 응답 DTO
      */
-    private TemporaryTokenResponse createTemporaryToken(String email) {
+    private TemporaryTokenResponse createTemporaryToken(String email, LoginType loginType) {
         log.debug("추가 정보 입력용 임시 토큰 발급 시작");
         return TemporaryTokenResponse.toDto(
                 jwtTokenProvider.getTemporaryTokenExpiresIn(),
-                jwtTokenProvider.createTemporaryToken(email)
+                jwtTokenProvider.createTemporaryToken(email, loginType.name())
         );
     }
 }

@@ -86,9 +86,6 @@ public class AuthResponse {
     @Schema(description = "로그인 성공 응답")
     public static class LoginSuccessResponse implements LoginResponse {
 
-        @Schema(description = "유저 식별자", example = "550e8400-e29b-41d4-a716-446655440000")
-        private String usersId;
-
         @Schema(description = "닉네임", example = "여행자")
         private String nickname;
 
@@ -108,7 +105,6 @@ public class AuthResponse {
         private String refreshToken;
 
         public static LoginSuccessResponse toDto(
-                String usersId,
                 String nickname,
                 Integer level,
                 Integer xp,
@@ -116,7 +112,7 @@ public class AuthResponse {
                 String accessToken,
                 String refreshToken
         ) {
-            return new LoginSuccessResponse(usersId, nickname, level, xp, tier, accessToken, refreshToken);
+            return new LoginSuccessResponse(nickname, level, xp, tier, accessToken, refreshToken);
         }
     }
 
