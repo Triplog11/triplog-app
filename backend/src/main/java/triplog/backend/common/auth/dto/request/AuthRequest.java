@@ -1,7 +1,9 @@
 package triplog.backend.common.auth.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -42,5 +44,39 @@ public class AuthRequest {
 
         @Schema(description = "자체 로그인(LOCAL)에서 사용하는 비밀번호", example = "344rsdkf")
         private String password;
+    }
+
+    /**
+     * 소셜 로그인 신규 사용자의 추가정보 입력 요청 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "추가정보 입력 요청")
+    public static class AdditionalInfoRequest {
+
+        @NotBlank(message = "닉네임은 필수입니다.")
+        @Size(min = 2, max = 12, message = "닉네임은 2자 이상 12자 이하로 입력해야 합니다.")
+        @Schema(description = "닉네임", example = "여행자")
+        private String nickname;
+
+        @Schema(description = "프로필 이미지 URL", example = "profile-default.png", nullable = true)
+        private String profileUrl;
+
+        @NotBlank(message = "시는 필수입니다.")
+        @Schema(description = "시", example = "수원시")
+        private String addressSi;
+
+        @NotBlank(message = "도/군은 필수입니다.")
+        @Schema(description = "도/군", example = "경기도")
+        private String addressDoGun;
+
+        @NotBlank(message = "구는 필수입니다.")
+        @Schema(description = "구", example = "팔달구")
+        private String addressGu;
+
+        @NotNull(message = "전체 알림 여부는 필수입니다.")
+        @Schema(description = "전체 알림 여부. 알림 도메인 구현 전까지는 저장하지 않습니다.", example = "true")
+        private Boolean isNotification;
     }
 }

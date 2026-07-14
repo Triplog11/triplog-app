@@ -1,6 +1,5 @@
 package triplog.backend.common.auth.exception;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
@@ -11,7 +10,6 @@ import lombok.Getter;
  * {@code GlobalExceptionHandler}에서 이 예외를 가로채고 {@link AuthErrorCode}에 정의된
  * HTTP 상태 코드와 메시지로 응답을 변환합니다.
  */
-@AllArgsConstructor
 @Getter
 public class AuthException extends RuntimeException {
 
@@ -19,4 +17,14 @@ public class AuthException extends RuntimeException {
      * 발생한 예외의 구체적인 종류(상태 코드, 메시지)를 담고 있는 Enum입니다.
      */
     private final AuthErrorCode errorCode;
+
+    /**
+     * 인증 오류 코드로 예외를 생성합니다.
+     *
+     * @param errorCode 발생한 인증 오류 코드
+     */
+    public AuthException(AuthErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
 }

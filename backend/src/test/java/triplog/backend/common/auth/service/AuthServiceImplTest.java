@@ -15,7 +15,10 @@ import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.common.auth.repository.RefreshTokenRepository;
 import triplog.backend.common.jwt.JwtTokenProvider;
 import triplog.backend.common.jwt.JwtTokenRecord;
+import triplog.backend.stats.service.StatsLoginInfo;
+import triplog.backend.stats.service.StatsService;
 import triplog.backend.users.entity.Users;
+import triplog.backend.users.service.UsersAuthInfo;
 import triplog.backend.users.service.UsersService;
 
 import java.util.List;
@@ -50,6 +53,9 @@ class AuthServiceImplTest {
     private UsersService usersService;
 
     @Mock
+    private StatsService statsService;
+
+    @Mock
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
@@ -68,6 +74,7 @@ class AuthServiceImplTest {
         authService = new AuthServiceImpl(
                 List.of(),
                 usersService,
+                statsService,
                 jwtTokenProvider,
                 refreshTokenRepository,
                 passwordEncoder
@@ -85,15 +92,19 @@ class AuthServiceImplTest {
         UUID usersId = UUID.fromString(user.getUsersId());
         LoginRequest request = new LoginRequest(LOCAL, null, null, EMAIL, RAW_PASSWORD);
 
-        given(usersService.findByEmailAndLoginType(EMAIL, LOCAL)).willReturn(Optional.of(user));
+        given(usersService.findAuthInfoByEmailAndLoginType(EMAIL, LOCAL)).willReturn(Optional.of(new UsersAuthInfo(user.getUsersId(), user.getNickname(), ENCODED_PASSWORD)));
         given(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).willReturn(true);
         given(jwtTokenProvider.createTokenRecord(usersId)).willReturn(new JwtTokenRecord(ACCESS_TOKEN, REFRESH_TOKEN, 3_600_000L));
+        given(statsService.getLoginStats(user.getUsersId())).willReturn(new StatsLoginInfo(3, 120, "SILVER"));
 
         // when
         LoginSuccessResponse response = (LoginSuccessResponse) authService.login(request);
 
         // then
         assertThat(response.getNickname()).isEqualTo("로컬회원");
+        assertThat(response.getLevel()).isEqualTo(3);
+        assertThat(response.getXp()).isEqualTo(120);
+        assertThat(response.getTier()).isEqualTo("SILVER");
         assertThat(response.getAccessToken()).isEqualTo(ACCESS_TOKEN);
         assertThat(response.getRefreshToken()).isEqualTo(REFRESH_TOKEN);
         verify(refreshTokenRepository).save(any(RefreshToken.class));
@@ -115,7 +126,7 @@ class AuthServiceImplTest {
                 .isInstanceOf(AuthException.class)
                 .extracting("errorCode")
                 .isEqualTo(LOCAL_EMAIL_REQUIRED);
-        verify(usersService, never()).findByEmailAndLoginType(any(), any());
+        verify(usersService, never()).findAuthInfoByEmailAndLoginType(any(), any());
         log.info("LOCAL 로그인 이메일 필수값 검증 테스트 완료");
     }
 
@@ -134,7 +145,7 @@ class AuthServiceImplTest {
                 .isInstanceOf(AuthException.class)
                 .extracting("errorCode")
                 .isEqualTo(LOCAL_PASSWORD_REQUIRED);
-        verify(usersService, never()).findByEmailAndLoginType(any(), any());
+        verify(usersService, never()).findAuthInfoByEmailAndLoginType(any(), any());
         log.info("LOCAL 로그인 비밀번호 필수값 검증 테스트 완료");
     }
 
@@ -146,7 +157,7 @@ class AuthServiceImplTest {
     void LOCAL_로그인_사용자가_없으면_인증_실패_예외가_발생한다() {
         // given
         LoginRequest request = new LoginRequest(LOCAL, null, null, EMAIL, RAW_PASSWORD);
-        given(usersService.findByEmailAndLoginType(EMAIL, LOCAL)).willReturn(Optional.empty());
+        given(usersService.findAuthInfoByEmailAndLoginType(EMAIL, LOCAL)).willReturn(Optional.empty());
 
         // when
         // then
@@ -168,7 +179,7 @@ class AuthServiceImplTest {
         Users user = new Users(LOCAL, "로컬회원", "https://example.com/profile.png", EMAIL, ENCODED_PASSWORD);
         LoginRequest request = new LoginRequest(LOCAL, null, null, EMAIL, RAW_PASSWORD);
 
-        given(usersService.findByEmailAndLoginType(EMAIL, LOCAL)).willReturn(Optional.of(user));
+        given(usersService.findAuthInfoByEmailAndLoginType(EMAIL, LOCAL)).willReturn(Optional.of(new UsersAuthInfo(user.getUsersId(), user.getNickname(), ENCODED_PASSWORD)));
         given(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).willReturn(false);
 
         // when
