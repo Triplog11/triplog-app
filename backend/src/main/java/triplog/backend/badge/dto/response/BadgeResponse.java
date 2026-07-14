@@ -44,7 +44,7 @@ public final class BadgeResponse {
          * @param result Repository 상세 조회 결과
          * @return 배지 상세 응답
          */
-        public static BadgeDetailResponse from(BadgeDetailQueryResult result) {
+        public static BadgeDetailResponse toDto(BadgeDetailQueryResult result) {
             return new BadgeDetailResponse(
                     result.badgeId(), result.badgeName(), result.badgeUrl(), result.badgeGroup(),
                     result.badgeType(), result.badgeTarget(), result.badgeOperator(), result.badgeValue(),

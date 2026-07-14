@@ -28,7 +28,7 @@ public class BadgeServiceImpl implements BadgeService {
     @Override
     public BadgeResponse.BadgeDetailResponse getBadgeDetail(String usersId, Long badgeId) {
         return badgeRepository.findBadgeDetail(badgeId, usersId)
-                .map(BadgeResponse.BadgeDetailResponse::from)
+                .map(BadgeResponse.BadgeDetailResponse::toDto)
                 .orElseThrow(() -> new BadgeException(BadgeErrorCode.BADGE_DETAIL_NOT_FOUND));
     }
 
