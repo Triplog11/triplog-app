@@ -46,7 +46,7 @@ public enum AuthErrorCode implements BaseErrorCode {
     NAVER_STATE_REQUIRED(HttpStatus.BAD_REQUEST, "Naver 로그인 state 값은 필수입니다."),
 
     /**
-     * Google 토큰 발급 요청이 실패한 경우 사용합니다.
+     * Google 토큰 발급 요청에 실패한 경우 사용합니다.
      */
     GOOGLE_TOKEN_REQUEST_FAILED(HttpStatus.UNAUTHORIZED, "Google 토큰 발급에 실패했습니다."),
 
@@ -66,7 +66,7 @@ public enum AuthErrorCode implements BaseErrorCode {
     GOOGLE_EMAIL_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Google 계정 이메일을 찾을 수 없습니다."),
 
     /**
-     * Naver 토큰 발급 요청이 실패한 경우 사용합니다.
+     * Naver 토큰 발급 요청에 실패한 경우 사용합니다.
      */
     NAVER_TOKEN_REQUEST_FAILED(HttpStatus.UNAUTHORIZED, "Naver 토큰 발급에 실패했습니다."),
 
@@ -76,22 +76,27 @@ public enum AuthErrorCode implements BaseErrorCode {
     NAVER_TOKEN_RESPONSE_INVALID(HttpStatus.UNAUTHORIZED, "Naver 토큰 응답이 올바르지 않습니다."),
 
     /**
-     * Naver 사용자 정보 요청이 실패한 경우 사용합니다.
+     * Naver 사용자 정보 요청에 실패한 경우 사용합니다.
      */
     NAVER_USER_INFO_REQUEST_FAILED(HttpStatus.UNAUTHORIZED, "Naver 사용자 정보 조회에 실패했습니다."),
 
     /**
      * Naver 사용자 정보 응답에서 이메일을 찾을 수 없는 경우 사용합니다.
      */
-    NAVER_EMAIL_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Naver 계정 이메일을 찾을 수 없습니다.");
+    NAVER_EMAIL_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Naver 계정 이메일을 찾을 수 없습니다."),
 
     /**
-     * 클라이언트에게 응답할 HTTP 상태 코드입니다.
+     * 회원가입용 임시 토큰이 유효하지 않은 경우 사용합니다.
+     */
+    TEMPORARY_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 회원가입용 임시 토큰입니다.");
+
+    /**
+     * 클라이언트에 응답할 HTTP 상태 코드입니다.
      */
     private final HttpStatus httpStatus;
 
     /**
-     * 클라이언트에게 전달할 에러 메시지입니다.
+     * 클라이언트에 전달할 에러 메시지입니다.
      */
     private final String message;
 }

@@ -17,12 +17,12 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.UUID;
 
 /**
  * 요청의 Authorization 헤더에서 JWT를 추출해 인증 정보를 설정하는 필터입니다.
  * <p>
- * JWT 처리 중 발생한 예외는 HandlerExceptionResolver로 전달합니다.
+ * 일반 Access Token은 사용자 ID를 principal로 사용하고,
+ * 회원가입용 임시 토큰은 추가정보 입력 API에서만 이메일을 principal로 사용합니다.
  */
 @Component
 @RequiredArgsConstructor
@@ -30,12 +30,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
-
+    private static final String ADDITIONAL_INFO_PATH = "/auth/additional-info";
     private final JwtTokenProvider jwtTokenProvider;
     private final HandlerExceptionResolver handlerExceptionResolver;
 
     /**
      * JWT 토큰을 검증하고 인증 객체를 SecurityContext에 저장합니다.
+     * <p>
+     * 회원가입용 임시 토큰은 추가정보 입력 API에서만 인증 객체로 변환합니다.
+     * 다른 보호 API에서 임시 토큰이 일반 인증 토큰처럼 사용되는 것을 막기 위한 제한입니다.
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -46,10 +49,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (token != null) {
                 jwtTokenProvider.validateToken(token);
-                UUID usersId = jwtTokenProvider.getUsersId(token);
 
-                Authentication authentication = createAuthentication(usersId, request);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                if (!jwtTokenProvider.isTemporaryToken(token) || ADDITIONAL_INFO_PATH.equals(request.getServletPath())) {
+                    String principal = jwtTokenProvider.getAuthenticationPrincipal(token);
+                    Authentication authentication = createAuthentication(principal, token, request);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
 
             filterChain.doFilter(request, response);
@@ -73,16 +78,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 사용자 ID를 기반으로 Spring Security 인증 객체를 생성합니다.
+     * JWT principal을 기반으로 Spring Security 인증 객체를 생성합니다.
      */
-    private Authentication createAuthentication(UUID usersId, HttpServletRequest request) {
-        UserDetails userDetails = User.withUsername(usersId.toString())
+    private Authentication createAuthentication(String principal, String token, HttpServletRequest request) {
+        UserDetails userDetails = User.withUsername(principal)
                 .password("")
                 .authorities(Collections.emptyList())
                 .build();
 
         UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         return authentication;
     }

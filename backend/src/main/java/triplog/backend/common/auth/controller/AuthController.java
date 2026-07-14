@@ -11,12 +11,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import triplog.backend.common.auth.dto.request.AuthRequest.AdditionalInfoRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
-import triplog.backend.common.auth.dto.response.AuthResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse;
@@ -71,7 +72,7 @@ public class AuthController {
                             }
                     )
             ),
-            @ApiResponse(responseCode = "400", description = "잘못된 로그인 요청입니다.",
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
@@ -98,7 +99,7 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(name = "500 Internal Server Error", value = "{\"status\": 500, \"message\": \"서버 내부 오류가 발생했습니다.\"}")))
+                            examples = @ExampleObject(value = "{\"status\": 500, \"message\": \"서버 내부 오류가 발생했습니다.\"}")))
     })
     @PostMapping("/oauth")
     public ResponseEntity<LoginResponse> login(
@@ -106,5 +107,52 @@ public class AuthController {
     ) {
         log.info("로그인 요청 수신: provider={}", request.getProvider());
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /**
+     * 소셜 신규 회원의 추가정보 입력 요청을 처리합니다.
+     *     * @param request 추가정보 입력 요청 DTO
+     * @return 회원가입 완료 후 로그인 성공 응답
+     */
+    @Operation(
+            summary = "추가정보 입력",
+            description = "회원가입용 임시 토큰에서 이메일과 로그인 타입을 추출하고, 입력받은 추가정보로 사용자와 초기 통계를 생성합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "추가정보 입력에 성공했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LoginSuccessResponse.class),
+                            examples = @ExampleObject(value = "{\"nickname\":\"여행자\",\"level\":1,\"xp\":0,\"tier\":\"BRONZE\",\"accessToken\":\"access-token\",\"refreshToken\":\"refresh-token\"}"))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(name = "닉네임 누락", value = "{\"status\":400,\"message\":\"닉네임은 필수입니다.\"}"),
+                                    @ExampleObject(name = "닉네임 길이 오류", value = "{\"status\":400,\"message\":\"닉네임은 2자 이상 12자 이하로 입력해야 합니다.\"}"),
+                                    @ExampleObject(name = "시 누락", value = "{\"status\":400,\"message\":\"시는 필수입니다.\"}"),
+                                    @ExampleObject(name = "도/군 누락", value = "{\"status\":400,\"message\":\"도/군은 필수입니다.\"}"),
+                                    @ExampleObject(name = "구 누락", value = "{\"status\":400,\"message\":\"구는 필수입니다.\"}")
+                            })),
+            @ApiResponse(responseCode = "401", description = "회원가입용 임시 토큰이 유효하지 않습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\":401,\"message\":\"유효하지 않은 회원가입용 임시 토큰입니다.\"}"))),
+            @ApiResponse(responseCode = "404", description = "사용자 또는 통계 정보를 찾을 수 없습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\":404,\"message\":\"사용자 또는 통계 정보를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\":500,\"message\":\"서버 내부 오류가 발생했습니다.\"}")))
+    })
+    @PostMapping("/additional-info")
+    public ResponseEntity<LoginSuccessResponse> addAdditionalInfo(
+            Authentication authentication,
+            @Valid @RequestBody AdditionalInfoRequest request
+    ) {
+        String email = authentication.getName();
+        String temporaryToken = authentication.getCredentials().toString();
+        return ResponseEntity.ok(authService.addAdditionalInfo(email, temporaryToken, request));
     }
 }
