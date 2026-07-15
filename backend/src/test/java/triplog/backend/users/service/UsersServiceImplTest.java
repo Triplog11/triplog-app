@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
 
@@ -127,4 +128,39 @@ class UsersServiceImplTest {
         assertThat(result.usersId()).isEqualTo(savedUsers.getUsersId());
         assertThat(result.nickname()).isEqualTo(NICKNAME);
     }
+
+    /**
+     * 닉네임을 사용하는 사용자가 없으면 사용 가능 응답을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("닉네임 중복 확인 시 사용자가 없으면 사용 가능 응답을 반환한다")
+    void checkNickname_Available() {
+        // given
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(false);
+
+        // when
+        NicknameCheckResponse result = usersService.checkNickname(NICKNAME);
+
+        // then
+        assertThat(result.getAvailable()).isTrue();
+        assertThat(result.getMessage()).isEqualTo("사용 가능한 닉네임입니다.");
+    }
+
+    /**
+     * 닉네임을 사용하는 사용자가 있으면 사용 불가 응답을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("닉네임 중복 확인 시 사용자가 있으면 사용 불가 응답을 반환한다")
+    void checkNickname_Unavailable() {
+        // given
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(true);
+
+        // when
+        NicknameCheckResponse result = usersService.checkNickname(NICKNAME);
+
+        // then
+        assertThat(result.getAvailable()).isFalse();
+        assertThat(result.getMessage()).isEqualTo("중복된 닉네임입니다.");
+    }
 }
+
