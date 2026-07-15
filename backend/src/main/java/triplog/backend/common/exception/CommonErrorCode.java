@@ -20,6 +20,11 @@ public enum CommonErrorCode implements BaseErrorCode {
     INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
 
     /**
+     * 짧은 시간 안에 허용된 횟수를 초과해 요청한 경우 사용하는 에러 코드입니다.
+     */
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "요청을 너무 많이 보냈습니다."),
+
+    /**
      * 별도로 처리되지 않은 서버 내부 오류가 발생한 경우 사용하는 에러 코드입니다.
      */
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");

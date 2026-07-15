@@ -1,6 +1,7 @@
 package triplog.backend.users.service;
 
 import triplog.backend.users.entity.LoginType;
+import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 
 import java.util.Optional;
 
@@ -30,4 +31,12 @@ public interface UsersService {
      * @return 저장된 사용자 요약 정보
      */
     UsersSignupInfo createSocialUser(String email, LoginType loginType, String nickname, String profileUrl);
+
+    /**
+     * 닉네임 사용 가능 여부를 확인합니다.
+     *
+     * @param nickname 확인할 닉네임
+     * @return 닉네임 사용 가능 여부와 결과 메시지
+     */
+    NicknameCheckResponse checkNickname(String nickname);
 }

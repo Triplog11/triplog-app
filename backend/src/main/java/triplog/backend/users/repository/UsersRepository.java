@@ -24,4 +24,12 @@ public interface UsersRepository extends JpaRepository<Users, String> {
      * @return 조회된 사용자
      */
     Optional<Users> findByEmailAndLoginType(String email, LoginType loginType);
+
+    /**
+     * 닉네임으로 사용자 존재 여부를 확인합니다.
+     *
+     * @param nickname 확인할 닉네임
+     * @return 해당 닉네임을 사용하는 사용자가 존재하면 {@code true}
+     */
+    boolean existsByNickname(String nickname);
 }

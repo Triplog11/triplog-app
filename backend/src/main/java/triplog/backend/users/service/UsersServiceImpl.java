@@ -3,6 +3,8 @@ package triplog.backend.users.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.entity.LoginType;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
@@ -56,5 +58,18 @@ public class UsersServiceImpl implements UsersService {
         Users users = usersRepository.save(new Users(loginType, nickname, resolvedProfileUrl, email, null));
 
         return new UsersSignupInfo(users.getUsersId(), users.getNickname());
+    }
+
+    /**
+     * 닉네임 사용 가능 여부를 확인합니다.
+     *
+     * @param nickname 확인할 닉네임
+     * @return 닉네임 사용 가능 여부와 결과 메시지
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public NicknameCheckResponse checkNickname(String nickname) {
+        boolean available = !usersRepository.existsByNickname(nickname);
+        return NicknameCheckResponse.toDto(available);
     }
 }
