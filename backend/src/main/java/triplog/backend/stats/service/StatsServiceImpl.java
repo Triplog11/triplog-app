@@ -3,12 +3,14 @@ package triplog.backend.stats.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.stats.entity.Stats;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.stats.repository.StatsRepository;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
 
+import static triplog.backend.stats.exception.StatsErrorCode.PROFILE_UPDATE_TARGET_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.STATS_NOT_FOUND;
 
 /**
@@ -20,6 +22,7 @@ import static triplog.backend.stats.exception.StatsErrorCode.STATS_NOT_FOUND;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class StatsServiceImpl implements StatsService {
 
     private final StatsRepository statsRepository;
@@ -52,8 +55,9 @@ public class StatsServiceImpl implements StatsService {
      * @param addressDoGun 도/군
      * @param addressGu 구
      * @return 생성된 사용자의 초기 레벨, 경험치, 티어 정보
-     */
+    */
     @Override
+    @Transactional
     public StatsLoginInfo createInitialStats(String usersId, String addressSi, String addressDoGun, String addressGu) {
         log.info("신규 사용자 초기 통계 생성 시작: usersId={}", usersId);
         Users users = usersRepository.findById(usersId)
@@ -64,6 +68,34 @@ public class StatsServiceImpl implements StatsService {
                 stats.getStatsLevel(),
                 stats.getStatsXp(),
                 stats.getCurrentTier()
+        );
+    }
+    /**
+     * 사용자 주소 프로필 정보를 수정하고 수정 후 주소 요약 정보를 조회합니다.
+     * <p>
+     * 전달되지 않은 주소 필드는 Repository 수정 쿼리에서 기존 값을 유지합니다.
+     *
+     * @param usersId 수정할 사용자 ID
+     * @param addressSi 변경할 시
+     * @param addressDoGun 변경할 도/군
+     * @param addressGu 변경할 구
+     * @return 수정 후 주소 프로필 요약 정보
+     */
+    @Override
+    @Transactional
+    public StatsProfileInfo updateProfileAddress(String usersId, String addressSi, String addressDoGun, String addressGu) {
+        int updatedCount = statsRepository.updateProfileAddress(usersId, addressSi, addressDoGun, addressGu);
+        if (updatedCount == 0) {
+            throw new StatsException(PROFILE_UPDATE_TARGET_NOT_FOUND);
+        }
+
+        Stats stats = statsRepository.findByUsersUsersId(usersId)
+                .orElseThrow(() -> new StatsException(PROFILE_UPDATE_TARGET_NOT_FOUND));
+
+        return new StatsProfileInfo(
+                stats.getAddressSi(),
+                stats.getAddressDoGun(),
+                stats.getAddressGu()
         );
     }
 }

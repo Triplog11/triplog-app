@@ -143,4 +143,43 @@ class StatsServiceImplTest {
     private Users createUsers() {
         return new Users(GOOGLE, NICKNAME, PROFILE_URL, EMAIL, null);
     }
+    /**
+     * 주소 프로필 수정 요청이 정상 처리되면 수정 후 주소 정보를 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("주소 프로필 수정 요청 시 수정 후 주소 정보를 반환한다")
+    void updateProfileAddress() {
+        // given
+        Users users = createUsers();
+        Stats stats = new Stats(users, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU);
+        given(statsRepository.updateProfileAddress(USERS_ID, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU)).willReturn(1);
+        given(statsRepository.findByUsersUsersId(USERS_ID)).willReturn(Optional.of(stats));
+
+        // when
+        StatsProfileInfo result = statsService.updateProfileAddress(USERS_ID, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU);
+
+        // then
+        verify(statsRepository).updateProfileAddress(USERS_ID, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU);
+        assertThat(result.addressSi()).isEqualTo(ADDRESS_SI);
+        assertThat(result.addressDoGun()).isEqualTo(ADDRESS_DO_GUN);
+        assertThat(result.addressGu()).isEqualTo(ADDRESS_GU);
+    }
+
+    /**
+     * 주소 프로필 수정 대상 통계 정보가 없으면 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("주소 프로필 수정 대상 통계 정보가 없으면 예외가 발생한다")
+    void updateProfileAddress_ProfileUpdateTargetNotFound() {
+        // given
+        given(statsRepository.updateProfileAddress(USERS_ID, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU)).willReturn(0);
+
+        // when
+        // then
+        assertThatThrownBy(() -> statsService.updateProfileAddress(USERS_ID, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU))
+                .isInstanceOf(StatsException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.stats.exception.StatsErrorCode.PROFILE_UPDATE_TARGET_NOT_FOUND);
+        verify(statsRepository, never()).findByUsersUsersId(USERS_ID);
+    }
 }
