@@ -25,6 +25,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(nicknameCheckRateLimitInterceptor)
-                .addPathPatterns("/users/nickname/check");
+                .addPathPatterns("/users/nickname/check", "/users/email/check");
     }
 }

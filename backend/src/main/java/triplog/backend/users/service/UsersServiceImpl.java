@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.entity.LoginType;
 import triplog.backend.users.entity.Users;
@@ -71,5 +72,18 @@ public class UsersServiceImpl implements UsersService {
     public NicknameCheckResponse checkNickname(String nickname) {
         boolean available = !usersRepository.existsByNickname(nickname);
         return NicknameCheckResponse.toDto(available);
+    }
+
+    /**
+     * 이메일 사용 가능 여부를 확인합니다.
+     *
+     * @param email 확인할 이메일
+     * @return 이메일 사용 가능 여부와 결과 메시지
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public EmailCheckResponse checkEmail(String email) {
+        boolean available = !usersRepository.existsByEmail(email);
+        return EmailCheckResponse.toDto(available);
     }
 }
