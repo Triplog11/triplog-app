@@ -1,10 +1,12 @@
 package triplog.backend.users.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import triplog.backend.users.entity.LoginType;
 import triplog.backend.users.entity.Users;
-
 import java.util.Optional;
 
 /**
@@ -32,7 +34,7 @@ public interface UsersRepository extends JpaRepository<Users, String> {
      * @return 해당 닉네임을 사용하는 사용자가 존재하면 {@code true}
      */
     boolean existsByNickname(String nickname);
-
+  
     /**
      * 이메일로 사용자 존재 여부를 확인합니다.
      *
@@ -40,4 +42,27 @@ public interface UsersRepository extends JpaRepository<Users, String> {
      * @return 해당 이메일을 사용하는 사용자가 존재하면 {@code true}
      */
     boolean existsByEmail(String email);
+
+    /**
+     * 사용자 프로필 정보를 수정합니다.
+     * <p>
+     * 요청에서 전달되지 않은 필드는 {@code null}로 들어오며 기존 값을 유지합니다.
+     *
+     * @param usersId 수정할 사용자 ID
+     * @param nickname 변경할 닉네임
+     * @param profileUrl 변경할 프로필 이미지 URL
+     * @return 수정된 행 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Users u
+            set u.nickname = coalesce(:nickname, u.nickname),
+                u.profileUrl = coalesce(:profileUrl, u.profileUrl)
+            where u.usersId = :usersId
+            """)
+    int updateProfile(
+            @Param("usersId") String usersId,
+            @Param("nickname") String nickname,
+            @Param("profileUrl") String profileUrl
+    );
 }

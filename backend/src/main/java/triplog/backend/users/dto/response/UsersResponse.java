@@ -43,6 +43,33 @@ public class UsersResponse {
     }
 
     /**
+     * 프로필 수정 응답 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "프로필 수정 응답")
+    public static class ProfileUpdateResponse {
+
+        @Schema(description = "유저 식별자", example = "550e8400-e29b-41d4-a716-446655440000")
+        private String usersId;
+
+        @Schema(description = "닉네임", example = "여행자")
+        private String nickname;
+
+        @Schema(description = "시", example = "수원시")
+        private String addressSi;
+
+        @Schema(description = "도/군", example = "경기도")
+        private String addressDoGun;
+
+        @Schema(description = "구", example = "팔달구")
+        private String addressGu;
+
+        @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.png", nullable = true)
+        private String profileUrl;
+    }
+  
+   /**
      * 이메일 중복 확인 응답 DTO입니다.
      */
     @Getter

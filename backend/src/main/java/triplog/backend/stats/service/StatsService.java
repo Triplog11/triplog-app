@@ -26,4 +26,15 @@ public interface StatsService {
      * @return 생성된 사용자의 초기 레벨, 경험치, 티어 정보
      */
     StatsLoginInfo createInitialStats(String usersId, String addressSi, String addressDoGun, String addressGu);
+
+    /**
+     * 사용자 주소 프로필 정보를 수정하고 수정 후 주소 요약 정보를 조회합니다.
+     *
+     * @param usersId 수정할 사용자 ID
+     * @param addressSi 변경할 시
+     * @param addressDoGun 변경할 도/군
+     * @param addressGu 변경할 구
+     * @return 수정 후 주소 프로필 요약 정보
+     */
+    StatsProfileInfo updateProfileAddress(String usersId, String addressSi, String addressDoGun, String addressGu);
 }

@@ -7,13 +7,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import triplog.backend.stats.service.StatsService;
 import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
-
 import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -36,6 +35,9 @@ class UsersServiceImplTest {
     @Mock
     private UsersRepository usersRepository;
 
+    @Mock
+    private StatsService statsService;
+
     private UsersServiceImpl usersService;
 
     /**
@@ -43,7 +45,7 @@ class UsersServiceImplTest {
      */
     @BeforeEach
     void setUp() {
-        usersService = new UsersServiceImpl(usersRepository);
+        usersService = new UsersServiceImpl(usersRepository, statsService);
     }
 
     /**
@@ -162,6 +164,108 @@ class UsersServiceImplTest {
         // then
         assertThat(result.getAvailable()).isFalse();
         assertThat(result.getMessage()).isEqualTo("중복된 닉네임입니다.");
+    }
+
+    /**
+     * 프로필 수정 요청이 정상 처리되면 사용자 정보와 주소 정보를 함께 응답하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("프로필 수정 요청 시 수정된 프로필 정보를 반환한다")
+    void updateProfile() {
+        // given
+        String usersId = "550e8400-e29b-41d4-a716-446655440000";
+        String updatedNickname = "updated";
+        String updatedProfileUrl = "https://example.com/updated.png";
+        String addressSi = "수원시";
+        String addressDoGun = "경기도";
+        String addressGu = "팔달구";
+        triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest request =
+                new triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest(
+                        updatedNickname,
+                        addressSi,
+                        addressDoGun,
+                        addressGu,
+                        updatedProfileUrl
+                );
+        Users updatedUsers = new Users(GOOGLE, updatedNickname, updatedProfileUrl, EMAIL, null);
+        triplog.backend.stats.service.StatsProfileInfo stats =
+                new triplog.backend.stats.service.StatsProfileInfo(addressSi, addressDoGun, addressGu);
+
+        given(usersRepository.existsByNickname(updatedNickname)).willReturn(false);
+        given(usersRepository.updateProfile(usersId, updatedNickname, updatedProfileUrl)).willReturn(1);
+        given(usersRepository.findById(usersId)).willReturn(Optional.of(updatedUsers));
+        given(statsService.updateProfileAddress(usersId, addressSi, addressDoGun, addressGu)).willReturn(stats);
+
+        // when
+        triplog.backend.users.dto.response.UsersResponse.ProfileUpdateResponse result =
+                usersService.updateProfile(usersId, request);
+
+        // then
+        verify(usersRepository).updateProfile(usersId, updatedNickname, updatedProfileUrl);
+        verify(statsService).updateProfileAddress(usersId, addressSi, addressDoGun, addressGu);
+        assertThat(result.getUsersId()).isEqualTo(updatedUsers.getUsersId());
+        assertThat(result.getNickname()).isEqualTo(updatedNickname);
+        assertThat(result.getAddressSi()).isEqualTo(addressSi);
+        assertThat(result.getAddressDoGun()).isEqualTo(addressDoGun);
+        assertThat(result.getAddressGu()).isEqualTo(addressGu);
+        assertThat(result.getProfileUrl()).isEqualTo(updatedProfileUrl);
+    }
+
+    /**
+     * 프로필 수정 요청의 닉네임이 이미 사용 중이면 수정 쿼리를 실행하지 않고 예외를 발생시키는지 검증합니다.
+     */
+    @Test
+    @DisplayName("프로필 수정 요청 시 닉네임이 중복되면 예외가 발생한다")
+    void updateProfile_DuplicatedNickname() {
+        // given
+        String usersId = "550e8400-e29b-41d4-a716-446655440000";
+        String duplicatedNickname = "duplicated";
+        triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest request =
+                new triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest(
+                        duplicatedNickname,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+        given(usersRepository.existsByNickname(duplicatedNickname)).willReturn(true);
+
+        // when
+        // then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> usersService.updateProfile(usersId, request))
+                .isInstanceOf(triplog.backend.users.exception.UsersException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.users.exception.UsersErrorCode.NICKNAME_DUPLICATED);
+        verify(usersRepository, org.mockito.Mockito.never()).updateProfile(usersId, duplicatedNickname, null);
+    }
+
+    /**
+     * 프로필 수정 대상 사용자가 없으면 사용자 없음 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("프로필 수정 대상 사용자가 없으면 예외가 발생한다")
+    void updateProfile_UserNotFound() {
+        // given
+        String usersId = "550e8400-e29b-41d4-a716-446655440000";
+        String profileUrl = "https://example.com/updated.png";
+        triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest request =
+                new triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest(
+                        null,
+                        null,
+                        null,
+                        null,
+                        profileUrl
+                );
+        given(usersRepository.updateProfile(usersId, null, profileUrl)).willReturn(0);
+
+        // when
+        // then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> usersService.updateProfile(usersId, request))
+                .isInstanceOf(triplog.backend.users.exception.UsersException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND);
+        verify(usersRepository, org.mockito.Mockito.never()).findById(usersId);
+        verify(statsService, org.mockito.Mockito.never()).updateProfileAddress(usersId, null, null, null);
     }
 
     /**

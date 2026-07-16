@@ -18,7 +18,12 @@ public enum StatsErrorCode implements BaseErrorCode {
     /**
      * 요청한 사용자의 통계 정보를 찾을 수 없을 때 사용하는 에러 코드입니다.
      */
-    STATS_NOT_FOUND(HttpStatus.NOT_FOUND, "통계 정보를 찾을 수 없습니다.");
+    STATS_NOT_FOUND(HttpStatus.NOT_FOUND, "통계 정보를 찾을 수 없습니다."),
+
+    /**
+     * 프로필 수정 대상 통계 정보가 존재하지 않는 경우 사용하는 에러 코드입니다.
+     */
+    PROFILE_UPDATE_TARGET_NOT_FOUND(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
 
     /**
      * 클라이언트에 응답할 HTTP 상태 코드입니다.

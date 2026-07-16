@@ -48,4 +48,38 @@ public class UsersRequest {
         @Schema(description = "이메일", example = "example@example.com")
         private String email;
     }
+  
+    /**
+     * 프로필 수정 요청 DTO입니다.
+     * <p>
+     * 모든 필드는 선택 입력값이며, 요청에서 전달되지 않은 필드는 수정 대상에서 제외됩니다.
+     * 이메일 중복 확인 요청 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "프로필 수정 요청")
+    public static class ProfileUpdateRequest {
+
+        @Size(min = 2, max = 12, message = "닉네임은 2자 이상 12자 이하로 입력해야 합니다.")
+        @Schema(description = "닉네임", example = "여행자", nullable = true)
+        private String nickname;
+
+        @Size(min = 1, max = 20, message = "시는 1자 이상 20자 이하로 입력해야 합니다.")
+        @Schema(description = "시", example = "수원시", nullable = true)
+        private String addressSi;
+
+        @Size(min = 1, max = 20, message = "도/군은 1자 이상 20자 이하로 입력해야 합니다.")
+        @Schema(description = "도/군", example = "경기도", nullable = true)
+        private String addressDoGun;
+
+        @Size(min = 1, max = 30, message = "구는 1자 이상 30자 이하로 입력해야 합니다.")
+        @Schema(description = "구", example = "팔달구", nullable = true)
+        private String addressGu;
+
+        @Size(min = 1, max = 2048, message = "프로필 이미지 URL은 1자 이상 2048자 이하로 입력해야 합니다.")
+        @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.png", nullable = true)
+        private String profileUrl;
+    }
+
 }
