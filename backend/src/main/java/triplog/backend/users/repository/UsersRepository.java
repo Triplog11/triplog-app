@@ -7,7 +7,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import triplog.backend.users.entity.LoginType;
 import triplog.backend.users.entity.Users;
-
 import java.util.Optional;
 
 /**
@@ -35,6 +34,14 @@ public interface UsersRepository extends JpaRepository<Users, String> {
      * @return 해당 닉네임을 사용하는 사용자가 존재하면 {@code true}
      */
     boolean existsByNickname(String nickname);
+  
+    /**
+     * 이메일로 사용자 존재 여부를 확인합니다.
+     *
+     * @param email 확인할 이메일
+     * @return 해당 이메일을 사용하는 사용자가 존재하면 {@code true}
+     */
+    boolean existsByEmail(String email);
 
     /**
      * 사용자 프로필 정보를 수정합니다.

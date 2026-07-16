@@ -2,9 +2,9 @@ package triplog.backend.users.service;
 
 import triplog.backend.users.entity.LoginType;
 import triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest;
+import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.ProfileUpdateResponse;
-
 import java.util.Optional;
 
 /**
@@ -41,7 +41,15 @@ public interface UsersService {
      * @return 닉네임 사용 가능 여부와 결과 메시지
      */
     NicknameCheckResponse checkNickname(String nickname);
-
+    
+    /**
+     * 이메일 사용 가능 여부를 확인합니다.
+     *
+     * @param email 확인할 이메일
+     * @return 이메일 사용 가능 여부와 결과 메시지
+     */
+    EmailCheckResponse checkEmail(String email);
+  
     /**
      * 사용자 프로필 정보를 수정하고 수정 후 사용자 요약 정보를 조회합니다.
      *

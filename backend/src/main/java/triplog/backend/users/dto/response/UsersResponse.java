@@ -68,5 +68,31 @@ public class UsersResponse {
         @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.png", nullable = true)
         private String profileUrl;
     }
+  
+   /**
+     * 이메일 중복 확인 응답 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "이메일 중복 확인 응답")
+    public static class EmailCheckResponse {
+
+        @Schema(description = "사용 가능 여부", example = "true")
+        private Boolean available;
+
+        @Schema(description = "결과 메시지", example = "사용 가능한 이메일입니다.")
+        private String message;
+
+        /**
+         * 이메일 사용 가능 여부를 기반으로 응답 DTO를 생성합니다.
+         *
+         * @param available 이메일 사용 가능 여부
+         * @return 이메일 중복 확인 응답 DTO
+         */
+        public static EmailCheckResponse toDto(Boolean available) {
+            String message = available ? "사용 가능한 이메일입니다." : "중복된 이메일입니다.";
+            return new EmailCheckResponse(available, message);
+        }
+    }
 }
 

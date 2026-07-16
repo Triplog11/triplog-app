@@ -8,12 +8,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import triplog.backend.stats.service.StatsService;
+import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
-
 import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -166,6 +165,7 @@ class UsersServiceImplTest {
         assertThat(result.getAvailable()).isFalse();
         assertThat(result.getMessage()).isEqualTo("중복된 닉네임입니다.");
     }
+
     /**
      * 프로필 수정 요청이 정상 처리되면 사용자 정보와 주소 정보를 함께 응답하는지 검증합니다.
      */
@@ -266,6 +266,40 @@ class UsersServiceImplTest {
                 .isEqualTo(triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND);
         verify(usersRepository, org.mockito.Mockito.never()).findById(usersId);
         verify(statsService, org.mockito.Mockito.never()).updateProfileAddress(usersId, null, null, null);
+    }
+
+    /**
+     * 이메일을 사용하는 사용자가 없으면 사용 가능 응답을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("이메일 중복 확인 시 사용자가 없으면 사용 가능 응답을 반환한다")
+    void checkEmail_Available() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(false);
+
+        // when
+        EmailCheckResponse result = usersService.checkEmail(EMAIL);
+
+        // then
+        assertThat(result.getAvailable()).isTrue();
+        assertThat(result.getMessage()).isEqualTo("사용 가능한 이메일입니다.");
+    }
+
+    /**
+     * 이메일을 사용하는 사용자가 있으면 사용 불가 응답을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("이메일 중복 확인 시 사용자가 있으면 사용 불가 응답을 반환한다")
+    void checkEmail_Unavailable() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(true);
+
+        // when
+        EmailCheckResponse result = usersService.checkEmail(EMAIL);
+
+        // then
+        assertThat(result.getAvailable()).isFalse();
+        assertThat(result.getMessage()).isEqualTo("중복된 이메일입니다.");
     }
 }
 

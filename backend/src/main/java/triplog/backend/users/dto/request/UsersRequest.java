@@ -1,6 +1,7 @@
 package triplog.backend.users.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -34,9 +35,25 @@ public class UsersRequest {
     }
 
     /**
+     * 이메일 중복 확인 요청 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "이메일 중복 확인 요청")
+    public static class EmailCheckRequest {
+
+        @NotBlank(message = "이메일은 필수입니다.")
+        @Email(message = "이메일 형식이 올바르지 않습니다.")
+        @Schema(description = "이메일", example = "example@example.com")
+        private String email;
+    }
+  
+    /**
      * 프로필 수정 요청 DTO입니다.
      * <p>
      * 모든 필드는 선택 입력값이며, 요청에서 전달되지 않은 필드는 수정 대상에서 제외됩니다.
+     * 이메일 중복 확인 요청 DTO입니다.
      */
     @Getter
     @NoArgsConstructor
@@ -64,4 +81,5 @@ public class UsersRequest {
         @Schema(description = "프로필 이미지 URL", example = "https://example.com/profile.png", nullable = true)
         private String profileUrl;
     }
+
 }
