@@ -68,6 +68,7 @@ public class SecurityConfig {
                                 "/login/oauth2/**",
                                 "/auth/additional-info",
                                 "/users/nickname/check",
+                                "/users/email/check",
                                 "/images/**",
                                 "/scalar/**",
                                 "/v3/api-docs/**",
