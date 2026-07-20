@@ -54,3 +54,12 @@ google:
   client_id: ${GOOGLE_CLIENT_ID}
   redirect_uri: ${GOOGLE_REDIRECT_URI}
   client_secret: ${GOOGLE_CLIENT_SECRET}
+
+# [TourAPI]: 한국관광공사 국문 관광정보 서비스 연동 설정
+tour-api:
+  base-url: ${TOUR_API_BASE_URL:https://apis.data.go.kr/B551011/KorService2}
+  service-key: ${TOUR_API_SERVICE_KEY:}
+  mobile-os: ${TOUR_API_MOBILE_OS:ETC}
+  mobile-app: ${TOUR_API_MOBILE_APP:Triplog}
+  connect-timeout: ${TOUR_API_CONNECT_TIMEOUT:3s}
+  read-timeout: ${TOUR_API_READ_TIMEOUT:10s}
