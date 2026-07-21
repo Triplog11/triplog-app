@@ -156,4 +156,26 @@ public class AuthResponse {
             return new SignupResponse(isRegister);
         }
     }
+
+    /**
+     * 로그아웃 완료 응답 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "로그아웃 완료 응답")
+    public static class LogoutResponse {
+
+        @Schema(description = "로그아웃 처리 여부", example = "true")
+        private Boolean isLogOut;
+
+        /**
+         * 로그아웃 처리 여부를 기반으로 응답 DTO를 생성합니다.
+         *
+         * @param isLogOut 로그아웃 처리 여부
+         * @return 로그아웃 완료 응답 DTO
+         */
+        public static LogoutResponse toDto(Boolean isLogOut) {
+            return new LogoutResponse(isLogOut);
+        }
+    }
 }

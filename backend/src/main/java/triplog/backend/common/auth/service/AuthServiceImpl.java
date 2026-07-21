@@ -9,9 +9,11 @@ import triplog.backend.common.auth.client.NaverClient;
 import triplog.backend.common.auth.client.SocialApiClient;
 import triplog.backend.common.auth.dto.request.AuthRequest.AdditionalInfoRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.LogoutRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.LogoutResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse;
 import triplog.backend.common.auth.entity.RefreshToken;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.UUID;
 import static triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse.toDto;
 import static triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse.toDto;
+import static triplog.backend.common.auth.exception.AuthErrorCode.LOGOUT_TOKEN_NOT_FOUND;
 import static triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse.toDto;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_EMAIL_REQUIRED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_LOGIN_FAILED;
@@ -109,6 +112,23 @@ public class AuthServiceImpl implements AuthService {
         );
 
         return toDto(true);
+    }
+
+    /**
+     * 로그아웃 요청을 처리합니다.
+     *
+     * @param usersId 인증된 사용자 ID
+     * @param request 로그아웃 요청 DTO
+     * @return 로그아웃 처리 여부 응답
+     */
+    @Override
+    public LogoutResponse logout(String usersId, LogoutRequest request) {
+        RefreshToken refreshToken = refreshTokenRepository.findByRefreshToken(request.getRefreshToken())
+                .filter(token -> usersId.equals(token.getUsersId()))
+                .orElseThrow(() -> new AuthException(LOGOUT_TOKEN_NOT_FOUND));
+
+        refreshTokenRepository.deleteById(refreshToken.getUsersId());
+        return LogoutResponse.toDto(true);
     }
 
     /**

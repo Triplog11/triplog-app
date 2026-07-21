@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import triplog.backend.common.auth.dto.request.AuthRequest.AdditionalInfoRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.LogoutRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.LogoutResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse;
 import triplog.backend.common.auth.service.AuthService;
@@ -109,6 +111,47 @@ public class AuthController {
     ) {
         log.info("로그인 요청 수신: provider={}", request.getProvider());
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /**
+     * 로그아웃 요청을 처리합니다.
+     *
+     * @param authentication JWT 인증 정보
+     * @param request 로그아웃 요청 DTO
+     * @return 로그아웃 처리 여부 응답
+     */
+    @Operation(
+            summary = "로그아웃",
+            description = "인증된 사용자의 Refresh Token을 삭제하여 로그아웃을 처리합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "로그아웃에 성공했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LogoutResponse.class),
+                            examples = @ExampleObject(value = "{\"isLogOut\": true}"))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 400, \"message\": \"잘못된 요청입니다.\"}"))),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요한 기능입니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 401, \"message\": \"로그인이 필요한 기능입니다.\"}"))),
+            @ApiResponse(responseCode = "404", description = "토큰 정보를 찾을 수 없습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 404, \"message\": \"토큰 정보를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\": 500, \"message\": \"서버 내부 오류가 발생했습니다.\"}")))
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<LogoutResponse> logout(
+            Authentication authentication,
+            @Valid @RequestBody LogoutRequest request
+    ) {
+        return ResponseEntity.ok(authService.logout(authentication.getName(), request));
     }
 
     /**
