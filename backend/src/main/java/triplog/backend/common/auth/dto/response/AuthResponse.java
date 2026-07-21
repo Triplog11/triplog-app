@@ -134,4 +134,26 @@ public class AuthResponse {
             return new TemporaryTokenResponse(expiresIn, temporaryToken);
         }
     }
+
+    /**
+     * 로컬 회원가입 완료 응답 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "로컬 회원가입 완료 응답")
+    public static class SignupResponse {
+
+        @Schema(description = "회원가입 완료 여부", example = "true")
+        private Boolean isRegister;
+
+        /**
+         * 회원가입 완료 여부를 기반으로 응답 DTO를 생성합니다.
+         *
+         * @param isRegister 회원가입 완료 여부
+         * @return 로컬 회원가입 완료 응답 DTO
+         */
+        public static SignupResponse toDto(Boolean isRegister) {
+            return new SignupResponse(isRegister);
+        }
+    }
 }

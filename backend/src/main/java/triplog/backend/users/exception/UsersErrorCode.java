@@ -23,7 +23,12 @@ public enum UsersErrorCode implements BaseErrorCode {
     /**
      * 이미 사용 중인 닉네임으로 프로필 수정을 요청한 경우 사용합니다.
      */
-    NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다.");
+    NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
+
+    /**
+     * 이미 회원가입이 완료된 이메일로 회원가입을 요청한 경우 사용합니다.
+     */
+    EMAIL_DUPLICATED(HttpStatus.CONFLICT, "이미 회원가입이 완료된 이메일입니다.");
 
     /**
      * 클라이언트에 응답할 HTTP 상태 코드입니다.

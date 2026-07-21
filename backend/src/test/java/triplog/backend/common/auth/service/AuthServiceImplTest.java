@@ -9,7 +9,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
 import triplog.backend.common.auth.entity.RefreshToken;
 import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.common.auth.repository.RefreshTokenRepository;
@@ -20,6 +22,7 @@ import triplog.backend.stats.service.StatsService;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.service.UsersAuthInfo;
 import triplog.backend.users.service.UsersService;
+import triplog.backend.users.service.UsersSignupInfo;
 
 import java.util.List;
 import java.util.Optional;
@@ -79,6 +82,37 @@ class AuthServiceImplTest {
                 refreshTokenRepository,
                 passwordEncoder
         );
+    }
+
+    /**
+     * 로컬 회원가입에 성공하면 비밀번호를 암호화하고 사용자와 초기 통계를 생성하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("LOCAL 회원가입에 성공하면 사용자와 초기 통계를 생성한다")
+    void signupLocalUser() {
+        // given
+        String usersId = UUID.randomUUID().toString();
+        SignupRequest request = new SignupRequest(
+                "여행자",
+                "profile-default.png",
+                "수원시",
+                "경기도",
+                "팔달구",
+                EMAIL,
+                RAW_PASSWORD,
+                true
+        );
+        given(passwordEncoder.encode(RAW_PASSWORD)).willReturn(ENCODED_PASSWORD);
+        given(usersService.createLocalUser(EMAIL, "여행자", "profile-default.png", ENCODED_PASSWORD))
+                .willReturn(new UsersSignupInfo(usersId, "여행자"));
+
+        // when
+        SignupResponse response = authService.signup(request);
+
+        // then
+        assertThat(response.getIsRegister()).isTrue();
+        verify(usersService).createLocalUser(EMAIL, "여행자", "profile-default.png", ENCODED_PASSWORD);
+        verify(statsService).createInitialStats(usersId, "수원시", "경기도", "팔달구");
     }
 
     /**
