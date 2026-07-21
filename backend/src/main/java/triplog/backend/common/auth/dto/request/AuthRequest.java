@@ -123,4 +123,18 @@ public class AuthRequest {
         @Schema(description = "전체 알림 여부", example = "true")
         private Boolean isNotification;
     }
+
+    /**
+     * 로그아웃 요청 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "로그아웃 요청")
+    public static class LogoutRequest {
+
+        @NotBlank(message = "리프레시 토큰은 필수입니다.")
+        @Schema(description = "로그아웃 대상 Refresh Token", example = "refresh-token-value")
+        private String refreshToken;
+    }
 }

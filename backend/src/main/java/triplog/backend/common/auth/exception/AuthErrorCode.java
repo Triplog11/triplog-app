@@ -88,7 +88,12 @@ public enum AuthErrorCode implements BaseErrorCode {
     /**
      * 회원가입용 임시 토큰이 유효하지 않은 경우 사용합니다.
      */
-    TEMPORARY_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 회원가입용 임시 토큰입니다.");
+    TEMPORARY_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 회원가입용 임시 토큰입니다."),
+
+    /**
+     * 로그아웃 대상 Refresh Token 정보를 찾을 수 없는 경우 사용합니다.
+     */
+    LOGOUT_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "토큰 정보를 찾을 수 없습니다.");
 
     /**
      * 클라이언트에 응답할 HTTP 상태 코드입니다.

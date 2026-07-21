@@ -9,8 +9,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.LogoutRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.LogoutResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
 import triplog.backend.common.auth.entity.RefreshToken;
 import triplog.backend.common.auth.exception.AuthException;
@@ -34,6 +36,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static triplog.backend.common.auth.exception.AuthErrorCode.LOGOUT_TOKEN_NOT_FOUND;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_EMAIL_REQUIRED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_LOGIN_FAILED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_PASSWORD_REQUIRED;
@@ -113,6 +116,68 @@ class AuthServiceImplTest {
         assertThat(response.getIsRegister()).isTrue();
         verify(usersService).createLocalUser(EMAIL, "여행자", "profile-default.png", ENCODED_PASSWORD);
         verify(statsService).createInitialStats(usersId, "수원시", "경기도", "팔달구");
+    }
+
+    /**
+     * 로그아웃 요청에 성공하면 저장된 Refresh Token을 삭제하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로그아웃에 성공하면 Refresh Token을 삭제한다")
+    void logout() {
+        // given
+        String usersId = UUID.randomUUID().toString();
+        LogoutRequest request = new LogoutRequest(REFRESH_TOKEN);
+        given(refreshTokenRepository.findByRefreshToken(REFRESH_TOKEN))
+                .willReturn(Optional.of(new RefreshToken(usersId, REFRESH_TOKEN)));
+
+        // when
+        LogoutResponse response = authService.logout(usersId, request);
+
+        // then
+        assertThat(response.getIsLogOut()).isTrue();
+        verify(refreshTokenRepository).deleteById(usersId);
+    }
+
+    /**
+     * 로그아웃 대상 Refresh Token을 찾을 수 없으면 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로그아웃 대상 Refresh Token이 없으면 예외가 발생한다")
+    void logout_TokenNotFound() {
+        // given
+        String usersId = UUID.randomUUID().toString();
+        LogoutRequest request = new LogoutRequest(REFRESH_TOKEN);
+        given(refreshTokenRepository.findByRefreshToken(REFRESH_TOKEN)).willReturn(Optional.empty());
+
+        // when
+        // then
+        assertThatThrownBy(() -> authService.logout(usersId, request))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorCode")
+                .isEqualTo(LOGOUT_TOKEN_NOT_FOUND);
+        verify(refreshTokenRepository, never()).deleteById(any());
+    }
+
+    /**
+     * 로그아웃 대상 Refresh Token의 사용자와 인증 사용자가 다르면 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("Refresh Token 사용자와 인증 사용자가 다르면 로그아웃 예외가 발생한다")
+    void logout_UsersMismatch() {
+        // given
+        String usersId = UUID.randomUUID().toString();
+        String otherUsersId = UUID.randomUUID().toString();
+        LogoutRequest request = new LogoutRequest(REFRESH_TOKEN);
+        given(refreshTokenRepository.findByRefreshToken(REFRESH_TOKEN))
+                .willReturn(Optional.of(new RefreshToken(otherUsersId, REFRESH_TOKEN)));
+
+        // when
+        // then
+        assertThatThrownBy(() -> authService.logout(usersId, request))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorCode")
+                .isEqualTo(LOGOUT_TOKEN_NOT_FOUND);
+        verify(refreshTokenRepository, never()).deleteById(any());
     }
 
     /**
