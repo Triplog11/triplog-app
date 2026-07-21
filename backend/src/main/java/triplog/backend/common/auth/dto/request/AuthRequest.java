@@ -1,6 +1,7 @@
 package triplog.backend.common.auth.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -77,6 +78,49 @@ public class AuthRequest {
 
         @NotNull(message = "전체 알림 여부는 필수입니다.")
         @Schema(description = "전체 알림 여부. 알림 도메인 구현 전까지는 저장하지 않습니다.", example = "true")
+        private Boolean isNotification;
+    }
+
+    /**
+     * 로컬 회원가입 요청 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "로컬 회원가입 요청")
+    public static class SignupRequest {
+
+        @NotBlank(message = "닉네임은 필수입니다.")
+        @Size(min = 2, max = 12, message = "닉네임은 2자 이상 12자 이하로 입력해야 합니다.")
+        @Schema(description = "닉네임", example = "여행자")
+        private String nickname;
+
+        @Schema(description = "프로필 이미지 URL", example = "profile-default.png", nullable = true)
+        private String profileUrl;
+
+        @NotBlank(message = "시는 필수입니다.")
+        @Schema(description = "시", example = "수원시")
+        private String addressSi;
+
+        @NotBlank(message = "도/군은 필수입니다.")
+        @Schema(description = "도/군", example = "경기도")
+        private String addressDoGun;
+
+        @NotBlank(message = "구는 필수입니다.")
+        @Schema(description = "구", example = "팔달구")
+        private String addressGu;
+
+        @NotBlank(message = "이메일은 필수입니다.")
+        @Email(message = "이메일 형식이 올바르지 않습니다.")
+        @Schema(description = "이메일", example = "test@test.com")
+        private String email;
+
+        @NotBlank(message = "비밀번호는 필수입니다.")
+        @Schema(description = "비밀번호", example = "test1234")
+        private String password;
+
+        @NotNull(message = "전체 알림 여부는 필수입니다.")
+        @Schema(description = "전체 알림 여부", example = "true")
         private Boolean isNotification;
     }
 }

@@ -35,6 +35,17 @@ public interface UsersService {
     UsersSignupInfo createSocialUser(String email, LoginType loginType, String nickname, String profileUrl);
 
     /**
+     * 로컬 회원가입 요청 정보를 기반으로 신규 사용자를 생성합니다.
+     *
+     * @param email 사용자 이메일
+     * @param nickname 닉네임
+     * @param profileUrl 프로필 이미지 URL
+     * @param encodedPassword 암호화된 비밀번호
+     * @return 저장된 사용자 요약 정보
+     */
+    UsersSignupInfo createLocalUser(String email, String nickname, String profileUrl, String encodedPassword);
+
+    /**
      * 닉네임 사용 가능 여부를 확인합니다.
      *
      * @param nickname 확인할 닉네임

@@ -133,6 +133,100 @@ class UsersServiceImplTest {
     }
 
     /**
+     * 로컬 사용자 생성 시 중복 검사를 통과하면 LOCAL 타입과 암호화된 비밀번호로 저장되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로컬 사용자 생성 시 LOCAL 타입과 암호화된 비밀번호로 저장한다")
+    void createLocalUser() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(false);
+        given(usersRepository.save(any(Users.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        UsersSignupInfo result = usersService.createLocalUser(EMAIL, NICKNAME, PROFILE_URL, PASSWORD);
+
+        // then
+        ArgumentCaptor<Users> usersCaptor = ArgumentCaptor.forClass(Users.class);
+        verify(usersRepository).save(usersCaptor.capture());
+        Users savedUsers = usersCaptor.getValue();
+
+        assertThat(savedUsers.getEmail()).isEqualTo(EMAIL);
+        assertThat(savedUsers.getLoginType()).isEqualTo(LOCAL);
+        assertThat(savedUsers.getNickname()).isEqualTo(NICKNAME);
+        assertThat(savedUsers.getProfileUrl()).isEqualTo(PROFILE_URL);
+        assertThat(savedUsers.getPassword()).isEqualTo(PASSWORD);
+        assertThat(result.usersId()).isEqualTo(savedUsers.getUsersId());
+        assertThat(result.nickname()).isEqualTo(NICKNAME);
+    }
+
+    /**
+     * 로컬 사용자 생성 시 프로필 URL이 비어 있으면 기본 프로필 URL로 저장되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로컬 사용자 생성 시 프로필 URL이 비어 있으면 기본값을 저장한다")
+    void createLocalUser_DefaultProfileUrl() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(false);
+        given(usersRepository.save(any(Users.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        UsersSignupInfo result = usersService.createLocalUser(EMAIL, NICKNAME, " ", PASSWORD);
+
+        // then
+        ArgumentCaptor<Users> usersCaptor = ArgumentCaptor.forClass(Users.class);
+        verify(usersRepository).save(usersCaptor.capture());
+        Users savedUsers = usersCaptor.getValue();
+
+        assertThat(savedUsers.getProfileUrl()).isEqualTo(DEFAULT_PROFILE_URL);
+        assertThat(result.usersId()).isEqualTo(savedUsers.getUsersId());
+        assertThat(result.nickname()).isEqualTo(NICKNAME);
+    }
+
+    /**
+     * 로컬 사용자 생성 시 이메일이 중복되면 저장하지 않고 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로컬 사용자 생성 시 이메일이 중복되면 예외가 발생한다")
+    void createLocalUser_DuplicatedEmail() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(true);
+
+        // when
+        // then
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> usersService.createLocalUser(EMAIL, NICKNAME, PROFILE_URL, PASSWORD)
+                )
+                .isInstanceOf(triplog.backend.users.exception.UsersException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.users.exception.UsersErrorCode.EMAIL_DUPLICATED);
+        verify(usersRepository, org.mockito.Mockito.never()).existsByNickname(NICKNAME);
+        verify(usersRepository, org.mockito.Mockito.never()).save(any(Users.class));
+    }
+
+    /**
+     * 로컬 사용자 생성 시 닉네임이 중복되면 저장하지 않고 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로컬 사용자 생성 시 닉네임이 중복되면 예외가 발생한다")
+    void createLocalUser_DuplicatedNickname() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(true);
+
+        // when
+        // then
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> usersService.createLocalUser(EMAIL, NICKNAME, PROFILE_URL, PASSWORD)
+                )
+                .isInstanceOf(triplog.backend.users.exception.UsersException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.users.exception.UsersErrorCode.NICKNAME_DUPLICATED);
+        verify(usersRepository, org.mockito.Mockito.never()).save(any(Users.class));
+    }
+
+    /**
      * 닉네임을 사용하는 사용자가 없으면 사용 가능 응답을 반환하는지 검증합니다.
      */
     @Test

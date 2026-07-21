@@ -16,6 +16,7 @@ import triplog.backend.users.exception.UsersException;
 import triplog.backend.users.repository.UsersRepository;
 import java.util.Optional;
 import static triplog.backend.users.exception.UsersErrorCode.NICKNAME_DUPLICATED;
+import static triplog.backend.users.exception.UsersErrorCode.EMAIL_DUPLICATED;
 import static triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND;
 
 /**
@@ -66,6 +67,32 @@ public class UsersServiceImpl implements UsersService {
     public UsersSignupInfo createSocialUser(String email, LoginType loginType, String nickname, String profileUrl) {
         String resolvedProfileUrl = profileUrl == null || profileUrl.isBlank() ? DEFAULT_PROFILE_URL : profileUrl;
         Users users = usersRepository.save(new Users(loginType, nickname, resolvedProfileUrl, email, null));
+
+        return new UsersSignupInfo(users.getUsersId(), users.getNickname());
+    }
+
+    /**
+     * 로컬 회원가입 요청 정보를 기반으로 신규 사용자를 생성합니다.
+     *
+     * @param email 사용자 이메일
+     * @param nickname 닉네임
+     * @param profileUrl 프로필 이미지 URL
+     * @param encodedPassword 암호화된 비밀번호
+     * @return 저장된 사용자 요약 정보
+     */
+    @Override
+    @Transactional
+    public UsersSignupInfo createLocalUser(String email, String nickname, String profileUrl, String encodedPassword) {
+        if (usersRepository.existsByEmail(email)) {
+            throw new UsersException(EMAIL_DUPLICATED);
+        }
+
+        if (usersRepository.existsByNickname(nickname)) {
+            throw new UsersException(NICKNAME_DUPLICATED);
+        }
+
+        String resolvedProfileUrl = profileUrl == null || profileUrl.isBlank() ? DEFAULT_PROFILE_URL : profileUrl;
+        Users users = usersRepository.save(new Users(LoginType.LOCAL, nickname, resolvedProfileUrl, email, encodedPassword));
 
         return new UsersSignupInfo(users.getUsersId(), users.getNickname());
     }

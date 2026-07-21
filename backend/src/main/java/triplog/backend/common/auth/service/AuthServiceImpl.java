@@ -9,8 +9,10 @@ import triplog.backend.common.auth.client.NaverClient;
 import triplog.backend.common.auth.client.SocialApiClient;
 import triplog.backend.common.auth.dto.request.AuthRequest.AdditionalInfoRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse;
 import triplog.backend.common.auth.entity.RefreshToken;
 import triplog.backend.common.auth.exception.AuthException;
@@ -27,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import static triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse.toDto;
+import static triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse.toDto;
 import static triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse.toDto;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_EMAIL_REQUIRED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_LOGIN_FAILED;
@@ -80,6 +83,32 @@ public class AuthServiceImpl implements AuthService {
                     log.info("추가정보 입력 필요 사용자 로그인 처리: provider={}", request.getProvider());
                     return createTemporaryToken(email, request.getProvider());
                 });
+    }
+
+    /**
+     * 로컬 회원가입 요청을 처리합니다.
+     *
+     * @param request 로컬 회원가입 요청 DTO
+     * @return 회원가입 완료 여부 응답
+     */
+    @Override
+    @Transactional
+    public SignupResponse signup(SignupRequest request) {
+        UsersSignupInfo users = usersService.createLocalUser(
+                request.getEmail(),
+                request.getNickname(),
+                request.getProfileUrl(),
+                passwordEncoder.encode(request.getPassword())
+        );
+
+        statsService.createInitialStats(
+                users.usersId(),
+                request.getAddressSi(),
+                request.getAddressDoGun(),
+                request.getAddressGu()
+        );
+
+        return toDto(true);
     }
 
     /**
