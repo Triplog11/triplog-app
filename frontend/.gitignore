@@ -43,3 +43,7 @@ yarn-error.*
 /android
 >>>>>>> Stashed changes
 !.env.example
+
+# 로컬 참고용 자료 (커밋 금지 - 크리덴셜 스크린샷 포함)
+assets/image*.png
+assets/*.zip
