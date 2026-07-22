@@ -41,4 +41,19 @@ public class FcmTokenRequest {
         @Schema(description = "디바이스 이름", example = "Galaxy Z Flip 5")
         private String deviceName;
     }
+
+    /**
+     * FCM 푸시 토큰 삭제 요청 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "FCM 푸시 토큰 삭제 요청")
+    public static class DeleteRequest {
+
+        @NotBlank(message = "FCM 토큰은 필수입니다.")
+        @Size(max = 512, message = "FCM 토큰은 512자 이하여야 합니다.")
+        @Schema(description = "FCM 토큰", example = "fcm_device_token_string")
+        private String token;
+    }
 }

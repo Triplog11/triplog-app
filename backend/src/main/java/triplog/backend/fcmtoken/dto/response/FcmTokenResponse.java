@@ -36,4 +36,26 @@ public class FcmTokenResponse {
             return new RegisterResponse(isRegistered);
         }
     }
+
+    /**
+     * FCM 푸시 토큰 삭제 결과를 반환하는 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "FCM 푸시 토큰 삭제 응답")
+    public static class DeleteResponse {
+
+        @Schema(description = "등록 여부", example = "false")
+        private Boolean isRegistered;
+
+        /**
+         * 푸시 토큰 등록 여부를 기반으로 삭제 응답 DTO를 생성합니다.
+         *
+         * @param isRegistered 푸시 토큰 등록 여부
+         * @return 푸시 토큰 삭제 응답 DTO
+         */
+        public static DeleteResponse toDto(Boolean isRegistered) {
+            return new DeleteResponse(isRegistered);
+        }
+    }
 }
