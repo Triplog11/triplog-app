@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useAuth, AUTH_STATUS } from '../../context/AuthContext';
 import CustomText from '../../components/common/CustomText';
+import theme from '../../theme/theme';
 
 const NICKNAME_MIN = 2;
 const NICKNAME_MAX = 12;
@@ -62,47 +63,47 @@ export default function NicknameScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <CustomText variant="Heading/H2" color="#0F172A">
+          <CustomText variant="Heading/H2" color={theme.colors.text}>
             프로필 설정
           </CustomText>
-          <CustomText variant="Body/Small" color="#64748B" style={styles.headerSubtitle}>
+          <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.headerSubtitle}>
             트립로그에서 사용할 이름과 거주 지역을 알려주세요.
           </CustomText>
         </View>
 
         <View style={styles.content}>
-          <CustomText variant="Label/Medium" color="#475569" style={styles.label}>
+          <CustomText variant="Label/Medium" color={theme.colors.textSecondary} style={styles.label}>
             닉네임
           </CustomText>
           <TextInput
             style={styles.input}
             placeholder={`한글, 영문, 숫자 조합 ${NICKNAME_MIN}~${NICKNAME_MAX}자`}
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={theme.colors.textMuted}
             value={nickname}
             onChangeText={setNickname}
             maxLength={NICKNAME_MAX}
           />
           {nickname.length > 0 && !isNicknameValid && (
-            <CustomText variant="Body/Small" color="#EF4444" style={styles.helperText}>
+            <CustomText variant="Body/Small" color={theme.colors.error} style={styles.helperText}>
               닉네임은 {NICKNAME_MIN}자 이상 {NICKNAME_MAX}자 이하로 입력해 주세요.
             </CustomText>
           )}
 
-          <CustomText variant="Label/Medium" color="#475569" style={[styles.label, styles.sectionGap]}>
+          <CustomText variant="Label/Medium" color={theme.colors.textSecondary} style={[styles.label, styles.sectionGap]}>
             거주 지역
           </CustomText>
           <View style={styles.addressRow}>
             <TextInput
               style={[styles.input, styles.addressInput]}
               placeholder="도 (예: 경기도)"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={theme.colors.textMuted}
               value={addressDoGun}
               onChangeText={setAddressDoGun}
             />
             <TextInput
               style={[styles.input, styles.addressInput]}
               placeholder="시 (예: 수원시)"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={theme.colors.textMuted}
               value={addressSi}
               onChangeText={setAddressSi}
             />
@@ -110,24 +111,24 @@ export default function NicknameScreen({ navigation }) {
           <TextInput
             style={[styles.input, styles.addressBottomInput]}
             placeholder="구/군 (예: 팔달구)"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={theme.colors.textMuted}
             value={addressGu}
             onChangeText={setAddressGu}
           />
 
           <View style={styles.notificationRow}>
             <View style={styles.notificationTextGroup}>
-              <CustomText variant="Label/Medium" color="#475569">
+              <CustomText variant="Label/Medium" color={theme.colors.textSecondary}>
                 알림 받기
               </CustomText>
-              <CustomText variant="Body/Small" color="#94A3B8" style={styles.notificationDescription}>
+              <CustomText variant="Body/Small" color={theme.colors.textMuted} style={styles.notificationDescription}>
                 새로운 뱃지와 이벤트 소식을 알려드려요.
               </CustomText>
             </View>
             <Switch
               value={isNotification}
               onValueChange={setIsNotification}
-              trackColor={{ false: '#E2E8F0', true: '#3B82F6' }}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
               thumbColor="#FFFFFF"
             />
           </View>
@@ -143,7 +144,7 @@ export default function NicknameScreen({ navigation }) {
         >
           <CustomText
             variant="UI/Button"
-            color={canSubmit ? '#FFFFFF' : '#94A3B8'}
+            color={canSubmit ? '#FFFFFF' : theme.colors.textMuted}
             style={styles.completeText}
           >
             {submitting ? '가입하는 중...' : '가입 완료'}
@@ -157,7 +158,7 @@ export default function NicknameScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // 순백색 배경
+    backgroundColor: theme.colors.canvas,
   },
   scrollContent: {
     flexGrow: 1,
@@ -183,14 +184,14 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 56,
-    backgroundColor: '#F8FAFC', // Slate-50 인풋 배경
-    borderRadius: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.rounded.card,
     paddingHorizontal: 16,
-    color: '#0F172A',
+    color: theme.colors.text,
     fontSize: 15,
     fontFamily: 'Pretendard-Regular',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
   },
   helperText: {
     marginTop: 8,
@@ -224,18 +225,13 @@ const styles = StyleSheet.create({
   },
   completeBtn: {
     height: 56,
-    backgroundColor: '#3B82F6',
-    borderRadius: 16,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.rounded.cta,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
   },
   completeBtnDisabled: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: theme.colors.surfaceDim,
     shadowOpacity: 0,
     elevation: 0,
   },

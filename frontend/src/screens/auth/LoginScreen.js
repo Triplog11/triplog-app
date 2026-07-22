@@ -112,11 +112,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.rounded.pill,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: theme.colors.textPrimary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
   },
   naverButton: {
     backgroundColor: '#03C75A',
