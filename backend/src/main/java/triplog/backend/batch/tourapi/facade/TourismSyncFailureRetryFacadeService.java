@@ -91,6 +91,11 @@ public class TourismSyncFailureRetryFacadeService {
         return new RetryResult(resolved, failed);
     }
 
+    /**
+     * 실패 유형에 맞는 동기화 기능으로 실패 이력 한 건을 재처리합니다.
+     *
+     * @param failure 재처리할 동기화 실패 이력
+     */
     private void retryOne(TourismSyncFailure failure) {
         switch (failure.getSyncType()) {
             case LANDMARK -> landmarkSyncFacadeService.retryOne(failure.getExternalContentId());
@@ -100,6 +105,11 @@ public class TourismSyncFailureRetryFacadeService {
         }
     }
 
+    /**
+     * 관광 콘텐츠의 이미지 전체를 다시 조회해 동기화합니다.
+     *
+     * @param contentId 이미지를 재동기화할 TourAPI contentId
+     */
     private void retryImages(String contentId) {
         TourismContent content = tourismContentService.findByExternalContentId(contentId);
         List<TourismContentImageSyncData> images = new ArrayList<>();
@@ -114,6 +124,12 @@ public class TourismSyncFailureRetryFacadeService {
         imageService.synchronize(content, images);
     }
 
+    /**
+     * 실패 이력에 저장할 수 있도록 예외 메시지를 안전한 문자열로 변환합니다.
+     *
+     * @param exception 메시지를 추출할 예외
+     * @return 예외 메시지 또는 예외 클래스명
+     */
     private String safeMessage(RuntimeException exception) {
         String message = exception.getMessage();
         if (message == null || message.isBlank()) {

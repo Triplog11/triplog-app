@@ -75,6 +75,13 @@ public class LandmarkSeedReader {
                 .findFirst();
     }
 
+    /**
+     * CSV 레코드를 랜드마크 시드로 변환하고 contentId 중복 여부를 검증합니다.
+     *
+     * @param record 변환할 CSV 레코드
+     * @param contentIds 앞서 읽은 contentId 집합
+     * @return 검증을 마친 랜드마크 시드
+     */
     private LandmarkSeed convert(CSVRecord record, Set<String> contentIds) {
         String contentId = required(record, "content_id");
         if (!contentIds.add(contentId)) {
@@ -98,6 +105,13 @@ public class LandmarkSeedReader {
         );
     }
 
+    /**
+     * CSV 레코드에서 필수 값을 읽고 빈 값 여부를 검증합니다.
+     *
+     * @param record 값을 읽을 CSV 레코드
+     * @param header 필수 열 이름
+     * @return 앞뒤 공백을 제거한 필수 값
+     */
     private String required(CSVRecord record, String header) {
         String value = record.get(header);
         if (!StringUtils.hasText(value)) {

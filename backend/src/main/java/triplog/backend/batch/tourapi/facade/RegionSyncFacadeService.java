@@ -47,6 +47,12 @@ public class RegionSyncFacadeService {
         return savedCount;
     }
 
+    /**
+     * 지정한 시도의 시군구를 모두 조회해 지역 정보로 저장합니다.
+     *
+     * @param region 시군구를 조회할 시도 항목
+     * @return 저장하거나 갱신한 시군구 수
+     */
     private int synchronizeDistricts(TourApiLegalDistrictItem region) {
         int savedCount = 0;
         int districtPageNumber = 1;

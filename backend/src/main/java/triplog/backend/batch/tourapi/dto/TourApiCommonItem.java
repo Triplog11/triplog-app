@@ -73,14 +73,32 @@ public record TourApiCommonItem(
         );
     }
 
+    /**
+     * 문자열을 소수 값으로 변환합니다.
+     *
+     * @param value 변환할 문자열
+     * @return 변환한 소수 또는 입력값이 비어 있으면 {@code null}
+     */
     private BigDecimal decimal(String value) {
         return value == null || value.isBlank() ? null : new BigDecimal(value);
     }
 
+    /**
+     * 문자열을 정수 값으로 변환합니다.
+     *
+     * @param value 변환할 문자열
+     * @return 변환한 정수 또는 입력값이 비어 있으면 {@code null}
+     */
     private Integer integer(String value) {
         return value == null || value.isBlank() ? null : Integer.valueOf(value);
     }
 
+    /**
+     * TourAPI 일시 문자열을 날짜·시간 객체로 변환합니다.
+     *
+     * @param value yyyyMMddHHmmss 형식의 일시 문자열
+     * @return 변환한 날짜·시간 또는 입력값이 비어 있으면 {@code null}
+     */
     private LocalDateTime dateTime(String value) {
         return value == null || value.isBlank() ? null : LocalDateTime.parse(value, PROVIDER_DATE_TIME);
     }

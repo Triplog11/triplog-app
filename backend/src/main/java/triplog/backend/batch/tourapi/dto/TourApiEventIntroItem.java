@@ -55,10 +55,23 @@ public record TourApiEventIntroItem(
         );
     }
 
+    /**
+     * TourAPI 날짜 문자열을 날짜 객체로 변환합니다.
+     *
+     * @param value yyyyMMdd 형식의 날짜 문자열
+     * @return 변환한 날짜 또는 입력값이 비어 있으면 {@code null}
+     */
     private LocalDate parseDate(String value) {
         return value == null || value.isBlank() ? null : LocalDate.parse(value, EVENT_DATE);
     }
 
+    /**
+     * 값이 존재하는 상세 항목만 부가정보 Map에 추가합니다.
+     *
+     * @param detailData 부가정보를 저장할 Map
+     * @param key 저장할 항목 이름
+     * @param value 저장할 항목 값
+     */
     private void putIfPresent(Map<String, Object> detailData, String key, String value) {
         if (value != null && !value.isBlank()) {
             detailData.put(key, value);

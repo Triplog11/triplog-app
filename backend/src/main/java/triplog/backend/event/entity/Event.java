@@ -99,6 +99,11 @@ public class Event {
         apply(syncData);
     }
 
+    /**
+     * 동기화 입력값을 축제 상세 필드에 반영합니다.
+     *
+     * @param data 반영할 축제 상세 동기화 값
+     */
     private void apply(EventSyncData data) {
         this.eventStartDate = data.eventStartDate();
         this.eventEndDate = data.eventEndDate();

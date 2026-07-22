@@ -150,6 +150,12 @@ public class LandmarkSyncFacadeService {
         synchronizeOne(seed);
     }
 
+    /**
+     * 전달받은 랜드마크 시드를 순회하며 개별 동기화 결과를 집계합니다.
+     *
+     * @param seeds 동기화할 랜드마크 시드 목록
+     * @return 성공·실패·건너뜀 건수
+     */
     private LandmarkSyncResult synchronizeSeeds(Iterable<LandmarkSeed> seeds) {
         int succeeded = 0;
         int failed = 0;
@@ -166,6 +172,12 @@ public class LandmarkSyncFacadeService {
         return new LandmarkSyncResult(succeeded, failed, 0);
     }
 
+    /**
+     * 랜드마크 동기화 예외를 실패 이력으로 기록합니다.
+     *
+     * @param seed 동기화에 실패한 랜드마크 시드
+     * @param exception 발생한 예외
+     */
     private void recordFailure(LandmarkSeed seed, RuntimeException exception) {
         failureService.recordFailure(
                 TourismSyncType.LANDMARK,
@@ -178,6 +190,12 @@ public class LandmarkSyncFacadeService {
         );
     }
 
+    /**
+     * 기준일 이후 변경된 관광 콘텐츠를 모두 조회해 contentId별로 정리합니다.
+     *
+     * @param modifiedDate 변경 조회 기준일
+     * @return contentId를 키로 하는 변경 항목 Map
+     */
     private Map<String, TourApiChangedContentItem> readChangedItems(LocalDate modifiedDate) {
         Map<String, TourApiChangedContentItem> changedItems = new LinkedHashMap<>();
         int pageNumber = 1;
@@ -190,6 +208,11 @@ public class LandmarkSyncFacadeService {
         return changedItems;
     }
 
+    /**
+     * 랜드마크 시드 한 건의 공통 관광정보와 랜드마크 정보를 동기화합니다.
+     *
+     * @param seed 동기화할 랜드마크 시드
+     */
     private void synchronizeOne(LandmarkSeed seed) {
         TourApiCommonItem item = tourApiClient.getCommonDetail(seed.contentId());
         validateExpectedValues(seed, item);
@@ -198,6 +221,12 @@ public class LandmarkSyncFacadeService {
         landmarkService.upsert(content, seed.displayName());
     }
 
+    /**
+     * TourAPI 응답의 콘텐츠 유형과 지역 코드가 시드의 기대값과 일치하는지 검증합니다.
+     *
+     * @param seed 검증 기준이 되는 랜드마크 시드
+     * @param item TourAPI 공통정보 응답
+     */
     private void validateExpectedValues(LandmarkSeed seed, TourApiCommonItem item) {
         if (!seed.expectedContentTypeId().equals(item.contentTypeId())
                 || !seed.legalRegionCode().equals(item.legalRegionCode())
@@ -206,6 +235,12 @@ public class LandmarkSyncFacadeService {
         }
     }
 
+    /**
+     * 실패 이력에 저장할 수 있도록 예외 메시지를 안전한 문자열로 변환합니다.
+     *
+     * @param exception 메시지를 추출할 예외
+     * @return 예외 메시지 또는 예외 클래스명
+     */
     private String safeMessage(RuntimeException exception) {
         String message = exception.getMessage();
         if (message == null || message.isBlank()) {

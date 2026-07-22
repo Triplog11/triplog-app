@@ -254,6 +254,12 @@ public class TourApiClient {
         return parsePageAllowEmpty(responseBody, TourApiImageItem.class);
     }
 
+    /**
+     * 공통정보 요청을 재시도 정책에 따라 반복 실행합니다.
+     *
+     * @param contentId 조회할 TourAPI contentId
+     * @return TourAPI 원본 응답 본문
+     */
     private String requestWithRetry(String contentId) {
         int attempt = 0;
         while (true) {
@@ -269,6 +275,14 @@ public class TourApiClient {
         }
     }
 
+    /**
+     * 지정한 TourAPI 요청을 재시도 정책에 따라 반복 실행합니다.
+     *
+     * @param operation 로그에 사용할 API 작업명
+     * @param target 로그에 사용할 요청 대상
+     * @param uri 호출할 전체 URI
+     * @return TourAPI 원본 응답 본문
+     */
     private String requestWithRetry(String operation, String target, URI uri) {
         int attempt = 0;
         while (true) {
@@ -284,18 +298,36 @@ public class TourApiClient {
         }
     }
 
+    /**
+     * 발생한 TourAPI 예외가 재시도 가능한 일시적 오류인지 판별합니다.
+     *
+     * @param exception 판별할 TourAPI 예외
+     * @return 재시도 가능한 오류이면 {@code true}
+     */
     private boolean isRetryable(TourApiException exception) {
         return exception.getErrorCode() == HTTP_REQUEST_FAILED
                 || exception.getErrorCode() == REQUEST_LIMIT_EXCEEDED
                 || exception.getErrorCode() == SERVICE_UNAVAILABLE;
     }
 
+    /**
+     * 제공자 Retry-After 값 또는 설정된 백오프 정책으로 재시도 대기시간을 결정합니다.
+     *
+     * @param exception 재시도 원인이 된 예외
+     * @param retryIndex 현재 재시도 순번
+     * @return 적용할 재시도 대기시간
+     */
     private Duration resolveRetryDelay(TourApiException exception, int retryIndex) {
         return exception.getRetryAfter() == null
                 ? retryProperties.delayFor(retryIndex)
                 : exception.getRetryAfter();
     }
 
+    /**
+     * 다음 요청을 실행하기 전에 지정된 시간만큼 현재 스레드를 대기시킵니다.
+     *
+     * @param delay 대기할 시간
+     */
     private void waitBeforeRetry(Duration delay) {
         try {
             Thread.sleep(delay.toMillis());
@@ -332,6 +364,14 @@ public class TourApiClient {
         }
     }
 
+    /**
+     * 지정한 URI로 GET 요청을 보내고 HTTP 오류를 TourAPI 예외로 변환합니다.
+     *
+     * @param operation 로그에 사용할 API 작업명
+     * @param target 로그에 사용할 요청 대상
+     * @param uri 호출할 전체 URI
+     * @return TourAPI 원본 응답 본문
+     */
     private String request(String operation, String target, URI uri) {
         try {
             return restClient.get()
@@ -356,6 +396,7 @@ public class TourApiClient {
      * TourAPI의 HTTP 상태 코드를 애플리케이션 오류 코드로 변환합니다.
      *
      * @param statusCode TourAPI가 반환한 HTTP 상태 코드
+     * @param headers TourAPI가 반환한 HTTP 헤더
      * @return 상태 코드에 대응하는 TourAPI 예외
      */
     private TourApiException createHttpStatusException(HttpStatusCode statusCode, HttpHeaders headers) {
@@ -374,6 +415,12 @@ public class TourApiClient {
         );
     }
 
+    /**
+     * HTTP Retry-After 헤더를 대기시간으로 변환합니다.
+     *
+     * @param value 초 단위 숫자 또는 RFC 1123 형식의 일시
+     * @return 계산한 대기시간 또는 유효한 값이 없으면 {@code null}
+     */
     private Duration parseRetryAfter(String value) {
         if (!StringUtils.hasText(value)) {
             return null;
@@ -420,6 +467,14 @@ public class TourApiClient {
         return URI.create(baseUrl + DETAIL_COMMON_PATH + "?" + query);
     }
 
+    /**
+     * 법정동 지역 목록 조회에 필요한 URI를 생성합니다.
+     *
+     * @param legalRegionCode 시군구 조회 시 사용할 시도 코드
+     * @param pageNumber 조회할 페이지 번호
+     * @param pageSize 페이지당 항목 수
+     * @return 법정동 지역 목록 요청 URI
+     */
     private URI buildLegalDistrictUri(String legalRegionCode, int pageNumber, int pageSize) {
         String query = commonQuery()
                 + "&pageNo=" + pageNumber
@@ -430,6 +485,11 @@ public class TourApiClient {
         return buildUri(LEGAL_DISTRICT_PATH, query);
     }
 
+    /**
+     * 모든 TourAPI 요청에 공통으로 필요한 인증 및 애플리케이션 쿼리를 생성합니다.
+     *
+     * @return 인코딩된 공통 쿼리 문자열
+     */
     private String commonQuery() {
         return "serviceKey=" + encodeQueryParameter(normalizeServiceKey(properties.serviceKey()))
                 + "&MobileOS=" + encodeQueryParameter(properties.mobileOs())
@@ -437,6 +497,13 @@ public class TourApiClient {
                 + "&_type=" + encodeQueryParameter(JSON_RESPONSE_TYPE);
     }
 
+    /**
+     * 설정된 기본 URL에 API 경로와 쿼리를 결합합니다.
+     *
+     * @param path 호출할 API 경로
+     * @param query 인코딩된 쿼리 문자열
+     * @return 호출 가능한 전체 URI
+     */
     private URI buildUri(String path, String query) {
         String baseUrl = properties.baseUrl().endsWith("/")
                 ? properties.baseUrl().substring(0, properties.baseUrl().length() - 1)
@@ -505,14 +572,39 @@ public class TourApiClient {
         }
     }
 
+    /**
+     * 항목이 반드시 존재해야 하는 TourAPI 페이지 응답을 변환합니다.
+     *
+     * @param responseBody TourAPI 원본 응답 본문
+     * @param itemType 항목을 변환할 DTO 타입
+     * @param <T> 페이지 항목 타입
+     * @return 변환한 페이지 응답
+     */
     private <T> TourApiPage<T> parsePage(String responseBody, Class<T> itemType) {
         return parsePage(responseBody, itemType, false);
     }
 
+    /**
+     * 조회 항목이 없어도 정상으로 처리하는 TourAPI 페이지 응답을 변환합니다.
+     *
+     * @param responseBody TourAPI 원본 응답 본문
+     * @param itemType 항목을 변환할 DTO 타입
+     * @param <T> 페이지 항목 타입
+     * @return 변환한 페이지 응답
+     */
     private <T> TourApiPage<T> parsePageAllowEmpty(String responseBody, Class<T> itemType) {
         return parsePage(responseBody, itemType, true);
     }
 
+    /**
+     * TourAPI 원본 JSON을 페이지 DTO로 변환하고 응답 구조와 페이지 값을 검증합니다.
+     *
+     * @param responseBody TourAPI 원본 응답 본문
+     * @param itemType 항목을 변환할 DTO 타입
+     * @param allowEmptyItems 빈 항목 목록을 정상 응답으로 허용할지 여부
+     * @param <T> 페이지 항목 타입
+     * @return 변환과 검증을 마친 페이지 응답
+     */
     private <T> TourApiPage<T> parsePage(
             String responseBody,
             Class<T> itemType,
@@ -553,6 +645,14 @@ public class TourApiClient {
         }
     }
 
+    /**
+     * TourAPI 페이지 응답에서 첫 번째 항목을 변환해 반환합니다.
+     *
+     * @param responseBody TourAPI 원본 응답 본문
+     * @param itemType 항목을 변환할 DTO 타입
+     * @param <T> 반환할 항목 타입
+     * @return 조회된 첫 번째 항목
+     */
     private <T> T parseFirstItem(String responseBody, Class<T> itemType) {
         TourApiPage<T> page = parsePage(responseBody, itemType);
         if (page.items().isEmpty()) {
@@ -561,6 +661,11 @@ public class TourApiClient {
         return page.items().getFirst();
     }
 
+    /**
+     * 빈 항목을 허용하는 페이지 응답의 헤더와 본문 구조를 검증합니다.
+     *
+     * @param tourApiResponse 변환된 TourAPI 표준 응답
+     */
     private void validatePageResponse(TourApiResponse tourApiResponse) {
         if (tourApiResponse == null
                 || tourApiResponse.response() == null
@@ -574,6 +679,12 @@ public class TourApiClient {
         }
     }
 
+    /**
+     * TourAPI 페이지 숫자가 누락되지 않았고 음수가 아닌지 검증합니다.
+     *
+     * @param value 검증할 페이지 관련 값
+     * @return 검증을 통과한 기본형 정수
+     */
     private int requiredPageValue(Integer value) {
         if (value == null || value < 0) {
             throw new TourApiException(RESPONSE_INVALID);
@@ -699,6 +810,12 @@ public class TourApiClient {
         }
     }
 
+    /**
+     * 목록 요청의 페이지 값과 필수 TourAPI 설정을 검증합니다.
+     *
+     * @param pageNumber 조회할 페이지 번호
+     * @param pageSize 페이지당 항목 수
+     */
     private void validateListRequest(int pageNumber, int pageSize) {
         if (pageNumber < 1 || pageSize < 1) {
             throw new TourApiException(RESPONSE_INVALID);

@@ -3,7 +3,7 @@ package triplog.backend.batch.tourapi.scheduler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,26 +18,29 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "tourism-sync.scheduling", name = "enabled", havingValue = "true")
 public class TourismSyncScheduler {
 
-    private final JobLauncher jobLauncher;
+    private final JobOperator jobOperator;
     private final Job regionSyncJob;
     private final Job landmarkSyncJob;
     private final Job festivalSyncJob;
     private final Job tourismSyncFailureRetryJob;
 
     /**
-     * 공용 JobLauncher와 랜드마크 Job을 주입받습니다.
+     * 공용 JobOperator와 TourAPI 동기화 Job을 주입받습니다.
      *
-     * @param jobLauncher Batch Job 실행기
+     * @param jobOperator Batch Job 실행 및 관리 기능
+     * @param regionSyncJob 지역 동기화 Job
      * @param landmarkSyncJob 랜드마크 동기화 Job
+     * @param festivalSyncJob 축제 동기화 Job
+     * @param tourismSyncFailureRetryJob 동기화 실패 이력 재처리 Job
      */
     public TourismSyncScheduler(
-            JobLauncher jobLauncher,
+            JobOperator jobOperator,
             @Qualifier("regionSyncJob") Job regionSyncJob,
             @Qualifier("landmarkSyncJob") Job landmarkSyncJob,
             @Qualifier("festivalSyncJob") Job festivalSyncJob,
             @Qualifier("tourismSyncFailureRetryJob") Job tourismSyncFailureRetryJob
     ) {
-        this.jobLauncher = jobLauncher;
+        this.jobOperator = jobOperator;
         this.regionSyncJob = regionSyncJob;
         this.landmarkSyncJob = landmarkSyncJob;
         this.festivalSyncJob = festivalSyncJob;
@@ -88,9 +91,15 @@ public class TourismSyncScheduler {
         run(tourismSyncFailureRetryJob, "TourAPI 실패 재처리");
     }
 
+    /**
+     * 현재 시각을 고유 파라미터로 사용해 지정한 배치 작업을 실행합니다.
+     *
+     * @param job 실행할 Spring Batch 작업
+     * @param jobName 로그에 표시할 작업 이름
+     */
     private void run(Job job, String jobName) {
         try {
-            jobLauncher.run(
+            jobOperator.start(
                     job,
                     new JobParametersBuilder()
                             .addLong("requestedAt", System.currentTimeMillis())

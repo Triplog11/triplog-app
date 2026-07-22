@@ -63,6 +63,7 @@ public class TourApiException extends RuntimeException {
      *
      * @param errorCode TourAPI 연동 오류 코드
      * @param providerCode TourAPI 또는 HTTP 제공자 오류 코드
+     * @param retryAfter 제공자가 요청한 재시도 대기시간
      * @param cause 오류의 원인이 된 예외
      */
     private TourApiException(

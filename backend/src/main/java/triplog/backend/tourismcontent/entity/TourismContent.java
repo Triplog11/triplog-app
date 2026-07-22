@@ -216,6 +216,12 @@ public class TourismContent {
         this.syncStatus = TourismSyncStatus.INACTIVE_CANDIDATE;
     }
 
+    /**
+     * 외부 관광 콘텐츠 정보와 동기화 완료 시각을 엔티티에 반영합니다.
+     *
+     * @param data 반영할 관광 콘텐츠 동기화 값
+     * @param syncedAt 동기화를 완료한 시각
+     */
     private void apply(TourismContentSyncData data, LocalDateTime syncedAt) {
         this.contentTypeId = data.contentTypeId();
         this.title = data.title();

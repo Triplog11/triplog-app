@@ -125,6 +125,15 @@ public class FestivalSyncFacadeService {
         return new FestivalSyncResult(succeeded, failed, skipped);
     }
 
+    /**
+     * 축제 동기화의 현재 처리 건수와 결과 집계를 로그로 남깁니다.
+     *
+     * @param processed 현재까지 처리한 건수
+     * @param total 전체 처리 대상 건수
+     * @param succeeded 성공 건수
+     * @param failed 실패 건수
+     * @param skipped 변경이 없어 건너뛴 건수
+     */
     private void logProgress(int processed, int total, int succeeded, int failed, int skipped) {
         if (processed % PROGRESS_LOG_INTERVAL == 0 || processed == total) {
             log.info(
@@ -147,6 +156,13 @@ public class FestivalSyncFacadeService {
         synchronizeOne(contentId);
     }
 
+    /**
+     * 조회 기간을 월 단위 구간으로 나누어 축제 목록을 읽고 중복을 제거합니다.
+     *
+     * @param startDate 축제 조회 시작일
+     * @param endDate 축제 조회 종료일
+     * @return contentId를 키로 하는 축제 항목 Map
+     */
     private Map<String, TourApiFestivalItem> readFestivals(LocalDate startDate, LocalDate endDate) {
         Map<String, TourApiFestivalItem> festivals = new LinkedHashMap<>();
         LocalDate windowStartDate = startDate;
@@ -172,6 +188,13 @@ public class FestivalSyncFacadeService {
         return festivals;
     }
 
+    /**
+     * 하나의 날짜 구간에 포함되는 축제 목록을 페이지 끝까지 조회합니다.
+     *
+     * @param startDate 구간 시작일
+     * @param endDate 구간 종료일
+     * @param festivals 조회 결과를 누적할 contentId별 축제 Map
+     */
     private void readFestivalWindow(
             LocalDate startDate,
             LocalDate endDate,
@@ -186,6 +209,12 @@ public class FestivalSyncFacadeService {
         } while (!page.isLastPage());
     }
 
+    /**
+     * 저장된 최종 수정시각을 기준으로 축제 상세정보 재동기화가 필요한지 판별합니다.
+     *
+     * @param festival 변경 여부를 확인할 축제 항목
+     * @return 기존 데이터와 변경이 없으면 {@code true}
+     */
     private boolean isUnchanged(TourApiFestivalItem festival) {
         if (festival.modifiedTime() == null || festival.modifiedTime().isBlank()) {
             return false;
@@ -197,10 +226,20 @@ public class FestivalSyncFacadeService {
                 .orElse(false);
     }
 
+    /**
+     * 축제 목록 항목의 contentId를 기준으로 상세정보를 동기화합니다.
+     *
+     * @param festival 동기화할 축제 목록 항목
+     */
     private void synchronizeOne(TourApiFestivalItem festival) {
         synchronizeOne(festival.contentId());
     }
 
+    /**
+     * 축제 한 건의 공통정보, 소개정보, 이벤트 및 이미지를 동기화합니다.
+     *
+     * @param contentId 동기화할 TourAPI contentId
+     */
     private void synchronizeOne(String contentId) {
         TourApiCommonItem commonItem = tourApiClient.getCommonDetail(contentId);
         if (!FESTIVAL_CONTENT_TYPE_ID.equals(commonItem.contentTypeId())) {
@@ -225,6 +264,12 @@ public class FestivalSyncFacadeService {
                 .toList());
     }
 
+    /**
+     * 지정한 관광 콘텐츠의 전체 이미지 페이지를 조회합니다.
+     *
+     * @param contentId 이미지를 조회할 TourAPI contentId
+     * @return 조회한 전체 이미지 목록
+     */
     private List<TourApiImageItem> readImages(String contentId) {
         List<TourApiImageItem> images = new ArrayList<>();
         int pageNumber = 1;
@@ -237,6 +282,12 @@ public class FestivalSyncFacadeService {
         return images;
     }
 
+    /**
+     * 축제 동기화 예외를 실패 이력으로 기록합니다.
+     *
+     * @param festival 동기화에 실패한 축제 항목
+     * @param exception 발생한 예외
+     */
     private void recordFailure(TourApiFestivalItem festival, RuntimeException exception) {
         String message = exception.getMessage();
         if (message == null || message.isBlank()) {
