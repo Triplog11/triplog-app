@@ -11,6 +11,7 @@ import triplog.backend.fcmtoken.exception.FcmTokenException;
 import triplog.backend.fcmtoken.repository.FcmTokenRepository;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.service.UsersService;
+import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +19,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static triplog.backend.fcmtoken.exception.FcmTokenErrorCode.FCM_TOKEN_ALREADY_REGISTERED;
+import static triplog.backend.fcmtoken.exception.FcmTokenErrorCode.FCM_TOKEN_NOT_FOUND;
 import triplog.backend.users.exception.UsersException;
 import static triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND;
 import static triplog.backend.users.entity.LoginType.GOOGLE;
@@ -58,6 +60,28 @@ class FcmTokenServiceImplTest {
         assertThatThrownBy(() -> service.register(USERS_ID, TOKEN, "ANDROID", "Galaxy"))
                 .isInstanceOf(FcmTokenException.class).extracting("errorCode").isEqualTo(FCM_TOKEN_ALREADY_REGISTERED);
         verify(fcmTokenRepository, never()).save(any());
+    }
+
+    @Test void deletesFcmToken() {
+        FcmToken fcmToken = new FcmToken(user(), TOKEN, "ANDROID", "Galaxy");
+        given(fcmTokenRepository.findByUsersUsersIdAndToken(USERS_ID, TOKEN))
+                .willReturn(Optional.of(fcmToken));
+
+        var response = service.delete(USERS_ID, TOKEN);
+
+        assertThat(response.getIsRegistered()).isFalse();
+        verify(fcmTokenRepository).delete(fcmToken);
+    }
+
+    @Test void rejectsMissingFcmTokenOnDelete() {
+        given(fcmTokenRepository.findByUsersUsersIdAndToken(USERS_ID, TOKEN))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.delete(USERS_ID, TOKEN))
+                .isInstanceOf(FcmTokenException.class)
+                .extracting("errorCode")
+                .isEqualTo(FCM_TOKEN_NOT_FOUND);
+        verify(fcmTokenRepository, never()).delete(any());
     }
 
     private Users user() { return new Users(GOOGLE, "여행자", "profile.png", "user@test.com", null); }
