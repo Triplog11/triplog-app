@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCM 토큰 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {triplog: {50: "#e8fafb", 100: "#d0f4f6", 500: "#10b6c0", 600: "#087f89"}},
+                    fontFamily: {sans: ["Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "system-ui", "sans-serif"]}
+                }
+            }
+        };
+    </script>
+</head>
+<body class="min-h-screen bg-[radial-gradient(circle_at_12%_0%,rgba(16,182,192,0.14),transparent_28%),linear-gradient(180deg,#fff_0%,#f4fbfc_100%)] text-slate-950">
+<main class="mx-auto w-[min(980px,calc(100%_-_36px))] py-8">
+    <header class="mb-5 flex items-center justify-between gap-5 max-md:block">
+        <div class="flex items-center gap-4">
+            <img class="h-[58px] w-[58px] object-contain" src="/images/triplog-logo.png" alt="Triplog">
+            <div>
+                <h1 class="text-[28px] font-black max-sm:text-[23px]">FCM 토큰 테스트</h1>
+                <p class="mt-1 text-sm font-medium text-slate-500">브라우저 토큰 발급부터 백엔드 등록, 메시지 수신까지 확인합니다.</p>
+            </div>
+        </div>
+        <span class="inline-flex min-h-9 items-center rounded-full border border-triplog-500/30 bg-white px-3 text-[13px] font-black text-triplog-600 max-md:mt-3">POST /fcm-tokens</span>
+    </header>
+
+    <section class="rounded-lg border border-slate-200 bg-white/95 p-6 shadow-[0_18px_44px_rgba(22,32,51,0.08)] max-sm:p-4">
+        <div class="grid gap-4">
+            <label class="block">
+                <span class="mb-1.5 block text-[13px] font-black text-slate-500">공개 VAPID Key</span>
+                <input id="vapidKey" class="h-[42px] w-full rounded-md border border-slate-300 bg-slate-50 px-3 font-mono text-[13px] outline-none focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" placeholder="웹 푸시 인증서에서 생성한 키 쌍의 공개 키">
+            </label>
+            <label class="block">
+                <span class="mb-1.5 block text-[13px] font-black text-slate-500">Triplog Access Token</span>
+                <textarea id="accessToken" class="min-h-[92px] w-full resize-y rounded-md border border-slate-300 bg-slate-50 p-3 font-mono text-[13px] outline-none focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" placeholder="Bearer를 제외한 accessToken"></textarea>
+            </label>
+            <label class="block">
+                <span class="mb-1.5 block text-[13px] font-black text-slate-500">디바이스 이름</span>
+                <input id="deviceName" class="h-[42px] w-full rounded-md border border-slate-300 bg-slate-50 px-3 text-[13px] outline-none focus:border-triplog-500 focus:ring-2 focus:ring-triplog-500/20" value="FCM Web Test Browser">
+            </label>
+            <label class="block">
+                <span class="mb-1.5 block text-[13px] font-black text-slate-500">발급된 FCM 토큰</span>
+                <textarea id="fcmToken" class="min-h-[120px] w-full resize-y rounded-md border border-slate-300 bg-slate-50 p-3 font-mono text-[13px] outline-none" readonly></textarea>
+            </label>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-2.5">
+            <button id="issueButton" type="button" class="h-[42px] rounded-md bg-triplog-500 px-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:shadow-lg">1. 토큰 발급</button>
+            <button id="registerButton" type="button" class="h-[42px] rounded-md bg-triplog-50 px-4 text-sm font-black text-triplog-600 transition hover:-translate-y-0.5 hover:bg-triplog-100">2. 백엔드 등록</button>
+            <button id="clearButton" type="button" class="h-[42px] rounded-md bg-slate-100 px-4 text-sm font-black transition hover:bg-slate-200">초기화</button>
+        </div>
+
+        <p id="message" class="min-h-[22px] py-4 text-[13px] font-semibold text-slate-500"></p>
+        <div class="mb-2.5 text-[15px] font-black">실행 로그</div>
+        <textarea id="result" class="min-h-[230px] w-full resize-y rounded-md border border-slate-300 bg-slate-950 p-3 font-mono text-[13px] text-emerald-300 outline-none" readonly></textarea>
+    </section>
+</main>
+
+<script type="module">
+    import {initializeApp} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+    import {getMessaging, getToken, onMessage} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-messaging.js";
+
+    const app = initializeApp({
+        apiKey: "AIzaSyBHS54lB4O1eAqU1qxEH1IU4l_0GRRBUAQ",
+        authDomain: "triplog-75c71.firebaseapp.com",
+        projectId: "triplog-75c71",
+        storageBucket: "triplog-75c71.firebasestorage.app",
+        messagingSenderId: "181905578934",
+        appId: "1:181905578934:web:f2ecf5b0e2e035c2a43f17"
+    });
+    const messaging = getMessaging(app);
+    const vapidKey = document.getElementById("vapidKey");
+    const accessToken = document.getElementById("accessToken");
+    const deviceName = document.getElementById("deviceName");
+    const fcmToken = document.getElementById("fcmToken");
+    const message = document.getElementById("message");
+    const result = document.getElementById("result");
+
+    vapidKey.value = localStorage.getItem("triplogFcmVapidKey") || "";
+    accessToken.value = localStorage.getItem("triplogAccessToken") || "";
+
+    function setMessage(text, type = "") {
+        message.textContent = text;
+        message.className = "min-h-[22px] py-4 text-[13px] font-semibold " +
+            (type === "success" ? "text-emerald-700" : type === "error" ? "text-red-600" : "text-slate-500");
+    }
+
+    function log(label, value) {
+        const content = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+        result.value = `[${new Date().toLocaleTimeString()}] ${label}\n${content}\n\n${result.value}`;
+    }
+
+    async function readBody(response) {
+        const text = await response.text();
+        try { return text ? JSON.parse(text) : null; } catch { return text; }
+    }
+
+    document.getElementById("issueButton").addEventListener("click", async () => {
+        const publicKey = vapidKey.value.trim();
+        if (!publicKey) {
+            setMessage("공개 VAPID Key를 입력하세요.", "error");
+            return;
+        }
+
+        try {
+            setMessage("알림 권한을 요청하고 FCM 토큰을 발급하는 중입니다.");
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") throw new Error(`알림 권한 상태: ${permission}`);
+
+            const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+            const token = await getToken(messaging, {vapidKey: publicKey, serviceWorkerRegistration: registration});
+            if (!token) throw new Error("FCM 토큰을 발급받지 못했습니다.");
+
+            fcmToken.value = token;
+            localStorage.setItem("triplogFcmVapidKey", publicKey);
+            log("FCM 토큰 발급 성공", token);
+            setMessage("FCM 토큰이 발급되었습니다.", "success");
+        } catch (error) {
+            log("FCM 토큰 발급 실패", error.message);
+            setMessage(error.message, "error");
+        }
+    });
+
+    document.getElementById("registerButton").addEventListener("click", async () => {
+        const token = fcmToken.value.trim();
+        const jwt = accessToken.value.trim();
+        const name = deviceName.value.trim();
+        if (!token || !jwt || !name) {
+            setMessage("FCM 토큰, Access Token, 디바이스 이름을 모두 입력하세요.", "error");
+            return;
+        }
+
+        try {
+            setMessage("FCM 토큰을 백엔드에 등록하는 중입니다.");
+            const response = await fetch("/fcm-tokens", {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "Authorization": `Bearer ${jwt}`},
+                body: JSON.stringify({token, deviceType: "WEB", deviceName: name})
+            });
+            const body = await readBody(response);
+            log(`백엔드 등록 응답 (${response.status})`, body);
+            if (!response.ok) throw new Error(body?.message || "FCM 토큰 등록에 실패했습니다.");
+
+            localStorage.setItem("triplogAccessToken", jwt);
+            setMessage("FCM 토큰이 백엔드에 등록되었습니다.", "success");
+        } catch (error) {
+            setMessage(error.message, "error");
+        }
+    });
+
+    document.getElementById("clearButton").addEventListener("click", () => {
+        fcmToken.value = "";
+        result.value = "";
+        setMessage("");
+    });
+
+    onMessage(messaging, (payload) => {
+        log("포그라운드 메시지 수신", payload);
+        setMessage("FCM 메시지를 수신했습니다.", "success");
+    });
+</script>
+</body>
+</html>

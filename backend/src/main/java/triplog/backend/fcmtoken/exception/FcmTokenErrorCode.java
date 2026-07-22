@@ -17,7 +17,12 @@ public enum FcmTokenErrorCode implements BaseErrorCode {
     /**
      * 요청한 FCM 푸시 토큰 정보를 찾을 수 없는 경우 사용합니다.
      */
-    FCM_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM 토큰 정보를 찾을 수 없습니다.");
+    FCM_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM 토큰 정보를 찾을 수 없습니다."),
+
+    /**
+     * 동일한 FCM 토큰이 이미 등록되어 있는 경우 사용합니다.
+     */
+    FCM_TOKEN_ALREADY_REGISTERED(HttpStatus.CONFLICT, "이미 등록된 푸시 토큰입니다.");
 
     /**
      * 클라이언트에 응답할 HTTP 상태 코드입니다.
