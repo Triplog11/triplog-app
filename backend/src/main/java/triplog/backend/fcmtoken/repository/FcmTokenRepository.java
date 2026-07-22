@@ -11,4 +11,12 @@ import triplog.backend.fcmtoken.entity.FcmToken;
  */
 @Repository
 public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
+
+    /**
+     * 동일한 FCM 토큰이 이미 저장되어 있는지 확인합니다.
+     *
+     * @param token 확인할 FCM 토큰
+     * @return 토큰이 존재하면 {@code true}
+     */
+    boolean existsByToken(String token);
 }
