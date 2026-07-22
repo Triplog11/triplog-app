@@ -10,6 +10,14 @@ export class ApiError extends Error {
 
 const NETWORK_ERROR_MESSAGE = '일시적으로 연결이 불안정해요. 잠시 후 다시 시도해 주세요.';
 const SERVER_ERROR_MESSAGE = '서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
+const REQUEST_TIMEOUT_MS = 15000;
+
+let onUnauthorized = null;
+
+/** 401 응답 시 호출될 핸들러 등록 (AuthContext가 세션 정리용으로 사용) */
+export function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler;
+}
 
 /**
  * 백엔드 API 공통 fetch 래퍼.
@@ -20,6 +28,9 @@ export async function request(path, { method = 'GET', body, token } = {}) {
     throw new ApiError(0, 'API 서버 주소가 설정되지 않았어요. .env의 EXPO_PUBLIC_API_URL을 확인해 주세요.');
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   let response;
   try {
     response = await fetch(`${BASE_URL}${path}`, {
@@ -29,10 +40,13 @@ export async function request(path, { method = 'GET', body, token } = {}) {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      signal: controller.signal,
     });
   } catch (error) {
     console.error(`API 요청 실패: ${method} ${path}`, error);
     throw new ApiError(0, NETWORK_ERROR_MESSAGE);
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   let data = null;
@@ -43,6 +57,9 @@ export async function request(path, { method = 'GET', body, token } = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401 && onUnauthorized) {
+      onUnauthorized();
+    }
     const message = data?.message ?? SERVER_ERROR_MESSAGE;
     throw new ApiError(response.status, message);
   }

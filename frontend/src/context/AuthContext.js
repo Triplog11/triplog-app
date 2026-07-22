@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { oauthLogin, submitAdditionalInfo, logoutRequest } from '../api/auth';
+import { setUnauthorizedHandler, ApiError } from '../api/client';
 import { saveTokens, getTokens, clearTokens } from '../utils/tokenStorage';
 
 export const AUTH_STATUS = {
@@ -16,6 +17,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [temporaryToken, setTemporaryToken] = useState(null);
   const tempTokenTimerRef = useRef(null);
+  const statusRef = useRef(status);
+  statusRef.current = status;
 
   // 앱 시작 시 저장된 토큰 복원 (토큰 검증 API 부재 — 존재하면 로그인 상태로 간주, 이후 401 시 로그아웃)
   useEffect(() => {
@@ -43,8 +46,22 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // 로그인 상태에서 액세스 토큰이 만료(401)되면 세션을 정리한다
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      if (statusRef.current !== AUTH_STATUS.LOGGED_IN) return;
+      clearTokens().catch((error) => console.error('토큰 정리 실패:', error));
+      setUser(null);
+      setStatus(AUTH_STATUS.LOGGED_OUT);
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   const applyLoginSuccess = useCallback(async (response) => {
-    const { accessToken, refreshToken, ...profile } = response;
+    const { accessToken, refreshToken, ...profile } = response ?? {};
+    if (!accessToken || !refreshToken) {
+      throw new ApiError(0, '서버 응답이 올바르지 않아요. 잠시 후 다시 시도해 주세요.');
+    }
     await saveTokens({ accessToken, refreshToken });
     setUser(profile);
     setTemporaryToken(null);
@@ -62,6 +79,9 @@ export function AuthProvider({ children }) {
     if (response?.accessToken) {
       await applyLoginSuccess(response);
       return AUTH_STATUS.LOGGED_IN;
+    }
+    if (!response?.temporaryToken) {
+      throw new ApiError(0, '서버 응답이 올바르지 않아요. 잠시 후 다시 시도해 주세요.');
     }
 
     // 신규 회원 — 임시 토큰으로 추가정보 입력 필요 (expiresIn초 후 만료)

@@ -1,5 +1,5 @@
 import * as WebBrowser from 'expo-web-browser';
-import { APP_RETURN_URL, parseRedirectParams } from './redirect';
+import { APP_RETURN_URL, createOAuthState, parseRedirectParams } from './redirect';
 
 const GOOGLE_AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
@@ -18,11 +18,13 @@ export async function getGoogleAuthCode() {
     throw new Error('구글 로그인 설정이 없어요. .env의 EXPO_PUBLIC_GOOGLE_* 값을 확인해 주세요.');
   }
 
+  const state = createOAuthState();
   const authorizeUrl =
     `${GOOGLE_AUTHORIZE_URL}?response_type=code` +
     `&client_id=${encodeURIComponent(CLIENT_ID)}` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
     `&scope=${encodeURIComponent('openid email profile')}` +
+    `&state=${encodeURIComponent(state)}` +
     '&prompt=select_account';
 
   const result = await WebBrowser.openAuthSessionAsync(authorizeUrl, APP_RETURN_URL);
@@ -37,6 +39,9 @@ export async function getGoogleAuthCode() {
   }
   if (!params.code) {
     throw new Error('구글 인가 코드를 받지 못했어요. 다시 시도해 주세요.');
+  }
+  if (params.state !== state) {
+    throw new Error('구글 로그인 검증에 실패했어요. 다시 시도해 주세요.');
   }
 
   return { provider: 'GOOGLE', code: params.code };

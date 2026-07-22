@@ -9,14 +9,14 @@ import {
   Switch,
   ScrollView,
 } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, AUTH_STATUS } from '../../context/AuthContext';
 import CustomText from '../../components/common/CustomText';
 
 const NICKNAME_MIN = 2;
 const NICKNAME_MAX = 12;
 
 export default function NicknameScreen({ navigation }) {
-  const { completeSignup, temporaryToken, resetToLoggedOut } = useAuth();
+  const { completeSignup, temporaryToken, status } = useAuth();
   const [nickname, setNickname] = useState('');
   const [addressDoGun, setAddressDoGun] = useState('');
   const [addressSi, setAddressSi] = useState('');
@@ -25,13 +25,14 @@ export default function NicknameScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
 
   // 임시 토큰 만료(5분) 시 로그인 화면으로 복귀
+  // (가입 성공 시에도 temporaryToken이 비워지므로 LOGGED_IN 전환과는 구분한다)
   useEffect(() => {
-    if (!temporaryToken) {
+    if (!temporaryToken && status !== AUTH_STATUS.LOGGED_IN) {
       Alert.alert('로그인', '로그인 유효 시간이 지났어요. 다시 로그인해 주세요.', [
         { text: '확인', onPress: () => navigation.popToTop() },
       ]);
     }
-  }, [temporaryToken, navigation]);
+  }, [temporaryToken, status, navigation]);
 
   const trimmedNickname = nickname.trim();
   const isNicknameValid =
