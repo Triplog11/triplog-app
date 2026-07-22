@@ -1,0 +1,399 @@
+package triplog.backend.users.service;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import triplog.backend.stats.service.StatsService;
+import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
+import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
+import triplog.backend.users.entity.Users;
+import triplog.backend.users.repository.UsersRepository;
+import java.util.Optional;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static triplog.backend.users.entity.LoginType.GOOGLE;
+import static triplog.backend.users.entity.LoginType.LOCAL;
+
+/**
+ * {@link UsersServiceImpl}의 사용자 인증 정보 조회 및 소셜 사용자 생성 흐름을 검증하는 테스트입니다.
+ */
+@ExtendWith(MockitoExtension.class)
+class UsersServiceImplTest {
+
+    private static final String EMAIL = "user@test.com";
+    private static final String NICKNAME = "여행자";
+    private static final String PASSWORD = "encoded-password";
+    private static final String PROFILE_URL = "https://example.com/profile.png";
+    private static final String DEFAULT_PROFILE_URL = "profile-default.png";
+
+    @Mock
+    private UsersRepository usersRepository;
+
+    @Mock
+    private StatsService statsService;
+
+    private UsersServiceImpl usersService;
+
+    /**
+     * 테스트 대상 서비스를 생성합니다.
+     */
+    @BeforeEach
+    void setUp() {
+        usersService = new UsersServiceImpl(usersRepository, statsService);
+    }
+
+    /**
+     * 이메일과 로그인 타입으로 사용자를 찾으면 인증 정보만 담은 레코드로 변환되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("이메일과 로그인 타입으로 인증 정보를 조회한다")
+    void findAuthInfoByEmailAndLoginType() {
+        // given
+        Users users = new Users(LOCAL, NICKNAME, PROFILE_URL, EMAIL, PASSWORD);
+        given(usersRepository.findByEmailAndLoginType(EMAIL, LOCAL)).willReturn(Optional.of(users));
+
+        // when
+        Optional<UsersAuthInfo> result = usersService.findAuthInfoByEmailAndLoginType(EMAIL, LOCAL);
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().usersId()).isEqualTo(users.getUsersId());
+        assertThat(result.get().nickname()).isEqualTo(NICKNAME);
+        assertThat(result.get().password()).isEqualTo(PASSWORD);
+    }
+
+    /**
+     * 이메일과 로그인 타입에 해당하는 사용자가 없으면 빈 Optional을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("인증 정보 조회 시 사용자가 없으면 빈 값을 반환한다")
+    void findAuthInfoByEmailAndLoginType_Empty() {
+        // given
+        given(usersRepository.findByEmailAndLoginType(EMAIL, LOCAL)).willReturn(Optional.empty());
+
+        // when
+        Optional<UsersAuthInfo> result = usersService.findAuthInfoByEmailAndLoginType(EMAIL, LOCAL);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    /**
+     * 소셜 로그인 추가정보로 신규 사용자를 생성하고 저장된 사용자 요약 정보를 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("소셜 사용자 생성 시 입력한 프로필 URL을 저장한다")
+    void createSocialUser() {
+        // given
+        given(usersRepository.save(any(Users.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        UsersSignupInfo result = usersService.createSocialUser(EMAIL, GOOGLE, NICKNAME, PROFILE_URL);
+
+        // then
+        ArgumentCaptor<Users> usersCaptor = ArgumentCaptor.forClass(Users.class);
+        verify(usersRepository).save(usersCaptor.capture());
+        Users savedUsers = usersCaptor.getValue();
+
+        assertThat(savedUsers.getEmail()).isEqualTo(EMAIL);
+        assertThat(savedUsers.getLoginType()).isEqualTo(GOOGLE);
+        assertThat(savedUsers.getNickname()).isEqualTo(NICKNAME);
+        assertThat(savedUsers.getProfileUrl()).isEqualTo(PROFILE_URL);
+        assertThat(savedUsers.getPassword()).isNull();
+        assertThat(result.usersId()).isEqualTo(savedUsers.getUsersId());
+        assertThat(result.nickname()).isEqualTo(NICKNAME);
+    }
+
+    /**
+     * 프로필 URL이 비어 있으면 기본 프로필 URL을 저장하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("소셜 사용자 생성 시 프로필 URL이 비어 있으면 기본값을 저장한다")
+    void createSocialUser_DefaultProfileUrl() {
+        // given
+        given(usersRepository.save(any(Users.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        UsersSignupInfo result = usersService.createSocialUser(EMAIL, GOOGLE, NICKNAME, " ");
+
+        // then
+        ArgumentCaptor<Users> usersCaptor = ArgumentCaptor.forClass(Users.class);
+        verify(usersRepository).save(usersCaptor.capture());
+        Users savedUsers = usersCaptor.getValue();
+
+        assertThat(savedUsers.getProfileUrl()).isEqualTo(DEFAULT_PROFILE_URL);
+        assertThat(result.usersId()).isEqualTo(savedUsers.getUsersId());
+        assertThat(result.nickname()).isEqualTo(NICKNAME);
+    }
+
+    /**
+     * 로컬 사용자 생성 시 중복 검사를 통과하면 LOCAL 타입과 암호화된 비밀번호로 저장되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로컬 사용자 생성 시 LOCAL 타입과 암호화된 비밀번호로 저장한다")
+    void createLocalUser() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(false);
+        given(usersRepository.save(any(Users.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        UsersSignupInfo result = usersService.createLocalUser(EMAIL, NICKNAME, PROFILE_URL, PASSWORD);
+
+        // then
+        ArgumentCaptor<Users> usersCaptor = ArgumentCaptor.forClass(Users.class);
+        verify(usersRepository).save(usersCaptor.capture());
+        Users savedUsers = usersCaptor.getValue();
+
+        assertThat(savedUsers.getEmail()).isEqualTo(EMAIL);
+        assertThat(savedUsers.getLoginType()).isEqualTo(LOCAL);
+        assertThat(savedUsers.getNickname()).isEqualTo(NICKNAME);
+        assertThat(savedUsers.getProfileUrl()).isEqualTo(PROFILE_URL);
+        assertThat(savedUsers.getPassword()).isEqualTo(PASSWORD);
+        assertThat(result.usersId()).isEqualTo(savedUsers.getUsersId());
+        assertThat(result.nickname()).isEqualTo(NICKNAME);
+    }
+
+    /**
+     * 로컬 사용자 생성 시 프로필 URL이 비어 있으면 기본 프로필 URL로 저장되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로컬 사용자 생성 시 프로필 URL이 비어 있으면 기본값을 저장한다")
+    void createLocalUser_DefaultProfileUrl() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(false);
+        given(usersRepository.save(any(Users.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        UsersSignupInfo result = usersService.createLocalUser(EMAIL, NICKNAME, " ", PASSWORD);
+
+        // then
+        ArgumentCaptor<Users> usersCaptor = ArgumentCaptor.forClass(Users.class);
+        verify(usersRepository).save(usersCaptor.capture());
+        Users savedUsers = usersCaptor.getValue();
+
+        assertThat(savedUsers.getProfileUrl()).isEqualTo(DEFAULT_PROFILE_URL);
+        assertThat(result.usersId()).isEqualTo(savedUsers.getUsersId());
+        assertThat(result.nickname()).isEqualTo(NICKNAME);
+    }
+
+    /**
+     * 로컬 사용자 생성 시 이메일이 중복되면 저장하지 않고 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로컬 사용자 생성 시 이메일이 중복되면 예외가 발생한다")
+    void createLocalUser_DuplicatedEmail() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(true);
+
+        // when
+        // then
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> usersService.createLocalUser(EMAIL, NICKNAME, PROFILE_URL, PASSWORD)
+                )
+                .isInstanceOf(triplog.backend.users.exception.UsersException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.users.exception.UsersErrorCode.EMAIL_DUPLICATED);
+        verify(usersRepository, org.mockito.Mockito.never()).existsByNickname(NICKNAME);
+        verify(usersRepository, org.mockito.Mockito.never()).save(any(Users.class));
+    }
+
+    /**
+     * 로컬 사용자 생성 시 닉네임이 중복되면 저장하지 않고 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("로컬 사용자 생성 시 닉네임이 중복되면 예외가 발생한다")
+    void createLocalUser_DuplicatedNickname() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(true);
+
+        // when
+        // then
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> usersService.createLocalUser(EMAIL, NICKNAME, PROFILE_URL, PASSWORD)
+                )
+                .isInstanceOf(triplog.backend.users.exception.UsersException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.users.exception.UsersErrorCode.NICKNAME_DUPLICATED);
+        verify(usersRepository, org.mockito.Mockito.never()).save(any(Users.class));
+    }
+
+    /**
+     * 닉네임을 사용하는 사용자가 없으면 사용 가능 응답을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("닉네임 중복 확인 시 사용자가 없으면 사용 가능 응답을 반환한다")
+    void checkNickname_Available() {
+        // given
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(false);
+
+        // when
+        NicknameCheckResponse result = usersService.checkNickname(NICKNAME);
+
+        // then
+        assertThat(result.getAvailable()).isTrue();
+        assertThat(result.getMessage()).isEqualTo("사용 가능한 닉네임입니다.");
+    }
+
+    /**
+     * 닉네임을 사용하는 사용자가 있으면 사용 불가 응답을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("닉네임 중복 확인 시 사용자가 있으면 사용 불가 응답을 반환한다")
+    void checkNickname_Unavailable() {
+        // given
+        given(usersRepository.existsByNickname(NICKNAME)).willReturn(true);
+
+        // when
+        NicknameCheckResponse result = usersService.checkNickname(NICKNAME);
+
+        // then
+        assertThat(result.getAvailable()).isFalse();
+        assertThat(result.getMessage()).isEqualTo("중복된 닉네임입니다.");
+    }
+
+    /**
+     * 프로필 수정 요청이 정상 처리되면 사용자 정보와 주소 정보를 함께 응답하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("프로필 수정 요청 시 수정된 프로필 정보를 반환한다")
+    void updateProfile() {
+        // given
+        String usersId = "550e8400-e29b-41d4-a716-446655440000";
+        String updatedNickname = "updated";
+        String updatedProfileUrl = "https://example.com/updated.png";
+        String addressSi = "수원시";
+        String addressDoGun = "경기도";
+        String addressGu = "팔달구";
+        triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest request =
+                new triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest(
+                        updatedNickname,
+                        addressSi,
+                        addressDoGun,
+                        addressGu,
+                        updatedProfileUrl
+                );
+        Users updatedUsers = new Users(GOOGLE, updatedNickname, updatedProfileUrl, EMAIL, null);
+        triplog.backend.stats.service.StatsProfileInfo stats =
+                new triplog.backend.stats.service.StatsProfileInfo(addressSi, addressDoGun, addressGu);
+
+        given(usersRepository.existsByNickname(updatedNickname)).willReturn(false);
+        given(usersRepository.updateProfile(usersId, updatedNickname, updatedProfileUrl)).willReturn(1);
+        given(usersRepository.findById(usersId)).willReturn(Optional.of(updatedUsers));
+        given(statsService.updateProfileAddress(usersId, addressSi, addressDoGun, addressGu)).willReturn(stats);
+
+        // when
+        triplog.backend.users.dto.response.UsersResponse.ProfileUpdateResponse result =
+                usersService.updateProfile(usersId, request);
+
+        // then
+        verify(usersRepository).updateProfile(usersId, updatedNickname, updatedProfileUrl);
+        verify(statsService).updateProfileAddress(usersId, addressSi, addressDoGun, addressGu);
+        assertThat(result.getUsersId()).isEqualTo(updatedUsers.getUsersId());
+        assertThat(result.getNickname()).isEqualTo(updatedNickname);
+        assertThat(result.getAddressSi()).isEqualTo(addressSi);
+        assertThat(result.getAddressDoGun()).isEqualTo(addressDoGun);
+        assertThat(result.getAddressGu()).isEqualTo(addressGu);
+        assertThat(result.getProfileUrl()).isEqualTo(updatedProfileUrl);
+    }
+
+    /**
+     * 프로필 수정 요청의 닉네임이 이미 사용 중이면 수정 쿼리를 실행하지 않고 예외를 발생시키는지 검증합니다.
+     */
+    @Test
+    @DisplayName("프로필 수정 요청 시 닉네임이 중복되면 예외가 발생한다")
+    void updateProfile_DuplicatedNickname() {
+        // given
+        String usersId = "550e8400-e29b-41d4-a716-446655440000";
+        String duplicatedNickname = "duplicated";
+        triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest request =
+                new triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest(
+                        duplicatedNickname,
+                        null,
+                        null,
+                        null,
+                        null
+                );
+        given(usersRepository.existsByNickname(duplicatedNickname)).willReturn(true);
+
+        // when
+        // then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> usersService.updateProfile(usersId, request))
+                .isInstanceOf(triplog.backend.users.exception.UsersException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.users.exception.UsersErrorCode.NICKNAME_DUPLICATED);
+        verify(usersRepository, org.mockito.Mockito.never()).updateProfile(usersId, duplicatedNickname, null);
+    }
+
+    /**
+     * 프로필 수정 대상 사용자가 없으면 사용자 없음 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("프로필 수정 대상 사용자가 없으면 예외가 발생한다")
+    void updateProfile_UserNotFound() {
+        // given
+        String usersId = "550e8400-e29b-41d4-a716-446655440000";
+        String profileUrl = "https://example.com/updated.png";
+        triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest request =
+                new triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest(
+                        null,
+                        null,
+                        null,
+                        null,
+                        profileUrl
+                );
+        given(usersRepository.updateProfile(usersId, null, profileUrl)).willReturn(0);
+
+        // when
+        // then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> usersService.updateProfile(usersId, request))
+                .isInstanceOf(triplog.backend.users.exception.UsersException.class)
+                .extracting("errorCode")
+                .isEqualTo(triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND);
+        verify(usersRepository, org.mockito.Mockito.never()).findById(usersId);
+        verify(statsService, org.mockito.Mockito.never()).updateProfileAddress(usersId, null, null, null);
+    }
+
+    /**
+     * 이메일을 사용하는 사용자가 없으면 사용 가능 응답을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("이메일 중복 확인 시 사용자가 없으면 사용 가능 응답을 반환한다")
+    void checkEmail_Available() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(false);
+
+        // when
+        EmailCheckResponse result = usersService.checkEmail(EMAIL);
+
+        // then
+        assertThat(result.getAvailable()).isTrue();
+        assertThat(result.getMessage()).isEqualTo("사용 가능한 이메일입니다.");
+    }
+
+    /**
+     * 이메일을 사용하는 사용자가 있으면 사용 불가 응답을 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("이메일 중복 확인 시 사용자가 있으면 사용 불가 응답을 반환한다")
+    void checkEmail_Unavailable() {
+        // given
+        given(usersRepository.existsByEmail(EMAIL)).willReturn(true);
+
+        // when
+        EmailCheckResponse result = usersService.checkEmail(EMAIL);
+
+        // then
+        assertThat(result.getAvailable()).isFalse();
+        assertThat(result.getMessage()).isEqualTo("중복된 이메일입니다.");
+    }
+}
+

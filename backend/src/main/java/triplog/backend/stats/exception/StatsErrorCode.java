@@ -1,0 +1,37 @@
+package triplog.backend.stats.exception;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import triplog.backend.common.exception.BaseErrorCode;
+
+/**
+ * 사용자 통계(Stats) 도메인에서 사용하는 에러 코드를 정의하는 Enum입니다.
+ * <p>
+ * 각 에러 코드는 HTTP 상태 코드와 클라이언트에 전달할 메시지를 포함하며,
+ * {@link triplog.backend.common.exception.ErrorResponse}에서 공통 응답 형식으로 변환됩니다.
+ */
+@Getter
+@RequiredArgsConstructor
+public enum StatsErrorCode implements BaseErrorCode {
+
+    /**
+     * 요청한 사용자의 통계 정보를 찾을 수 없을 때 사용하는 에러 코드입니다.
+     */
+    STATS_NOT_FOUND(HttpStatus.NOT_FOUND, "통계 정보를 찾을 수 없습니다."),
+
+    /**
+     * 프로필 수정 대상 통계 정보가 존재하지 않는 경우 사용하는 에러 코드입니다.
+     */
+    PROFILE_UPDATE_TARGET_NOT_FOUND(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
+
+    /**
+     * 클라이언트에 응답할 HTTP 상태 코드입니다.
+     */
+    private final HttpStatus httpStatus;
+
+    /**
+     * 클라이언트에 전달할 에러 메시지입니다.
+     */
+    private final String message;
+}
