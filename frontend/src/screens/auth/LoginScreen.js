@@ -4,6 +4,7 @@ import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { useAuth, AUTH_STATUS } from '../../context/AuthContext';
 import { getNaverAuthCode } from '../../services/oauth/naver';
+import { getGoogleAuthCode } from '../../services/oauth/google';
 
 export default function LoginScreen({ navigation }) {
   const { signInWithProvider } = useAuth();
@@ -43,17 +44,6 @@ export default function LoginScreen({ navigation }) {
       </View>
 
       <View style={styles.buttonContainer}>
-        {/* 카카오 로그인 */}
-        <TouchableOpacity
-          style={[styles.socialButton, styles.kakaoButton]}
-          onPress={() => navigation.navigate('Terms')}
-          activeOpacity={0.85}
-        >
-          <CustomText variant="UI/Button" color="#3A1D1D" style={styles.buttonText}>
-            카카오로 시작하기
-          </CustomText>
-        </TouchableOpacity>
-
         {/* 네이버 로그인 */}
         <TouchableOpacity
           style={[styles.socialButton, styles.naverButton, loadingProvider && styles.socialButtonDisabled]}
@@ -68,8 +58,9 @@ export default function LoginScreen({ navigation }) {
 
         {/* 구글 로그인 */}
         <TouchableOpacity
-          style={[styles.socialButton, styles.googleButton]}
-          onPress={() => navigation.navigate('Terms')}
+          style={[styles.socialButton, styles.googleButton, loadingProvider && styles.socialButtonDisabled]}
+          onPress={() => handleSocialLogin('GOOGLE', getGoogleAuthCode)}
+          disabled={!!loadingProvider}
           activeOpacity={0.85}
         >
           <CustomText variant="UI/Button" color={theme.colors.textBody} style={styles.buttonText}>
@@ -133,9 +124,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
-  },
-  kakaoButton: {
-    backgroundColor: '#FEE500',
   },
   naverButton: {
     backgroundColor: '#03C75A',
