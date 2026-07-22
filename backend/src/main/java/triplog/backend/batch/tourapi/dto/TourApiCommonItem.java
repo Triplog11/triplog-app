@@ -3,6 +3,11 @@ package triplog.backend.batch.tourapi.dto;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import triplog.backend.tourismcontent.service.TourismContentSyncData;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * TourAPI 공통정보 조회(detailCommon2)의 관광 콘텐츠 항목입니다.
@@ -33,4 +38,50 @@ public record TourApiCommonItem(
         @JsonProperty("lclsSystm2") @JsonAlias("lclssystm2") String classificationDepth2,
         @JsonProperty("lclsSystm3") @JsonAlias("lclssystm3") String classificationDepth3
 ) {
+    private static final DateTimeFormatter PROVIDER_DATE_TIME = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+    /**
+     * 외부 응답 문자열을 관광 콘텐츠 도메인의 동기화 입력값으로 변환합니다.
+     *
+     * @return 형식 변환이 끝난 관광 콘텐츠 동기화 입력값
+     * @throws IllegalArgumentException 숫자 또는 날짜 형식이 올바르지 않은 경우
+     */
+    public TourismContentSyncData toSyncData() {
+        return new TourismContentSyncData(
+                contentId,
+                contentTypeId,
+                title,
+                overview,
+                address,
+                detailAddress,
+                zipcode,
+                telephone,
+                homepage,
+                decimal(longitude),
+                decimal(latitude),
+                integer(mapLevel),
+                legalRegionCode,
+                legalDistrictCode,
+                classificationDepth1,
+                classificationDepth2,
+                classificationDepth3,
+                originalImageUrl,
+                thumbnailImageUrl,
+                copyrightType,
+                dateTime(createdTime),
+                dateTime(modifiedTime)
+        );
+    }
+
+    private BigDecimal decimal(String value) {
+        return value == null || value.isBlank() ? null : new BigDecimal(value);
+    }
+
+    private Integer integer(String value) {
+        return value == null || value.isBlank() ? null : Integer.valueOf(value);
+    }
+
+    private LocalDateTime dateTime(String value) {
+        return value == null || value.isBlank() ? null : LocalDateTime.parse(value, PROVIDER_DATE_TIME);
+    }
 }

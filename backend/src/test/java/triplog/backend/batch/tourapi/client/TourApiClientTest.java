@@ -4,17 +4,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 import triplog.backend.batch.tourapi.config.TourApiProperties;
 import triplog.backend.batch.tourapi.dto.TourApiCommonItem;
+import triplog.backend.batch.tourapi.dto.TourApiChangedContentItem;
+import triplog.backend.batch.tourapi.dto.TourApiFestivalItem;
+import triplog.backend.batch.tourapi.dto.TourApiEventIntroItem;
+import triplog.backend.batch.tourapi.dto.TourApiImageItem;
+import triplog.backend.batch.tourapi.dto.TourApiLegalDistrictItem;
+import triplog.backend.batch.tourapi.dto.TourApiPage;
 import triplog.backend.batch.tourapi.exception.TourApiException;
 
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -114,19 +122,131 @@ class TourApiClientTest {
     }
 
     @Test
+    @DisplayName("법정동 시도 코드 페이지를 조회한다")
+    void 법정동_시도_코드_페이지를_조회한다() {
+        // Given
+        String responseBody = createLegalDistrictResponse("""
+                [{"code":"11","name":"서울특별시"},{"code":"26","name":"부산광역시"}]
+                """, 2);
+        mockServer.expect(request -> assertLegalDistrictRequest(request.getURI(), null))
+                .andExpect(method(GET))
+                .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+
+        // When
+        TourApiPage<TourApiLegalDistrictItem> result = tourApiClient.getLegalRegions(1, 100);
+
+        // Then
+        assertThat(result.items()).extracting(TourApiLegalDistrictItem::code)
+                .containsExactly("11", "26");
+        assertThat(result.isLastPage()).isTrue();
+        mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("법정동 시도 코드로 시군구 코드 페이지를 조회한다")
+    void 법정동_시도_코드로_시군구_코드_페이지를_조회한다() {
+        // Given
+        String responseBody = createLegalDistrictResponse(
+                "{\"code\":\"110\",\"name\":\"종로구\"}",
+                1
+        );
+        mockServer.expect(request -> assertLegalDistrictRequest(request.getURI(), "11"))
+                .andExpect(method(GET))
+                .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+
+        // When
+        TourApiPage<TourApiLegalDistrictItem> result = tourApiClient.getLegalDistricts("11", 1, 100);
+
+        // Then
+        assertThat(result.items()).containsExactly(new TourApiLegalDistrictItem("110", "종로구"));
+        mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("기준일 이후 변경된 관광 콘텐츠 페이지를 조회한다")
+    void 기준일_이후_변경된_관광_콘텐츠_페이지를_조회한다() {
+        // Given
+        String responseBody = createLegalDistrictResponse("""
+                [{"contentid":"126508","contenttypeid":"12","modifiedtime":"20260721090000","showflag":"1"}]
+                """, 1);
+        mockServer.expect(request -> {
+                    URI uri = request.getURI();
+                    assertThat(uri.getPath()).isEqualTo("/B551011/KorService2/areaBasedSyncList2");
+                    assertThat(uri.getRawQuery())
+                            .contains("syncStatus=all")
+                            .contains("syncModifiedTime=20260720");
+                })
+                .andExpect(method(GET))
+                .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+
+        // When
+        TourApiPage<TourApiChangedContentItem> result = tourApiClient.getChangedContents(
+                LocalDate.of(2026, 7, 20),
+                1,
+                100
+        );
+
+        // Then
+        assertThat(result.items()).hasSize(1);
+        assertThat(result.items().getFirst().contentId()).isEqualTo("126508");
+        assertThat(result.items().getFirst().hidden()).isFalse();
+        mockServer.verify();
+    }
+
+    @Test
+    @DisplayName("기간 내 축제와 소개정보 및 이미지를 조회한다")
+    void 기간_내_축제와_소개정보_및_이미지를_조회한다() {
+        // Given
+        mockServer.expect(request -> assertThat(request.getURI().getRawQuery())
+                        .contains("eventStartDate=20260621")
+                        .contains("eventEndDate=20270721"))
+                .andExpect(method(GET))
+                .andRespond(withSuccess(createLegalDistrictResponse("""
+                        [{"contentid":"300001","contenttypeid":"15","eventstartdate":"20260720","eventenddate":"20260725"}]
+                        """, 1), MediaType.APPLICATION_JSON));
+        mockServer.expect(request -> assertThat(request.getURI().getPath()).endsWith("/detailIntro2"))
+                .andExpect(method(GET))
+                .andRespond(withSuccess(createLegalDistrictResponse("""
+                        {"contentid":"300001","contenttypeid":"15","eventstartdate":"20260720","eventenddate":"20260725","eventplace":"광장"}
+                        """, 1), MediaType.APPLICATION_JSON));
+        mockServer.expect(request -> assertThat(request.getURI().getPath()).endsWith("/detailImage2"))
+                .andExpect(method(GET))
+                .andRespond(withSuccess(createLegalDistrictResponse("""
+                        [{"serialnum":"1","imgname":"대표","originimgurl":"https://example.com/original.jpg","smallimageurl":"https://example.com/thumb.jpg"}]
+                        """, 1), MediaType.APPLICATION_JSON));
+
+        // When
+        TourApiPage<TourApiFestivalItem> festivals = tourApiClient.searchFestivals(
+                LocalDate.of(2026, 6, 21),
+                LocalDate.of(2027, 7, 21),
+                1,
+                100
+        );
+        TourApiEventIntroItem intro = tourApiClient.getIntroDetail("300001", "15");
+        TourApiPage<TourApiImageItem> images = tourApiClient.getImages("300001", 1, 100);
+
+        // Then
+        assertThat(festivals.items().getFirst().contentTypeId()).isEqualTo("15");
+        assertThat(intro.toSyncData().eventPlace()).isEqualTo("광장");
+        assertThat(images.items().getFirst().toSyncData().externalSerialNumber()).isEqualTo("1");
+        mockServer.verify();
+    }
+
+    @Test
     @DisplayName("TourAPI가 HTTP 429를 반환하면 요청 제한 예외가 발생한다")
     void TourAPI가_HTTP_429를_반환하면_요청_제한_예외가_발생한다() {
         // Given
         mockServer.expect(request -> assertCommonDetailRequest(request.getURI()))
                 .andExpect(method(GET))
-                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                        .header(HttpHeaders.RETRY_AFTER, "7"));
 
         // When
         // Then
         assertThatThrownBy(() -> tourApiClient.getCommonDetail(CONTENT_ID))
                 .isInstanceOf(TourApiException.class)
-                .extracting("errorCode", "providerCode")
-                .containsExactly(REQUEST_LIMIT_EXCEEDED, "HTTP_429");
+                .extracting("errorCode", "providerCode", "retryAfter")
+                .containsExactly(REQUEST_LIMIT_EXCEEDED, "HTTP_429", Duration.ofSeconds(7));
         mockServer.verify();
     }
 
@@ -413,6 +533,22 @@ class TourApiClientTest {
                 .containsEntry("contentId", CONTENT_ID);
     }
 
+    private void assertLegalDistrictRequest(URI uri, String legalRegionCode) {
+        assertThat(uri.getPath()).isEqualTo("/B551011/KorService2/ldongCode2");
+        Map<String, String> queryParameters = Arrays.stream(uri.getRawQuery().split("&"))
+                .map(parameter -> parameter.split("=", 2))
+                .collect(Collectors.toMap(parts -> parts[0], parts -> parts[1]));
+        assertThat(queryParameters)
+                .containsEntry("serviceKey", SERVICE_KEY)
+                .containsEntry("pageNo", "1")
+                .containsEntry("numOfRows", "100");
+        if (legalRegionCode == null) {
+            assertThat(queryParameters).doesNotContainKey("lDongRegnCd");
+        } else {
+            assertThat(queryParameters).containsEntry("lDongRegnCd", legalRegionCode);
+        }
+    }
+
     private String createCommonResponse(String itemJson) {
         return """
                 {
@@ -432,5 +568,21 @@ class TourApiClientTest {
                   }
                 }
                 """.formatted(itemJson);
+    }
+
+    private String createLegalDistrictResponse(String itemJson, int totalCount) {
+        return """
+                {
+                  "response": {
+                    "header": {"resultCode": "0000", "resultMsg": "OK"},
+                    "body": {
+                      "items": {"item": %s},
+                      "numOfRows": 100,
+                      "pageNo": 1,
+                      "totalCount": %d
+                    }
+                  }
+                }
+                """.formatted(itemJson, totalCount);
     }
 }

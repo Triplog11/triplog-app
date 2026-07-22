@@ -13,7 +13,11 @@ import java.net.http.HttpClient;
  * TourAPI 전용 HTTP Client를 구성합니다.
  */
 @Configuration
-@EnableConfigurationProperties(TourApiProperties.class)
+@EnableConfigurationProperties({
+        TourApiProperties.class,
+        TourApiRetryProperties.class,
+        TourismSyncProperties.class
+})
 public class TourApiClientConfig {
 
     /**
