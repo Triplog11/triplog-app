@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth, AUTH_STATUS } from '../../context/AuthContext';
+import { checkNickname } from '../../api/users';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 
@@ -19,6 +20,7 @@ const NICKNAME_MAX = 12;
 export default function NicknameScreen({ navigation }) {
   const { completeSignup, temporaryToken, status } = useAuth();
   const [nickname, setNickname] = useState('');
+  const [nicknameCheck, setNicknameCheck] = useState({ state: 'idle', message: '' });
   const [addressDoGun, setAddressDoGun] = useState('');
   const [addressSi, setAddressSi] = useState('');
   const [addressGu, setAddressGu] = useState('');
@@ -39,7 +41,32 @@ export default function NicknameScreen({ navigation }) {
   const isNicknameValid =
     trimmedNickname.length >= NICKNAME_MIN && trimmedNickname.length <= NICKNAME_MAX;
   const isAddressValid = !!(addressDoGun.trim() && addressSi.trim() && addressGu.trim());
-  const canSubmit = isNicknameValid && isAddressValid && !submitting && !!temporaryToken;
+  const canSubmit =
+    isNicknameValid &&
+    isAddressValid &&
+    nicknameCheck.state === 'available' &&
+    !submitting &&
+    !!temporaryToken;
+
+  const handleNicknameChange = (text) => {
+    setNickname(text);
+    setNicknameCheck({ state: 'idle', message: '' });
+  };
+
+  const handleCheckNickname = async () => {
+    if (!isNicknameValid || nicknameCheck.state === 'checking') return;
+    setNicknameCheck({ state: 'checking', message: '' });
+    try {
+      const result = await checkNickname(trimmedNickname);
+      setNicknameCheck({
+        state: result.available ? 'available' : 'unavailable',
+        message: result.message,
+      });
+    } catch (error) {
+      setNicknameCheck({ state: 'idle', message: '' });
+      Alert.alert('닉네임 확인', error.message);
+    }
+  };
 
   const handleComplete = async () => {
     if (!canSubmit) return;
@@ -75,17 +102,43 @@ export default function NicknameScreen({ navigation }) {
           <CustomText variant="Label/Medium" color={theme.colors.textSecondary} style={styles.label}>
             닉네임
           </CustomText>
-          <TextInput
-            style={styles.input}
-            placeholder={`한글, 영문, 숫자 조합 ${NICKNAME_MIN}~${NICKNAME_MAX}자`}
-            placeholderTextColor={theme.colors.textMuted}
-            value={nickname}
-            onChangeText={setNickname}
-            maxLength={NICKNAME_MAX}
-          />
+          <View style={styles.nicknameRow}>
+            <TextInput
+              style={[styles.input, styles.nicknameInput]}
+              placeholder={`한글, 영문, 숫자 조합 ${NICKNAME_MIN}~${NICKNAME_MAX}자`}
+              placeholderTextColor={theme.colors.textMuted}
+              value={nickname}
+              onChangeText={handleNicknameChange}
+              maxLength={NICKNAME_MAX}
+            />
+            <TouchableOpacity
+              style={[styles.checkBtn, (!isNicknameValid || nicknameCheck.state === 'checking') && styles.checkBtnDisabled]}
+              disabled={!isNicknameValid || nicknameCheck.state === 'checking'}
+              onPress={handleCheckNickname}
+              activeOpacity={0.85}
+            >
+              <CustomText
+                variant="UI/Button/Small"
+                color={isNicknameValid ? '#FFFFFF' : theme.colors.textMuted}
+                style={styles.checkBtnText}
+              >
+                {nicknameCheck.state === 'checking' ? '확인 중...' : '중복확인'}
+              </CustomText>
+            </TouchableOpacity>
+          </View>
           {nickname.length > 0 && !isNicknameValid && (
             <CustomText variant="Body/Small" color={theme.colors.error} style={styles.helperText}>
               닉네임은 {NICKNAME_MIN}자 이상 {NICKNAME_MAX}자 이하로 입력해 주세요.
+            </CustomText>
+          )}
+          {nicknameCheck.state === 'available' && (
+            <CustomText variant="Body/Small" color={theme.colors.success} style={styles.helperText}>
+              ✓ {nicknameCheck.message}
+            </CustomText>
+          )}
+          {nicknameCheck.state === 'unavailable' && (
+            <CustomText variant="Body/Small" color={theme.colors.error} style={styles.helperText}>
+              {nicknameCheck.message} 다른 닉네임으로 시도해 주세요.
             </CustomText>
           )}
 
@@ -195,6 +248,27 @@ const styles = StyleSheet.create({
   },
   helperText: {
     marginTop: 8,
+  },
+  nicknameRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  nicknameInput: {
+    flex: 1,
+  },
+  checkBtn: {
+    width: 92,
+    height: 56,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.rounded.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkBtnDisabled: {
+    backgroundColor: theme.colors.surfaceDim,
+  },
+  checkBtnText: {
+    fontWeight: 'bold',
   },
   addressRow: {
     flexDirection: 'row',
