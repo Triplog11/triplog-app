@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, SafeAreaView, Alert, Image } from 'react-native';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { useAuth, AUTH_STATUS } from '../../context/AuthContext';
@@ -32,9 +32,11 @@ export default function LoginScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.brandContainer}>
-        <View style={styles.logoMark}>
-          <CustomText variant="Display/Large" color={theme.colors.primary} style={styles.logoIcon}>✈</CustomText>
-        </View>
+        <Image
+          source={require('../../../assets/logo.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
         <CustomText variant="Display/Medium" color={theme.colors.textPrimary} style={styles.logoText}>
           TRIP LOG
         </CustomText>
@@ -83,19 +85,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 100,
   },
-  logoMark: {
-    width: 72,
-    height: 72,
-    borderRadius: theme.rounded.full,
-    backgroundColor: theme.colors.blueTint,
-    justifyContent: 'center',
-    alignItems: 'center',
+  logoImage: {
+    width: 112,
+    height: 112,
     marginBottom: theme.spacing.base,
-    borderWidth: 1.5,
-    borderColor: theme.colors.primary,
-  },
-  logoIcon: {
-    lineHeight: 72,
   },
   logoText: {
     fontWeight: '900',
