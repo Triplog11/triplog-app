@@ -43,3 +43,6 @@ yarn-error.*
 # 로컬 참고용 자료 (커밋 금지 - 크리덴셜 스크린샷 포함)
 assets/image*.png
 assets/*.zip
+
+# Firebase 설정 (커밋 여부 팀 결정 전까지 로컬 보관)
+/google-services.json

@@ -18,9 +18,10 @@
     },
     "android": {
       "package": "store.triplog11.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#00ADBA"
       },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
