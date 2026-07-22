@@ -1,9 +1,33 @@
-import React from 'react';
-import { StyleSheet, View, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
+import { useAuth, AUTH_STATUS } from '../../context/AuthContext';
+import { getNaverAuthCode } from '../../services/oauth/naver';
 
 export default function LoginScreen({ navigation }) {
+  const { signInWithProvider } = useAuth();
+  const [loadingProvider, setLoadingProvider] = useState(null);
+
+  const handleSocialLogin = async (providerName, getAuthCode) => {
+    if (loadingProvider) return;
+    setLoadingProvider(providerName);
+    try {
+      const authResult = await getAuthCode();
+      if (!authResult) return; // 사용자가 로그인 창을 닫음
+
+      const nextStatus = await signInWithProvider(authResult);
+      if (nextStatus === AUTH_STATUS.NEEDS_ADDITIONAL_INFO) {
+        navigation.navigate('Terms');
+      }
+      // LOGGED_IN이면 AppNavigator가 자동으로 메인 화면으로 전환
+    } catch (error) {
+      Alert.alert('로그인', error.message);
+    } finally {
+      setLoadingProvider(null);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.brandContainer}>
@@ -32,8 +56,9 @@ export default function LoginScreen({ navigation }) {
 
         {/* 네이버 로그인 */}
         <TouchableOpacity
-          style={[styles.socialButton, styles.naverButton]}
-          onPress={() => navigation.navigate('Terms')}
+          style={[styles.socialButton, styles.naverButton, loadingProvider && styles.socialButtonDisabled]}
+          onPress={() => handleSocialLogin('NAVER', getNaverAuthCode)}
+          disabled={!!loadingProvider}
           activeOpacity={0.85}
         >
           <CustomText variant="UI/Button" color="#FFFFFF" style={styles.buttonText}>
@@ -94,6 +119,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     gap: 12,
     marginBottom: 40,
+  },
+  socialButtonDisabled: {
+    opacity: 0.5,
   },
   socialButton: {
     height: 56,
