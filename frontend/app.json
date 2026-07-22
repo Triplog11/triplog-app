@@ -3,6 +3,7 @@
     "name": "trip_log",
     "slug": "trip_log",
     "version": "1.0.0",
+    "scheme": "triplog",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -36,7 +37,9 @@
         {
           "locationWhenInUsePermission": "현재 위치로 지도를 이동하고 방문 인증을 하기 위해 위치 정보를 사용해요."
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {
