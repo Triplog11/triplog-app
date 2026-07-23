@@ -17,6 +17,7 @@ import CommunityScreen from '../screens/social/CommunityScreen';
 import RankingScreen from '../screens/social/RankingScreen';
 import MyPageScreen from '../screens/mypage/MyPageScreen';
 import BadgeListScreen from '../screens/mypage/BadgeListScreen';
+import ProfileEditScreen from '../screens/mypage/ProfileEditScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -63,7 +64,8 @@ function MyPageStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="MyPageMain" component={MyPageScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="BadgeList" component={BadgeListScreen} options={{ title: '획득 배지 보관함' }} />
+      <Stack.Screen name="BadgeList" component={BadgeListScreen} options={{ title: '뱃지 보관함' }} />
+      <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{ title: '프로필 수정' }} />
     </Stack.Navigator>
   );
 }

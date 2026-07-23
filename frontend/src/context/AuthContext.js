@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useRef, useCallb
 import { oauthLogin, submitAdditionalInfo, logoutRequest } from '../api/auth';
 import { setUnauthorizedHandler, ApiError } from '../api/client';
 import { saveTokens, getTokens, clearTokens } from '../utils/tokenStorage';
+import { saveProfile, getProfile, clearProfile } from '../utils/profileStorage';
 
 export const AUTH_STATUS = {
   BOOTSTRAPPING: 'bootstrapping',
@@ -25,8 +26,9 @@ export function AuthProvider({ children }) {
     let mounted = true;
     (async () => {
       try {
-        const tokens = await getTokens();
+        const [tokens, profile] = await Promise.all([getTokens(), getProfile()]);
         if (!mounted) return;
+        if (tokens) setUser(profile);
         setStatus(tokens ? AUTH_STATUS.LOGGED_IN : AUTH_STATUS.LOGGED_OUT);
       } catch (error) {
         console.error('토큰 복원 실패:', error);
@@ -51,6 +53,7 @@ export function AuthProvider({ children }) {
     setUnauthorizedHandler(() => {
       if (statusRef.current !== AUTH_STATUS.LOGGED_IN) return;
       clearTokens().catch((error) => console.error('토큰 정리 실패:', error));
+      clearProfile().catch((error) => console.error('프로필 정리 실패:', error));
       setUser(null);
       setStatus(AUTH_STATUS.LOGGED_OUT);
     });
@@ -63,6 +66,7 @@ export function AuthProvider({ children }) {
       throw new ApiError(0, '서버 응답이 올바르지 않아요. 잠시 후 다시 시도해 주세요.');
     }
     await saveTokens({ accessToken, refreshToken });
+    await saveProfile(profile);
     setUser(profile);
     setTemporaryToken(null);
     clearTempTokenTimer();
@@ -115,11 +119,21 @@ export function AuthProvider({ children }) {
       console.error('서버 로그아웃 실패:', error);
     } finally {
       await clearTokens();
+      await clearProfile();
       setUser(null);
       setTemporaryToken(null);
       clearTempTokenTimer();
       setStatus(AUTH_STATUS.LOGGED_OUT);
     }
+  }, []);
+
+  /** 프로필 수정 성공 등으로 유저 정보가 바뀌면 상태와 저장소를 함께 갱신 */
+  const updateUser = useCallback(async (partial) => {
+    setUser((prev) => {
+      const next = { ...(prev ?? {}), ...partial };
+      saveProfile(next).catch((error) => console.error('프로필 저장 실패:', error));
+      return next;
+    });
   }, []);
 
   /** 임시 토큰 만료 등으로 가입 플로우를 중단하고 로그인 화면으로 복귀 */
@@ -138,6 +152,7 @@ export function AuthProvider({ children }) {
     completeSignup,
     logout,
     resetToLoggedOut,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -22,7 +22,7 @@ const TAB_META = {
 };
 
 /** 이 스택 화면들이 포커스되면 탭바를 접어서 숨김 */
-const HIDDEN_ROUTES = ['RegionDetail', 'History', 'Detail', 'Community', 'BadgeList'];
+const HIDDEN_ROUTES = ['RegionDetail', 'History', 'Detail', 'Community', 'BadgeList', 'ProfileEdit'];
 
 const BAR_CONTENT_HEIGHT = 56;
 

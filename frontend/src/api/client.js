@@ -20,6 +20,19 @@ export function setUnauthorizedHandler(handler) {
 }
 
 /**
+ * 저장된 액세스 토큰을 붙여 호출하는 인증 API 래퍼.
+ * (토큰 저장소를 늦게 로드해 client ↔ storage 순환 참조를 피한다)
+ */
+export async function authedRequest(path, options = {}) {
+  const { getTokens } = require('../utils/tokenStorage');
+  const tokens = await getTokens();
+  if (!tokens) {
+    throw new ApiError(401, '로그인이 필요합니다.');
+  }
+  return request(path, { ...options, token: tokens.accessToken });
+}
+
+/**
  * 백엔드 API 공통 fetch 래퍼.
  * 에러 응답 포맷 {status, message}를 ApiError로 변환한다.
  */

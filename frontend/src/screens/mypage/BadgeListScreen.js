@@ -1,61 +1,177 @@
-import React from 'react';
-import { StyleSheet, View, FlatList, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  StyleSheet,
+  View,
+  FlatList,
+  SafeAreaView,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import { fetchBadges } from '../../api/badges';
 import CustomText from '../../components/common/CustomText';
+import theme from '../../theme/theme';
 
-const DUMMY_BADGES = [
-  { id: '1', name: '첫 걸음마', desc: '첫 번째 장소 방문 인증 성공', earned: true, icon: '👣', color: '#EFF6FF', textColor: '#1D4ED8' },
-  { id: '2', name: '수원의 지배자', desc: '수원 화성 내 모든 랜드마크 인증', earned: true, icon: '🏯', color: '#FEF3C7', textColor: '#D97706' },
-  { id: '3', name: '올빼미 여행자', desc: '야간 시간대(20시 이후) 인증 완료', earned: true, icon: '🦉', color: '#F3E8FF', textColor: '#7C3AED' },
-  { id: '4', name: '소통왕', desc: '커뮤니티 후기 글 10개 이상 작성', earned: false, icon: '💬', color: '#F1F5F9', textColor: '#64748B' },
-  { id: '5', name: '프로 정복자', desc: '누적 인증 점수 10,000 XP 돌파', earned: false, icon: '👑', color: '#F1F5F9', textColor: '#64748B' },
+const PAGE_SIZE = 20;
+const FILTERS = [
+  { key: 'all', label: '전체', isAcquired: undefined },
+  { key: 'acquired', label: '획득', isAcquired: true },
+  { key: 'locked', label: '미획득', isAcquired: false },
 ];
 
+/** 뱃지 보관함 — GET /badges 실연동 (페이징 + 획득 여부 필터) */
 export default function BadgeListScreen() {
+  const [filterKey, setFilterKey] = useState('all');
+  const [badges, setBadges] = useState([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  const filter = FILTERS.find((f) => f.key === filterKey);
+
+  const load = useCallback(
+    async (nextPage, replace) => {
+      if (nextPage === 0) setLoading(true);
+      setErrorMessage(null);
+      try {
+        const result = await fetchBadges({
+          isAcquired: filter.isAcquired,
+          page: nextPage,
+          size: PAGE_SIZE,
+        });
+        const items = result?.items ?? [];
+        setBadges((prev) => (replace ? items : [...prev, ...items]));
+        setPage(nextPage);
+        setTotalPages(result?.totalPages ?? 0);
+      } catch (error) {
+        // 마지막 페이지 초과(404)는 목록 끝으로 처리
+        if (error.status === 404 && nextPage > 0) {
+          setTotalPages(nextPage);
+        } else {
+          setErrorMessage(error.message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filter.isAcquired],
+  );
+
+  useEffect(() => {
+    setBadges([]);
+    load(0, true);
+  }, [load]);
+
+  const handleEndReached = () => {
+    if (!loading && page + 1 < totalPages) {
+      load(page + 1, false);
+    }
+  };
+
+  const renderBadge = ({ item }) => {
+    const acquired = filter.key === 'acquired' ? true : !!item.acquired;
+    return (
+      <View style={[styles.badgeCard, !acquired && styles.lockedCard]}>
+        <View style={styles.iconWrapper}>
+          {item.badgeUrl ? (
+            <Image
+              source={{ uri: item.badgeUrl }}
+              style={[styles.badgeImage, !acquired && styles.lockedImage]}
+              resizeMode="contain"
+            />
+          ) : (
+            <CustomText style={styles.fallbackIcon}>🏅</CustomText>
+          )}
+        </View>
+        <CustomText
+          variant="Heading/H5"
+          color={acquired ? theme.colors.text : theme.colors.textMuted}
+          style={styles.badgeName}
+        >
+          {item.badgeName}
+        </CustomText>
+        {item.badgeTarget != null && (
+          <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.badgeDesc}>
+            {item.badgeTarget}{item.badgeValue != null ? ` ${item.badgeValue}` : ''}
+          </CustomText>
+        )}
+        <View style={[styles.statusTag, acquired ? styles.earnedTag : styles.lockedTag]}>
+          <CustomText
+            variant="Label/Small"
+            color={acquired ? theme.colors.success : theme.colors.textSecondary}
+            style={styles.statusText}
+          >
+            {acquired ? '획득 완료' : '잠김'}
+          </CustomText>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <CustomText variant="Heading/H2" color="#0F172A">
-          획득 배지 보관함 🏆
-        </CustomText>
-        <CustomText variant="Body/Small" color="#64748B" style={styles.headerSubtitle}>
-          인증 달성 조건에 맞춰 해금한 뱃지들입니다.
-        </CustomText>
+      <View style={styles.filterRow}>
+        {FILTERS.map((f) => {
+          const active = f.key === filterKey;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.filterChip, active && styles.filterChipActive]}
+              onPress={() => setFilterKey(f.key)}
+              activeOpacity={0.8}
+            >
+              <CustomText
+                variant="Label/Medium"
+                color={active ? '#FFFFFF' : theme.colors.textSecondary}
+                style={styles.filterLabel}
+              >
+                {f.label}
+              </CustomText>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      <FlatList 
-        data={DUMMY_BADGES}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.listContainer}
-        columnWrapperStyle={styles.columnWrapper}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <View style={[styles.badgeCard, !item.earned && styles.disabledCard]}>
-            <View style={[styles.iconWrapper, { backgroundColor: item.earned ? item.color : '#F1F5F9' }]}>
-              <CustomText style={styles.badgeIcon}>{item.icon}</CustomText>
-            </View>
-            <CustomText variant="Heading/H5" color="#1E293B" style={styles.badgeName}>
-              {item.name}
+      {loading && badges.length === 0 ? (
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      ) : errorMessage && badges.length === 0 ? (
+        <View style={styles.centerBox}>
+          <CustomText variant="Body/Medium" color={theme.colors.textSecondary} style={styles.emptyText}>
+            {errorMessage}
+          </CustomText>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => load(0, true)} activeOpacity={0.8}>
+            <CustomText variant="UI/Button/Small" color="#FFFFFF" style={styles.retryText}>
+              다시 시도
             </CustomText>
-            <CustomText variant="Body/Small" color="#64748B" style={styles.badgeDesc}>
-              {item.desc}
-            </CustomText>
-            
-            <View style={[
-              styles.statusTag, 
-              item.earned ? styles.earnedTag : styles.lockedTag
-            ]}>
-              <CustomText 
-                variant="Label/Small" 
-                color={item.earned ? '#059669' : '#64748B'}
-                style={styles.statusText}
-              >
-                {item.earned ? '획득 완료' : '잠김'}
-              </CustomText>
-            </View>
-          </View>
-        )}
-      />
+          </TouchableOpacity>
+        </View>
+      ) : badges.length === 0 ? (
+        <View style={styles.centerBox}>
+          <CustomText variant="Body/Medium" color={theme.colors.textSecondary} style={styles.emptyText}>
+            아직 획득한 뱃지가 없어요. 첫 번째 모험을 시작해 보세요!
+          </CustomText>
+        </View>
+      ) : (
+        <FlatList
+          data={badges}
+          keyExtractor={(item) => String(item.badgeId)}
+          numColumns={2}
+          contentContainerStyle={styles.listContainer}
+          columnWrapperStyle={styles.columnWrapper}
+          showsVerticalScrollIndicator={false}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
+          renderItem={renderBadge}
+          ListFooterComponent={
+            page + 1 < totalPages ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} style={styles.footerLoader} />
+            ) : null
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -63,40 +179,70 @@ export default function BadgeListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC', // Slate-50 공통 배경
+    backgroundColor: theme.colors.surface,
   },
-  header: {
+  filterRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
     paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 10,
+    paddingTop: theme.spacing.base,
+    paddingBottom: theme.spacing.sm,
   },
-  headerSubtitle: {
-    marginTop: 6,
-    fontWeight: '500',
+  filterChip: {
+    paddingHorizontal: 16,
+    height: 36,
+    borderRadius: theme.rounded.pill,
+    backgroundColor: theme.colors.canvas,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+  },
+  filterChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  filterLabel: {
+    fontWeight: '600',
+  },
+  centerBox: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    gap: theme.spacing.base,
+  },
+  emptyText: {
+    textAlign: 'center',
+  },
+  retryBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.rounded.pill,
+    paddingHorizontal: 24,
+    height: 40,
+    justifyContent: 'center',
+  },
+  retryText: {
+    fontWeight: 'bold',
   },
   listContainer: {
     paddingHorizontal: 24,
     gap: 16,
     paddingBottom: 40,
+    paddingTop: theme.spacing.sm,
   },
   columnWrapper: {
     justifyContent: 'space-between',
   },
   badgeCard: {
     width: '47%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.canvas,
     padding: 18,
-    borderRadius: 22,
+    borderRadius: theme.rounded.card,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
+    borderColor: theme.colors.border,
   },
-  disabledCard: {
+  lockedCard: {
     opacity: 0.55,
   },
   iconWrapper: {
@@ -106,9 +252,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
+    backgroundColor: theme.colors.surfaceDim,
+    overflow: 'hidden',
   },
-  badgeIcon: {
-    fontSize: 32,
+  badgeImage: {
+    width: 48,
+    height: 48,
+  },
+  lockedImage: {
+    opacity: 0.4,
+  },
+  fallbackIcon: {
+    fontSize: 30,
   },
   badgeName: {
     fontWeight: 'bold',
@@ -117,19 +272,18 @@ const styles = StyleSheet.create({
   badgeDesc: {
     textAlign: 'center',
     marginTop: 6,
-    marginBottom: 14,
-    lineHeight: 16,
   },
   statusTag: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
+    marginTop: 12,
   },
   earnedTag: {
-    backgroundColor: '#ECFDF5', // Light green tag
+    backgroundColor: theme.colors.primarySoft,
   },
   lockedTag: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: theme.colors.surfaceDim,
   },
   statusText: {
     fontWeight: 'bold',
