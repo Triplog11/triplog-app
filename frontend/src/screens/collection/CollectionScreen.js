@@ -1,326 +1,444 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { StyleSheet, View, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
-import { Feather } from '@expo/vector-icons';
-import KoreaMap from './components/KoreaMap';
+import {
+  LANDMARK_CARDS,
+  PROVINCE_LANDMARK_DATA,
+  GRADE_CONFIG,
+  GRADE_ORDER,
+  getProvinceProgress,
+} from '../../data/collection';
+import LandmarkCardItem from './components/LandmarkCardItem';
+import CardDetailModal from './components/CardDetailModal';
+import DaejeonMapTab from './components/DaejeonMapTab';
+import PhotoPlaceholder from './components/PhotoPlaceholder';
 
-const { width } = Dimensions.get('window');
-
-// 더미 지역 데이터 (service-policy.md 기준 예시 반영)
-const initialRegionData = [
-  { id: '1', name: '유성구', province: '대전광역시', progress: 100, completed: true, visitedCount: 3, totalCount: 3, badge: '대전 입문자' },
-  { id: '2', name: '중구', province: '대전광역시', progress: 80, completed: false, visitedCount: 4, totalCount: 5, badge: null },
-  { id: '3', name: '서구', province: '대전광역시', progress: 60, completed: false, visitedCount: 3, totalCount: 5, badge: null },
-  { id: '4', name: '동구', province: '대전광역시', progress: 30, completed: false, visitedCount: 1, totalCount: 3, badge: null },
-  { id: '5', name: '대덕구', province: '대전광역시', progress: 0, completed: false, visitedCount: 0, totalCount: 4, badge: null },
+const SUB_TABS = [
+  { key: 'region', label: '지역 도감', icon: 'location-outline' },
+  { key: 'card', label: '카드 목록', icon: 'book-outline' },
+  { key: 'map', label: '지도', icon: 'globe-outline' },
 ];
 
-export default function CollectionScreen({ navigation }) {
-  const [activeSubTab, setActiveSubTab] = useState('map'); // 'map' | 'list'
-  const [regions, setRegions] = useState(initialRegionData);
+const REGION_FILTERS = [
+  { key: 'all', label: '전체' },
+  { key: 'visited', label: '방문' },
+  { key: 'unvisited', label: '미방문' },
+];
 
-  // 방문 완료 지역 계산
-  const completedCount = regions.filter(r => r.completed).length;
+/** 도감 — 지역 도감 / 카드 목록 / 지도 3개 서브탭 (프로토타입 2 레이아웃, 목데이터) */
+export default function CollectionScreen({ navigation }) {
+  const [subTab, setSubTab] = useState('region');
+  const [selectedCard, setSelectedCard] = useState(null);
+
+  const openVerify = () => {
+    setSelectedCard(null);
+    navigation.navigate('Record');
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 상단 타이틀 영역 */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>나의 여행 도감 🎒</Text>
-        <Text style={styles.headerSub}>
-          전국 시/군/구 중 <Text style={styles.highlightText}>{completedCount}곳</Text>을 완료했어요
-        </Text>
-      </View>
-
-      {/* 서브 탭 스위처 (지도 vs 목록) */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeSubTab === 'map' && styles.activeTabButton]}
-          onPress={() => setActiveSubTab('map')}
-        >
-          <Feather name="map" size={16} color={activeSubTab === 'map' ? theme.colors.primary : theme.colors.textSecondary} />
-          <Text style={[styles.tabButtonText, activeSubTab === 'map' && styles.activeTabButtonText]}>지도 보기</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeSubTab === 'list' && styles.activeTabButton]}
-          onPress={() => setActiveSubTab('list')}
-        >
-          <Feather name="list" size={16} color={activeSubTab === 'list' ? theme.colors.primary : theme.colors.textSecondary} />
-          <Text style={[styles.tabButtonText, activeSubTab === 'list' && styles.activeTabButtonText]}>도감 목록</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 콘텐츠 영역 */}
-      {activeSubTab === 'map' ? (
-        <View style={styles.mapWrapper}>
-          <ScrollView contentContainerStyle={styles.mapScroll} maximumZoomScale={2.5} minimumZoomScale={1} showsVerticalScrollIndicator={false}>
-            <KoreaMap 
-              regions={regions} 
-              onRegionPress={(regionName) => {
-                const found = regions.find(r => r.name === regionName);
-                navigation.navigate('Detail', { 
-                  regionName: regionName, 
-                  progress: found ? found.progress : 0 
-                });
-              }} 
-            />
-          </ScrollView>
-          <View style={styles.mapGuideCard}>
-            <View style={styles.guideItem}>
-              <View style={[styles.guideColor, { backgroundColor: theme.colors.primary }]} />
-              <Text style={styles.guideText}>완료(100%)</Text>
-            </View>
-            <View style={styles.guideItem}>
-              <View style={[styles.guideColor, { backgroundColor: theme.colors.blueTint, borderColor: theme.colors.primary, borderWidth: 1 }]} />
-              <Text style={styles.guideText}>진행 중</Text>
-            </View>
-            <View style={styles.guideItem}>
-              <View style={[styles.guideColor, { backgroundColor: theme.colors.surface }]} />
-              <Text style={styles.guideText}>미방문</Text>
-            </View>
-          </View>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
-          <Text style={styles.sectionTitle}>대전광역시 도감</Text>
-          {regions.map((region) => (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* 서브탭 스위처 */}
+      <View style={styles.tabSwitcher}>
+        {SUB_TABS.map((tab) => {
+          const active = subTab === tab.key;
+          return (
             <TouchableOpacity
-              key={region.id}
-              style={[
-                styles.regionCard,
-                region.completed ? styles.completedCard : region.progress > 0 ? styles.inProgressCard : styles.unvisitedCard
-              ]}
-              onPress={() => navigation.navigate('Detail', { regionName: region.name, progress: region.progress })}
+              key={tab.key}
+              style={[styles.tabButton, active && styles.tabButtonActive]}
+              onPress={() => setSubTab(tab.key)}
+              activeOpacity={0.8}
             >
-              <View style={styles.cardHeader}>
-                <View>
-                  <Text style={styles.regionNameText}>{region.name}</Text>
-                  <Text style={styles.provinceText}>{region.province}</Text>
-                </View>
-                <View style={styles.badgeRow}>
-                  {region.completed && (
-                    <View style={styles.completedBadge}>
-                      <Text style={styles.completedBadgeText}>정복 완료 🏆</Text>
-                    </View>
-                  )}
-                  <Text style={[styles.progressText, region.completed && { color: theme.colors.success }]}>
-                    {region.progress}%
-                  </Text>
-                </View>
-              </View>
+              <Ionicons
+                name={tab.icon}
+                size={13}
+                color={active ? theme.colors.primary : theme.colors.textSecondary}
+              />
+              <CustomText
+                variant="Label/Medium"
+                color={active ? theme.colors.primary : theme.colors.textSecondary}
+                style={styles.tabLabel}
+              >
+                {tab.label}
+              </CustomText>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-              {/* 진행도 게이지 바 */}
-              <View style={styles.progressTrack}>
+      {subTab === 'region' && (
+        <RegionTab onSelectRegion={(key) => navigation.navigate('RegionCollection', { provinceKey: key })} />
+      )}
+      {subTab === 'card' && <CardGridTab onSelectCard={setSelectedCard} />}
+      {subTab === 'map' && (
+        <DaejeonMapTab onRegionPress={() => navigation.navigate('RegionCollection', { provinceKey: '대전' })} />
+      )}
+
+      <CardDetailModal card={selectedCard} onClose={() => setSelectedCard(null)} onVerifyPress={openVerify} />
+    </SafeAreaView>
+  );
+}
+
+/** 지역 도감 탭 — 전체 수집 현황 + 지역 리스트 */
+function RegionTab({ onSelectRegion }) {
+  const [filter, setFilter] = useState('all');
+
+  const provinces = Object.values(PROVINCE_LANDMARK_DATA);
+  const totalCards = LANDMARK_CARDS.length;
+  const collectedCards = LANDMARK_CARDS.filter((c) => c.obtained).length;
+  const visitedProvinces = provinces.filter((p) => getProvinceProgress(p.key).collected > 0);
+
+  const filtered = provinces.filter((p) => {
+    const { collected } = getProvinceProgress(p.key);
+    if (filter === 'visited') return collected > 0;
+    if (filter === 'unvisited') return collected === 0;
+    return true;
+  });
+
+  return (
+    <ScrollView contentContainerStyle={styles.regionScroll} showsVerticalScrollIndicator={false}>
+      {/* 전체 수집 현황 */}
+      <View style={styles.statsCard}>
+        <View style={styles.statsHeader}>
+          <View>
+            <CustomText variant="Heading/H5" color={theme.colors.text} style={styles.bold}>
+              전체 수집 현황
+            </CustomText>
+            <CustomText variant="Caption" color={theme.colors.textSecondary}>
+              {visitedProvinces.length}개 지역 방문
+            </CustomText>
+          </View>
+          <CustomText variant="Heading/H3" color={theme.colors.primary} style={styles.bold}>
+            {collectedCards}/{totalCards}
+          </CustomText>
+        </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.round((collectedCards / totalCards) * 100)}%` }]} />
+        </View>
+        <View style={styles.filterRow}>
+          {REGION_FILTERS.map((f) => {
+            const active = filter === f.key;
+            return (
+              <TouchableOpacity
+                key={f.key}
+                style={[styles.filterBtn, active && styles.filterBtnActive]}
+                onPress={() => setFilter(f.key)}
+                activeOpacity={0.8}
+              >
+                <CustomText
+                  variant="Label/Medium"
+                  color={active ? '#FFFFFF' : theme.colors.textSecondary}
+                  style={styles.bold}
+                >
+                  {f.label}
+                </CustomText>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* 지역 리스트 */}
+      {filtered.map((province) => {
+        const { collected, total, percent } = getProvinceProgress(province.key);
+        const complete = percent === 100;
+        return (
+          <TouchableOpacity
+            key={province.key}
+            style={styles.regionRow}
+            onPress={() => onSelectRegion(province.key)}
+            activeOpacity={0.85}
+          >
+            <View style={styles.regionThumbWrap}>
+              <PhotoPlaceholder icon="map-outline" size={22} />
+              {complete && (
+                <View style={styles.regionThumbOverlay}>
+                  <Ionicons name="trophy" size={16} color="#FFFFFF" />
+                </View>
+              )}
+            </View>
+            <View style={styles.regionInfo}>
+              <View style={styles.regionNameRow}>
+                <CustomText variant="Label/Medium" color={theme.colors.text} style={styles.bold} numberOfLines={1}>
+                  {province.name}
+                </CustomText>
+                {complete && <Ionicons name="trophy" size={12} color={theme.colors.success} />}
+              </View>
+              <CustomText variant="Caption" color={theme.colors.textSecondary} style={styles.regionMeta}>
+                {province.region} · {collected}/{total}장
+              </CustomText>
+              <View style={styles.regionProgressTrack}>
                 <View
                   style={[
-                    styles.progressBar,
-                    {
-                      width: `${region.progress}%`,
-                      backgroundColor: region.completed ? theme.colors.success : theme.colors.primary
-                    }
+                    styles.progressFill,
+                    complete && styles.progressFillComplete,
+                    { width: `${percent}%` },
                   ]}
                 />
               </View>
+            </View>
+            <View style={styles.regionRight}>
+              <CustomText
+                variant="Label/Medium"
+                color={complete ? theme.colors.success : percent > 0 ? theme.colors.primary : theme.colors.textMuted}
+                style={styles.bold}
+              >
+                {percent}%
+              </CustomText>
+              <Ionicons name="chevron-forward" size={14} color={theme.colors.textMuted} />
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
 
-              <View style={styles.cardFooter}>
-                <Text style={styles.footerText}>
-                  방문 랜드마크: {region.visitedCount} / {region.totalCount}
-                </Text>
-                {region.badge && (
-                  <Text style={styles.badgeText}>획득 뱃지: {region.badge}</Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+/** 카드 목록 탭 — 등급 필터 + 2열 카드 그리드 */
+function CardGridTab({ onSelectCard }) {
+  const [gradeFilter, setGradeFilter] = useState('All');
+
+  const cards = useMemo(
+    () => (gradeFilter === 'All' ? LANDMARK_CARDS : LANDMARK_CARDS.filter((c) => c.grade === gradeFilter)),
+    [gradeFilter],
+  );
+  const collectedCount = LANDMARK_CARDS.filter((c) => c.obtained).length;
+
+  return (
+    <FlatList
+      data={cards}
+      keyExtractor={(item) => String(item.id)}
+      numColumns={2}
+      columnWrapperStyle={styles.cardColumnWrap}
+      contentContainerStyle={styles.cardListContent}
+      showsVerticalScrollIndicator={false}
+      renderItem={({ item }) => (
+        <LandmarkCardItem card={item} wishlisted={false} onPress={() => onSelectCard(item)} />
       )}
-    </SafeAreaView>
+      ListHeaderComponent={
+        <View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.gradeFilterRow}>
+            {['All', ...GRADE_ORDER].map((g) => {
+              const active = gradeFilter === g;
+              const config = g === 'All' ? null : GRADE_CONFIG[g];
+              return (
+                <TouchableOpacity
+                  key={g}
+                  style={[
+                    styles.gradeChip,
+                    config && !active && { backgroundColor: config.soft },
+                    active && styles.gradeChipActive,
+                  ]}
+                  onPress={() => setGradeFilter(g)}
+                  activeOpacity={0.8}
+                >
+                  <CustomText
+                    variant="Label/Medium"
+                    color={active ? '#FFFFFF' : config ? config.color : theme.colors.textSecondary}
+                    style={styles.bold}
+                  >
+                    {g === 'All' ? '전체' : g}
+                  </CustomText>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <View style={styles.cardStatsRow}>
+            <CustomText variant="Body/Small" color={theme.colors.textSecondary}>
+              <CustomText variant="Body/Small" color={theme.colors.primary} style={styles.bold}>
+                {collectedCount}
+              </CustomText>
+              {' '}/ {LANDMARK_CARDS.length}장 수집
+            </CustomText>
+            <View style={styles.gradeCountRow}>
+              {GRADE_ORDER.map((g) => {
+                const config = GRADE_CONFIG[g];
+                const count = LANDMARK_CARDS.filter((c) => c.grade === g && c.obtained).length;
+                return (
+                  <View key={g} style={[styles.gradeCountPill, { backgroundColor: config.soft }]}>
+                    <CustomText variant="Caption" color={config.color} style={styles.gradeCountText}>
+                      {g[0]}{count}
+                    </CustomText>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.canvas,
+    backgroundColor: theme.colors.surface,
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: theme.colors.textPrimary,
-  },
-  headerSub: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginTop: 6,
-  },
-  highlightText: {
-    color: theme.colors.primary,
-    fontWeight: '700',
-  },
-  tabContainer: {
+  tabSwitcher: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    marginBottom: 16,
-    gap: 12,
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.base,
+    backgroundColor: theme.colors.surfaceDim,
+    borderRadius: theme.rounded.card,
+    padding: 4,
+    gap: 4,
   },
   tabButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: theme.rounded.full,
-    backgroundColor: theme.colors.surface,
-    gap: 6,
-  },
-  activeTabButton: {
-    backgroundColor: theme.colors.blueWash,
-    borderColor: theme.colors.primary,
-    borderWidth: 1,
-  },
-  tabButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
-  },
-  activeTabButtonText: {
-    color: theme.colors.primary,
-  },
-  mapWrapper: {
     flex: 1,
-    position: 'relative',
-  },
-  mapScroll: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-  },
-  mapGuideCard: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: theme.rounded.sm,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-    gap: 6,
-  },
-  guideItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 9,
+    borderRadius: theme.rounded.md,
   },
-  guideColor: {
-    width: 14,
-    height: 14,
-    borderRadius: 3,
+  tabButtonActive: {
+    backgroundColor: theme.colors.canvas,
   },
-  guideText: {
-    fontSize: 11,
-    color: theme.colors.textBody,
+  tabLabel: {
     fontWeight: '600',
   },
-  listContainer: {
-    paddingHorizontal: 24,
+  bold: {
+    fontWeight: 'bold',
+  },
+  // 지역 도감 탭
+  regionScroll: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.sm,
     paddingBottom: 40,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.textPrimary,
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  regionCard: {
+  statsCard: {
     backgroundColor: theme.colors.canvas,
-    borderRadius: theme.rounded.lg,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: theme.rounded.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    padding: theme.spacing.base,
+    marginBottom: theme.spacing.sm,
   },
-  completedCard: {
-    backgroundColor: theme.colors.canvas,
-    borderColor: theme.colors.success,
-  },
-  inProgressCard: {
-    backgroundColor: theme.colors.blueTint,
-    borderColor: theme.colors.primary,
-  },
-  unvisitedCard: {
-    backgroundColor: theme.colors.canvas,
-    borderColor: theme.colors.border,
-  },
-  cardHeader: {
+  statsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  regionNameText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.textPrimary,
-  },
-  provinceText: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
-  },
-  badgeRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  completedBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  completedBadgeText: {
-    fontSize: 11,
-    color: theme.colors.success,
-    fontWeight: '700',
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: theme.colors.primary,
+    marginBottom: theme.spacing.sm,
   },
   progressTrack: {
-    height: 6,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.surfaceDim,
     overflow: 'hidden',
-    marginBottom: 12,
   },
-  progressBar: {
+  progressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
+    backgroundColor: theme.colors.primary,
   },
-  cardFooter: {
+  progressFillComplete: {
+    backgroundColor: theme.colors.success,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: theme.spacing.base,
+  },
+  filterBtn: {
+    flex: 1,
+    height: 32,
+    borderRadius: theme.rounded.md,
+    backgroundColor: theme.colors.surfaceDim,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterBtnActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  regionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.canvas,
+    borderRadius: theme.rounded.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.sm,
+  },
+  regionThumbWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: theme.rounded.md,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.surfaceDim,
+  },
+  regionThumbOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(18,184,134,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  regionInfo: {
+    flex: 1,
+    gap: 3,
+  },
+  regionNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  regionMeta: {
+    marginBottom: 3,
+  },
+  regionProgressTrack: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: theme.colors.surfaceDim,
+    overflow: 'hidden',
+  },
+  regionRight: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  // 카드 목록 탭
+  cardListContent: {
+    padding: theme.spacing.lg,
+    paddingBottom: 40,
+  },
+  cardColumnWrap: {
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  gradeFilterRow: {
+    gap: 6,
+    paddingBottom: theme.spacing.sm,
+  },
+  gradeChip: {
+    height: 32,
+    borderRadius: theme.rounded.pill,
+    paddingHorizontal: 14,
+    backgroundColor: theme.colors.surfaceDim,
+    justifyContent: 'center',
+  },
+  gradeChipActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  cardStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: theme.spacing.sm,
   },
-  footerText: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
+  gradeCountRow: {
+    flexDirection: 'row',
+    gap: 4,
   },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.primary,
+  gradeCountPill: {
+    borderRadius: theme.rounded.pill,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  gradeCountText: {
+    fontWeight: 'bold',
+    fontSize: 10,
   },
 });
