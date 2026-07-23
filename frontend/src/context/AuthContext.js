@@ -3,6 +3,7 @@ import { oauthLogin, submitAdditionalInfo, logoutRequest } from '../api/auth';
 import { setUnauthorizedHandler, ApiError } from '../api/client';
 import { saveTokens, getTokens, clearTokens } from '../utils/tokenStorage';
 import { saveProfile, getProfile, clearProfile } from '../utils/profileStorage';
+import { registerPushToken, unregisterPushToken } from '../services/pushToken';
 
 export const AUTH_STATUS = {
   BOOTSTRAPPING: 'bootstrapping',
@@ -71,6 +72,8 @@ export function AuthProvider({ children }) {
     setTemporaryToken(null);
     clearTempTokenTimer();
     setStatus(AUTH_STATUS.LOGGED_IN);
+    // 알림은 부가 기능이므로 로그인 흐름을 기다리게 하지 않는다
+    registerPushToken();
   }, []);
 
   /**
@@ -110,6 +113,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
+      await unregisterPushToken();
       const tokens = await getTokens();
       if (tokens) {
         await logoutRequest(tokens.accessToken, tokens.refreshToken);
