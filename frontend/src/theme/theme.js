@@ -1,58 +1,61 @@
 /**
  * TripLog Design System Theme
- * Source of Truth: ./DESIGN.md (oh-my-design, bootstrapped from baemin)
- * TripLog Mint #2AC1BC 단일 액센트 — 카드 기반 구성, 5단계 그림자, 기능 UI는 절제된 모션
+ * Source of Truth: frontend/assets/DESIGN.md (prototype-2026, 서팍 최신 핸드오프)
+ * Blue #368FFF primary + Teal #0ECEDB 액센트 — 보더 우선 평면 UI, 브랜드 로고는 틸(#00ADBA)
  */
 export const theme = {
   colors: {
-    // Brand
-    primary: '#2AC1BC',
-    primaryDark: '#20A8A4',   // pressed
-    primaryLight: '#20C997',
-    primarySoft: '#EAF9F8',   // ghost pressed rgba(42,193,188,0.08) 근사
+    // Brand (--primary 계열)
+    primary: '#368FFF',
+    primaryDark: '#1A85E8',   // pressed / :active
+    primaryLight: '#1AADF6',
+    primarySoft: '#F1F7FF',   // 행 hover, 소프트 버튼 배경
 
     // Accents (semantic)
-    accent: '#12B886',
-    accentMint: '#20C997',
+    accent: '#0ECEDB',        // --accent-mint / --highlight-teal (수집 완료 등)
+    accentMint: '#0ECEDB',
+    accentGold: '#E8B84A',
+    accentOrange: '#FF9600',
+    logoTeal: '#00ADBA',      // 브랜드 로고 배경색 (스플래시/아이콘)
     error: '#FF6B6B',
-    warning: '#FFB347',
+    warning: '#FF9600',
     info: '#74C0FC',
     locationBlue: '#339AF0',  // 현재 위치 마커 (info 계열 강조 톤)
 
     // Surfaces
     white: '#FFFFFF',
     canvas: '#FFFFFF',
-    surface: '#F8F9FA',
-    surfaceDim: '#F1F3F5',
+    surface: '#F5F6F7',
+    surfaceDim: '#EEF0F2',
 
-    // Text (순수 검정 금지 — #212529 사용)
-    text: '#212529',
-    textBody: '#495057',
-    textSecondary: '#868E96',
-    textMuted: '#ADB5BD',
+    // Text (순수 검정 금지 — #1B1D1F 사용)
+    text: '#1B1D1F',
+    textBody: '#1B1D1F',
+    textSecondary: '#7E848A',
+    textMuted: '#ADB1B5',
 
     // Borders
-    border: '#DEE2E6',
-    borderStrong: '#343A40',
+    border: '#E8EAEC',
+    borderStrong: '#D5D8DB',
 
     // Map
-    mapLand: '#D7EDEC',
-    mapLandActive: '#2AC1BC',
+    mapLand: '#E7EEF5',
+    mapLandActive: '#368FFF',
     mapStroke: 'rgba(255,255,255,0.8)',
-    mapOutline: '#8AD5D2',
+    mapOutline: '#A9C4E4',
     mapSea: '#D9EAF6',
     mapNeighbor: '#E7EBEE',
 
-    // Bottom nav (baemin bottom-tab-bar)
-    navActive: '#2AC1BC',
-    navInactive: '#868E96',
+    // Bottom nav (플로팅 pill)
+    navActive: '#368FFF',
+    navInactive: '#7E848A',
 
     // 레거시 별칭 (구 화면 호환 — 리디자인 시 제거)
-    blueTint: '#EAF9F8',
-    blueWash: 'rgba(42,193,188,0.07)',
+    blueTint: '#F1F7FF',
+    blueWash: 'rgba(54,143,255,0.07)',
     success: '#12B886',
-    textPrimary: '#212529',
-    textTertiary: '#ADB5BD',
+    textPrimary: '#1B1D1F',
+    textTertiary: '#ADB1B5',
   },
 
   typography: {
@@ -101,6 +104,9 @@ export const theme = {
     sm: 4,
     md: 8,
     lg: 12,
+    card: 16, // 카드, 메뉴 (--radius-lg)
+    xl: 20,   // 시트 상단 (--radius-xl)
+    cta: 36,  // 풀폭 CTA 버튼 (--radius-5xl)
     search: 20,
     full: 9999,
     pill: 9999, // 레거시 별칭 (구 화면 호환)

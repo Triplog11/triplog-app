@@ -8,3 +8,8 @@ node_modules
 # 로컬 전용 디자인 참고 자료 (Git 제외)
 _design_refs/
 
+# 로컬 전용 설정/크리덴셜 파일 (Git 제외)
+*.local.md
+frontend/scratch/
+.cursor/
+

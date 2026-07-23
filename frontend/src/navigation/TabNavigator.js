@@ -10,13 +10,17 @@ import HomeScreen from '../screens/home/HomeScreen';
 import HistoryScreen from '../screens/home/HistoryScreen';
 import RegionDetailScreen from '../screens/home/RegionDetailScreen';
 import CollectionScreen from '../screens/collection/CollectionScreen';
-import MapScreen from '../screens/map/MapScreen';
-import DetailScreen from '../screens/map/DetailScreen';
+import RegionCollectionScreen from '../screens/collection/RegionCollectionScreen';
 import VisitCertScreen from '../screens/record/VisitCertScreen';
 import CommunityScreen from '../screens/social/CommunityScreen';
 import RankingScreen from '../screens/social/RankingScreen';
 import MyPageScreen from '../screens/mypage/MyPageScreen';
 import BadgeListScreen from '../screens/mypage/BadgeListScreen';
+import ProfileEditScreen from '../screens/mypage/ProfileEditScreen';
+import NotificationScreen from '../screens/mypage/NotificationScreen';
+import TravelLogScreen from '../screens/mypage/TravelLogScreen';
+import VerifyHistoryScreen from '../screens/mypage/VerifyHistoryScreen';
+import WishlistScreen from '../screens/mypage/WishlistScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -36,8 +40,7 @@ function CollectionStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="CollectionMain" component={CollectionScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Detail" component={DetailScreen} options={{ title: '지역 상세' }} />
-      <Stack.Screen name="MapMain" component={MapScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="RegionCollection" component={RegionCollectionScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -63,7 +66,12 @@ function MyPageStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="MyPageMain" component={MyPageScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="BadgeList" component={BadgeListScreen} options={{ title: '획득 배지 보관함' }} />
+      <Stack.Screen name="BadgeList" component={BadgeListScreen} options={{ title: '뱃지 보관함' }} />
+      <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{ title: '프로필 수정' }} />
+      <Stack.Screen name="Notification" component={NotificationScreen} options={{ title: '알림' }} />
+      <Stack.Screen name="TravelLog" component={TravelLogScreen} options={{ title: '여행 기록' }} />
+      <Stack.Screen name="VerifyHistory" component={VerifyHistoryScreen} options={{ title: '인증 내역' }} />
+      <Stack.Screen name="Wishlist" component={WishlistScreen} options={{ title: '찜한 랜드마크' }} />
     </Stack.Navigator>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import CustomText from '../../components/common/CustomText';
+import theme from '../../theme/theme';
 
 export default function TermsScreen({ navigation }) {
   const [checkedAll, setCheckedAll] = useState(false);
@@ -39,10 +40,10 @@ export default function TermsScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <CustomText variant="Heading/H2" color="#0F172A">
+        <CustomText variant="Heading/H2" color={theme.colors.text}>
           약관 동의
         </CustomText>
-        <CustomText variant="Body/Small" color="#64748B" style={styles.headerSubtitle}>
+        <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.headerSubtitle}>
           트립로그 서비스를 이용하기 위해 동의가 필요합니다.
         </CustomText>
       </View>
@@ -57,9 +58,9 @@ export default function TermsScreen({ navigation }) {
           <View style={[styles.circle, checkedAll && styles.circleActive]}>
             {checkedAll && <CustomText variant="Label/Small" color="#FFFFFF">✓</CustomText>}
           </View>
-          <CustomText 
-            variant="UI/Button" 
-            color={checkedAll ? '#1D4ED8' : '#475569'} 
+          <CustomText
+            variant="UI/Button"
+            color={checkedAll ? theme.colors.primaryDark : theme.colors.textSecondary}
             style={styles.allAgreeText}
           >
             전체 약관에 동의합니다
@@ -70,53 +71,53 @@ export default function TermsScreen({ navigation }) {
 
         {/* 이용약관 */}
         <View style={styles.termItem}>
-          <TouchableOpacity 
-            style={styles.termTitleRow} 
+          <TouchableOpacity
+            style={styles.termTitleRow}
             onPress={handleToggleTerm}
             activeOpacity={0.7}
           >
             <View style={[styles.circle, checkedTerms && styles.circleActive]}>
               {checkedTerms && <CustomText variant="Label/Small" color="#FFFFFF">✓</CustomText>}
             </View>
-            <CustomText variant="Heading/H5" color="#1E293B" style={styles.termTitle}>
+            <CustomText variant="Heading/H5" color={theme.colors.text} style={styles.termTitle}>
               [필수] 서비스 이용약관 동의
             </CustomText>
           </TouchableOpacity>
-          <CustomText variant="Body/Small" color="#64748B" style={styles.termDescription}>
+          <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.termDescription}>
             트립로그 서비스 이용규칙 및 회원과 회사 간의 권리 의무 사항을 투명하게 규정합니다. 즐거운 여행 인증 서비스를 즐겨보세요!
           </CustomText>
         </View>
 
         {/* 개인정보 처리방침 */}
         <View style={styles.termItem}>
-          <TouchableOpacity 
-            style={styles.termTitleRow} 
+          <TouchableOpacity
+            style={styles.termTitleRow}
             onPress={handleTogglePrivacy}
             activeOpacity={0.7}
           >
             <View style={[styles.circle, checkedPrivacy && styles.circleActive]}>
               {checkedPrivacy && <CustomText variant="Label/Small" color="#FFFFFF">✓</CustomText>}
             </View>
-            <CustomText variant="Heading/H5" color="#1E293B" style={styles.termTitle}>
+            <CustomText variant="Heading/H5" color={theme.colors.text} style={styles.termTitle}>
               [필수] 개인정보 수집 및 이용 동의
             </CustomText>
           </TouchableOpacity>
-          <CustomText variant="Body/Small" color="#64748B" style={styles.termDescription}>
+          <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.termDescription}>
             소셜 로그인 연동, 경험치 보관 및 뱃지 발급 등 개인화된 서비스 제공을 위해 최소한의 이메일 및 닉네임 정보를 수집합니다.
           </CustomText>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.nextBtn, isNextDisabled && styles.nextBtnDisabled]} 
+        <TouchableOpacity
+          style={[styles.nextBtn, isNextDisabled && styles.nextBtnDisabled]}
           disabled={isNextDisabled}
           onPress={() => navigation.navigate('Nickname')}
           activeOpacity={0.9}
         >
-          <CustomText 
-            variant="UI/Button" 
-            color={isNextDisabled ? '#94A3B8' : '#FFFFFF'} 
+          <CustomText
+            variant="UI/Button"
+            color={isNextDisabled ? theme.colors.textMuted : '#FFFFFF'}
             style={styles.nextText}
           >
             동의하고 다음으로
@@ -130,7 +131,7 @@ export default function TermsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // 순백색 배경
+    backgroundColor: theme.colors.canvas,
   },
   header: {
     paddingHorizontal: 24,
@@ -149,16 +150,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 14,
-    backgroundColor: '#F8FAFC',
+    borderRadius: theme.rounded.card,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
     marginBottom: 20,
     gap: 12,
   },
   allAgreeBtnActive: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
+    backgroundColor: theme.colors.primarySoft,
+    borderColor: theme.colors.primary,
   },
   allAgreeText: {
     fontWeight: 'bold',
@@ -168,32 +169,27 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: '#CBD5E1',
+    borderColor: theme.colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.white,
   },
   circleActive: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#3B82F6',
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: theme.colors.surfaceDim,
     marginBottom: 20,
   },
   termItem: {
     marginBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.white,
     padding: 18,
-    borderRadius: 14,
+    borderRadius: theme.rounded.card,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.02,
-    shadowRadius: 8,
-    elevation: 1,
+    borderColor: theme.colors.border,
   },
   termTitleRow: {
     flexDirection: 'row',
@@ -213,18 +209,13 @@ const styles = StyleSheet.create({
   },
   nextBtn: {
     height: 56,
-    backgroundColor: '#3B82F6',
-    borderRadius: 16,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.rounded.cta,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
   },
   nextBtnDisabled: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: theme.colors.surfaceDim,
     shadowOpacity: 0,
     elevation: 0,
   },
