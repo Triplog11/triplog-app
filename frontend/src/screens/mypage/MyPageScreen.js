@@ -31,6 +31,10 @@ export default function MyPageScreen({ navigation }) {
   const xp = user?.xp ?? 0;
   const xpRatio = Math.min(xp / MOCK_XP_MAX, 1);
 
+  const notifyComingSoon = () => {
+    Alert.alert('준비 중', '곧 만나실 수 있어요.');
+  };
+
   const handleLogout = () => {
     Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
       { text: '취소', style: 'cancel' },
@@ -97,10 +101,14 @@ export default function MyPageScreen({ navigation }) {
             <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.sectionTitle}>
               최근 획득 카드
             </CustomText>
-            <View style={styles.moreRow}>
+            <TouchableOpacity
+              style={styles.moreRow}
+              onPress={() => navigation.navigate('Collection')}
+              activeOpacity={0.7}
+            >
               <CustomText variant="Body/Small" color={theme.colors.textSecondary}>더보기</CustomText>
               <Ionicons name="chevron-forward" size={14} color={theme.colors.textSecondary} />
-            </View>
+            </TouchableOpacity>
           </View>
           <View style={styles.cardRow}>
             {MOCK_RECENT_CARDS.map((card) => (
@@ -119,33 +127,22 @@ export default function MyPageScreen({ navigation }) {
           </View>
         </View>
 
-        <TravelLogSection log={MOCK_TRAVEL_LOG} />
+        <TravelLogSection log={MOCK_TRAVEL_LOG} onMorePress={() => navigation.navigate('TravelLog')} />
 
         {/* 내 활동 */}
         <CustomText variant="Heading/H5" color={theme.colors.text} style={styles.groupLabel}>
           내 활동
         </CustomText>
         <View style={styles.menuContainer}>
-          <TouchableOpacity
-            style={[styles.menuItem, styles.menuItemLast]}
-            onPress={() => navigation.navigate('BadgeList')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuLeft}>
-              <View style={styles.menuIcon}>
-                <Ionicons name="time-outline" size={18} color={theme.colors.primary} />
-              </View>
-              <View>
-                <CustomText variant="Body/Medium" color={theme.colors.text} style={styles.menuTitle}>
-                  활동 히스토리
-                </CustomText>
-                <CustomText variant="Caption" color={theme.colors.textSecondary}>
-                  랜드마크 인증 · 뱃지
-                </CustomText>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
-          </TouchableOpacity>
+          <MenuRow icon="time-outline" label="인증 내역" onPress={() => navigation.navigate('VerifyHistory')} />
+          <MenuRow icon="ribbon-outline" label="뱃지 보관함" onPress={() => navigation.navigate('BadgeList')} />
+          <MenuRow icon="heart-outline" label="찜한 랜드마크" onPress={() => navigation.navigate('Wishlist')} />
+          <MenuRow
+            icon="notifications-outline"
+            label="알림"
+            onPress={() => navigation.navigate('Notification')}
+            last
+          />
         </View>
 
         {/* 설정 (서팍 피그마: 설정 버튼 삭제 → 하단 섹션으로 이동) */}
@@ -153,9 +150,9 @@ export default function MyPageScreen({ navigation }) {
           설정
         </CustomText>
         <View style={styles.menuContainer}>
-          <MenuRow icon="notifications-outline" label="알림 설정" onPress={() => {}} />
-          <MenuRow icon="help-circle-outline" label="도움말 / 문의" onPress={() => {}} />
-          <MenuRow icon="shield-checkmark-outline" label="이용약관 및 개인정보 처리방침" onPress={() => {}} />
+          <MenuRow icon="notifications-outline" label="알림 설정" onPress={notifyComingSoon} />
+          <MenuRow icon="help-circle-outline" label="도움말 / 문의" onPress={notifyComingSoon} />
+          <MenuRow icon="shield-checkmark-outline" label="이용약관 및 개인정보 처리방침" onPress={notifyComingSoon} />
           {/* 버전 정보 — 우측 표시, 클릭 인터랙션 없음 (피그마 디스크립션 #4) */}
           <View style={styles.menuItem}>
             <View style={styles.menuLeft}>
@@ -190,9 +187,13 @@ export default function MyPageScreen({ navigation }) {
   );
 }
 
-function MenuRow({ icon, label, onPress }) {
+function MenuRow({ icon, label, onPress, last }) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.menuItem, last && styles.menuItemLast]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.menuLeft}>
         <View style={styles.menuIcon}>
           <Ionicons name={icon} size={18} color={theme.colors.primary} />

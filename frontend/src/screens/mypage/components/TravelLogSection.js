@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
@@ -12,17 +12,17 @@ import theme from '../../../theme/theme';
  * - 사진 인증 시 우측에 사진 미리보기(+N)
  * - 카드 획득 장소는 장소명 옆에 카드 랭크 아이콘
  */
-export default function TravelLogSection({ log }) {
+export default function TravelLogSection({ log, onMorePress }) {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.title}>
           나의 여행 기록
         </CustomText>
-        <View style={styles.moreRow}>
+        <TouchableOpacity style={styles.moreRow} onPress={onMorePress} activeOpacity={0.7}>
           <CustomText variant="Body/Small" color={theme.colors.textSecondary}>더보기</CustomText>
           <Ionicons name="chevron-forward" size={14} color={theme.colors.textSecondary} />
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.timelineRow}>
