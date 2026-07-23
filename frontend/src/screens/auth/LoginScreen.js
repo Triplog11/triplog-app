@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, SafeAreaView, Alert, Image } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { useAuth, AUTH_STATUS } from '../../context/AuthContext';
 import { getNaverAuthCode } from '../../services/oauth/naver';
 import { getGoogleAuthCode } from '../../services/oauth/google';
+
+/** 네이버 브랜드 가이드 지정색 — 소셜 버튼에만 사용 (서비스 팔레트 아님) */
+const NAVER_GREEN = '#03C75A';
 
 export default function LoginScreen({ navigation }) {
   const { signInWithProvider } = useAuth();
@@ -29,46 +34,74 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const busy = !!loadingProvider;
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.brandContainer}>
-        <Image
-          source={require('../../../assets/logo.png')}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
-        <CustomText variant="Display/Medium" color={theme.colors.textPrimary} style={styles.logoText}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* 브랜드 */}
+      <View style={styles.brand}>
+        <View style={styles.logoTile}>
+          <Image
+            source={require('../../../assets/logo-glyph.png')}
+            style={styles.logoGlyph}
+            resizeMode="contain"
+          />
+        </View>
+        <CustomText variant="Display/Medium" color={theme.colors.text} style={styles.wordmark}>
           TRIP LOG
         </CustomText>
-        <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.subtitle}>
-          여행 기록 및 방문 인증 게이미피케이션
+        <CustomText variant="Body/Medium" color={theme.colors.textSecondary} style={styles.tagline}>
+          발 닿은 곳이 기록이 되고, 기록이 도감이 돼요
         </CustomText>
       </View>
 
-      <View style={styles.buttonContainer}>
-        {/* 네이버 로그인 */}
+      {/* 로그인 */}
+      <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.socialButton, styles.naverButton, loadingProvider && styles.socialButtonDisabled]}
+          style={[styles.socialBtn, styles.naverBtn, busy && styles.btnBusy]}
           onPress={() => handleSocialLogin('NAVER', getNaverAuthCode)}
-          disabled={!!loadingProvider}
-          activeOpacity={0.85}
+          disabled={busy}
+          activeOpacity={0.9}
         >
-          <CustomText variant="UI/Button" color="#FFFFFF" style={styles.buttonText}>
-            네이버로 시작하기
-          </CustomText>
+          {loadingProvider === 'NAVER' ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <View style={styles.iconSlot}>
+                <CustomText variant="UI/Button" color="#FFFFFF" style={styles.naverMark}>
+                  N
+                </CustomText>
+              </View>
+              <CustomText variant="UI/Button" color="#FFFFFF" style={styles.btnLabel}>
+                네이버로 시작하기
+              </CustomText>
+            </>
+          )}
         </TouchableOpacity>
 
-        {/* 구글 로그인 */}
         <TouchableOpacity
-          style={[styles.socialButton, styles.googleButton, loadingProvider && styles.socialButtonDisabled]}
+          style={[styles.socialBtn, styles.googleBtn, busy && styles.btnBusy]}
           onPress={() => handleSocialLogin('GOOGLE', getGoogleAuthCode)}
-          disabled={!!loadingProvider}
-          activeOpacity={0.85}
+          disabled={busy}
+          activeOpacity={0.9}
         >
-          <CustomText variant="UI/Button" color={theme.colors.textBody} style={styles.buttonText}>
-            구글로 시작하기
-          </CustomText>
+          {loadingProvider === 'GOOGLE' ? (
+            <ActivityIndicator size="small" color={theme.colors.textSecondary} />
+          ) : (
+            <>
+              <View style={styles.iconSlot}>
+                <Ionicons name="logo-google" size={18} color={theme.colors.textBody} />
+              </View>
+              <CustomText variant="UI/Button" color={theme.colors.textBody} style={styles.btnLabel}>
+                구글로 시작하기
+              </CustomText>
+            </>
+          )}
         </TouchableOpacity>
+
+        <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.notice}>
+          로그인하면 이용약관과 개인정보 처리방침에 동의하게 됩니다.
+        </CustomText>
       </View>
     </SafeAreaView>
   );
@@ -79,49 +112,70 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.canvas,
     justifyContent: 'space-between',
-    paddingVertical: 50,
   },
-  brandContainer: {
+  brand: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 100,
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.xl,
   },
-  logoImage: {
-    width: 112,
-    height: 112,
-    marginBottom: theme.spacing.base,
-  },
-  logoText: {
-    fontWeight: '900',
-    letterSpacing: 4,
-    color: theme.colors.textPrimary,
-  },
-  subtitle: {
-    marginTop: 12,
-    fontWeight: '500',
-  },
-  buttonContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    gap: 12,
-    marginBottom: 40,
-  },
-  socialButtonDisabled: {
-    opacity: 0.5,
-  },
-  socialButton: {
-    height: 56,
-    borderRadius: theme.rounded.pill,
+  logoTile: {
+    width: 104,
+    height: 104,
+    borderRadius: 30,
+    backgroundColor: theme.colors.logoTeal,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: theme.spacing.lg,
   },
-  naverButton: {
-    backgroundColor: '#03C75A',
+  logoGlyph: {
+    width: 52,
+    height: 62,
   },
-  googleButton: {
+  wordmark: {
+    fontWeight: '900',
+    letterSpacing: 4,
+  },
+  tagline: {
+    marginTop: theme.spacing.md,
+    textAlign: 'center',
+  },
+  footer: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+    gap: theme.spacing.md,
+  },
+  socialBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 56,
+    borderRadius: theme.rounded.cta,
+  },
+  naverBtn: {
+    backgroundColor: NAVER_GREEN,
+  },
+  googleBtn: {
     backgroundColor: theme.colors.canvas,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  buttonText: {
+  btnBusy: {
+    opacity: 0.6,
+  },
+  iconSlot: {
+    width: 22,
+    alignItems: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  naverMark: {
+    fontWeight: '900',
+  },
+  btnLabel: {
     fontWeight: 'bold',
+  },
+  notice: {
+    textAlign: 'center',
+    marginTop: theme.spacing.xs,
   },
 });
