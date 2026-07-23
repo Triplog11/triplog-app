@@ -58,9 +58,9 @@ export default function TermsScreen({ navigation }) {
           <View style={[styles.circle, checkedAll && styles.circleActive]}>
             {checkedAll && <CustomText variant="Label/Small" color="#FFFFFF">✓</CustomText>}
           </View>
-          <CustomText 
-            variant="UI/Button" 
-            color={checkedAll ? theme.colors.primaryDark : theme.colors.textSecondary} 
+          <CustomText
+            variant="UI/Button"
+            color={checkedAll ? theme.colors.primaryDark : theme.colors.textSecondary}
             style={styles.allAgreeText}
           >
             전체 약관에 동의합니다
@@ -71,8 +71,8 @@ export default function TermsScreen({ navigation }) {
 
         {/* 이용약관 */}
         <View style={styles.termItem}>
-          <TouchableOpacity 
-            style={styles.termTitleRow} 
+          <TouchableOpacity
+            style={styles.termTitleRow}
             onPress={handleToggleTerm}
             activeOpacity={0.7}
           >
@@ -90,8 +90,8 @@ export default function TermsScreen({ navigation }) {
 
         {/* 개인정보 처리방침 */}
         <View style={styles.termItem}>
-          <TouchableOpacity 
-            style={styles.termTitleRow} 
+          <TouchableOpacity
+            style={styles.termTitleRow}
             onPress={handleTogglePrivacy}
             activeOpacity={0.7}
           >
@@ -109,15 +109,15 @@ export default function TermsScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.nextBtn, isNextDisabled && styles.nextBtnDisabled]} 
+        <TouchableOpacity
+          style={[styles.nextBtn, isNextDisabled && styles.nextBtnDisabled]}
           disabled={isNextDisabled}
           onPress={() => navigation.navigate('Nickname')}
           activeOpacity={0.9}
         >
-          <CustomText 
-            variant="UI/Button" 
-            color={isNextDisabled ? theme.colors.textMuted : '#FFFFFF'} 
+          <CustomText
+            variant="UI/Button"
+            color={isNextDisabled ? theme.colors.textMuted : '#FFFFFF'}
             style={styles.nextText}
           >
             동의하고 다음으로
