@@ -41,6 +41,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final HandlerExceptionResolver handlerExceptionResolver;
 
+    /**
+     * 토큰 재발급 요청은 액세스 토큰 인증 필터를 적용하지 않습니다.
+     *
+     * @param request 현재 HTTP 요청
+     * @return 토큰 재발급 경로이면 {@code true}, 그 외에는 {@code false}
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return TOKEN_REISSUE_PATH.equals(request.getServletPath());
