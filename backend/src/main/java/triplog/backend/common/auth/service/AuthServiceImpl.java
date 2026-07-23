@@ -1,5 +1,7 @@
 package triplog.backend.common.auth.service;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,11 +13,13 @@ import triplog.backend.common.auth.dto.request.AuthRequest.AdditionalInfoRequest
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LogoutRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.TokenReissueRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LogoutResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.TokenReissueResponse;
 import triplog.backend.common.auth.entity.RefreshToken;
 import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.common.auth.repository.RefreshTokenRepository;
@@ -34,6 +38,8 @@ import static triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccess
 import static triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse.toDto;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOGOUT_TOKEN_NOT_FOUND;
 import static triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse.toDto;
+import static triplog.backend.common.auth.exception.AuthErrorCode.REFRESH_TOKEN_EXPIRED;
+import static triplog.backend.common.auth.exception.AuthErrorCode.REFRESH_TOKEN_INVALID;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_EMAIL_REQUIRED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_LOGIN_FAILED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_PASSWORD_REQUIRED;
@@ -129,6 +135,36 @@ public class AuthServiceImpl implements AuthService {
 
         refreshTokenRepository.deleteById(refreshToken.getUsersId());
         return LogoutResponse.toDto(true);
+    }
+
+    /**
+     * Refresh Token을 검증하고 토큰 쌍을 새로 발급하여 저장된 Refresh Token을 교체합니다.
+     */
+    @Override
+    public TokenReissueResponse reissue(TokenReissueRequest request) {
+        String refreshTokenValue = request.getRefreshToken();
+        UUID usersId;
+
+        try {
+            jwtTokenProvider.validateToken(refreshTokenValue);
+            usersId = jwtTokenProvider.getUsersId(refreshTokenValue);
+        } catch (ExpiredJwtException e) {
+            throw new AuthException(REFRESH_TOKEN_EXPIRED);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new AuthException(REFRESH_TOKEN_INVALID);
+        }
+
+        RefreshToken savedRefreshToken = refreshTokenRepository.findByRefreshToken(refreshTokenValue)
+                .filter(token -> usersId.toString().equals(token.getUsersId()))
+                .orElseThrow(() -> new AuthException(REFRESH_TOKEN_INVALID));
+
+        JwtTokenRecord tokenRecord = jwtTokenProvider.createTokenRecord(usersId);
+        refreshTokenRepository.save(new RefreshToken(savedRefreshToken.getUsersId(), tokenRecord.refreshToken()));
+
+        return TokenReissueResponse.toDto(
+                tokenRecord.accessToken(),
+                tokenRecord.refreshToken()
+        );
     }
 
     /**

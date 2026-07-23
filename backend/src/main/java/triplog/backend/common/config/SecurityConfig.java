@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/oauth",
                                 "/auth/signup",
+                                "/auth/reissue",
                                 "/auth/test-login",
                                 "/login/oauth2/**",
                                 "/auth/additional-info",

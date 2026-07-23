@@ -41,6 +41,21 @@ public enum AuthErrorCode implements BaseErrorCode {
     LOCAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
 
     /**
+     * Access Token의 유효 기간이 만료된 경우 사용합니다.
+     */
+    ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
+
+    /**
+     * Refresh Token이 만료된 경우 사용합니다.
+     */
+    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 만료되었습니다."),
+
+    /**
+     * Refresh Token이 유효하지 않거나 저장된 토큰과 일치하지 않는 경우 사용합니다.
+     */
+    REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
+
+    /**
      * Naver 소셜 로그인 state 값이 비어 있는 경우 사용합니다.
      */
     NAVER_STATE_REQUIRED(HttpStatus.BAD_REQUEST, "Naver 로그인 state 값은 필수입니다."),
