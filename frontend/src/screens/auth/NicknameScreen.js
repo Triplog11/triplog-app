@@ -40,7 +40,8 @@ export default function NicknameScreen({ navigation }) {
   const trimmedNickname = nickname.trim();
   const isNicknameValid =
     trimmedNickname.length >= NICKNAME_MIN && trimmedNickname.length <= NICKNAME_MAX;
-  const isAddressValid = !!(addressDoGun.trim() && addressSi.trim() && addressGu.trim());
+  // 도가 없는 지역(서울·부산 등 광역시)은 도를 비워두고 빈 문자열로 전송한다 (백엔드 정책)
+  const isAddressValid = !!(addressSi.trim() && addressGu.trim());
   const canSubmit =
     isNicknameValid &&
     isAddressValid &&
@@ -148,7 +149,7 @@ export default function NicknameScreen({ navigation }) {
           <View style={styles.addressRow}>
             <TextInput
               style={[styles.input, styles.addressInput]}
-              placeholder="도 (예: 경기도)"
+              placeholder="도 (예: 경기도, 없으면 비워두세요)"
               placeholderTextColor={theme.colors.textMuted}
               value={addressDoGun}
               onChangeText={setAddressDoGun}
