@@ -11,8 +11,6 @@ import HistoryScreen from '../screens/home/HistoryScreen';
 import RegionDetailScreen from '../screens/home/RegionDetailScreen';
 import CollectionScreen from '../screens/collection/CollectionScreen';
 import RegionCollectionScreen from '../screens/collection/RegionCollectionScreen';
-import MapScreen from '../screens/map/MapScreen';
-import DetailScreen from '../screens/map/DetailScreen';
 import VisitCertScreen from '../screens/record/VisitCertScreen';
 import CommunityScreen from '../screens/social/CommunityScreen';
 import RankingScreen from '../screens/social/RankingScreen';
@@ -39,8 +37,6 @@ function CollectionStack() {
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="CollectionMain" component={CollectionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="RegionCollection" component={RegionCollectionScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Detail" component={DetailScreen} options={{ title: '지역 상세' }} />
-      <Stack.Screen name="MapMain" component={MapScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
