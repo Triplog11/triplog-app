@@ -44,9 +44,34 @@ function TabItem({ meta, focused, onPress }) {
   );
 }
 
+function CenterTabItem({ meta, focused, onPress }) {
+  return (
+    <View style={styles.item}>
+      <Pressable
+        onPress={onPress}
+        style={styles.centerButton}
+        accessibilityRole="button"
+        accessibilityState={{ selected: focused }}
+        accessibilityLabel={meta.label}
+      >
+        <Feather name={meta.icon} size={24} color={theme.colors.white} />
+      </Pressable>
+      <Text
+        style={[
+          styles.label,
+          styles.centerLabel,
+          { color: focused ? theme.colors.navActive : theme.colors.navInactive },
+        ]}
+      >
+        {meta.label}
+      </Text>
+    </View>
+  );
+}
+
 /**
- * Bottom Tab Bar — DESIGN.md §4: 흰 배경, 상단 1px #DEE2E6 보더,
- * 홈·도감·인증·랭킹·마이 5탭 전원 같은 행. Active #2AC1BC / Inactive #868E96.
+ * Bottom Tab Bar — prototype-2 레이아웃: 흰 배경 + 상단 1px 보더,
+ * 가운데 인증 탭은 떠 있는 원형 프라이머리 버튼 (탭바 위로 돌출).
  */
 export default function TripLogTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
@@ -86,12 +111,14 @@ export default function TripLogTabBar({ state, navigation }) {
         {state.routes.map((route, index) => {
           const meta = TAB_META[route.name];
           if (!meta) return null;
+          const focused = state.index === index;
+          const Item = route.name === 'Record' ? CenterTabItem : TabItem;
           return (
-            <TabItem
+            <Item
               key={route.key}
               meta={meta}
-              focused={state.index === index}
-              onPress={() => handlePress(route, state.index === index)}
+              focused={focused}
+              onPress={() => handlePress(route, focused)}
             />
           );
         })}
@@ -105,7 +132,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.white,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    overflow: 'hidden',
+    // 가운데 인증 버튼이 탭바 위로 돌출되어야 하므로 clip하지 않는다
+    // (숨김 전환은 height+opacity 동시 애니메이션이라 시각적으로 자연스러움)
+    overflow: 'visible',
   },
   row: {
     height: '100%',
@@ -124,5 +153,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     lineHeight: 13,
+  },
+  centerButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: -24,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  centerLabel: {
+    marginTop: 2,
   },
 });
