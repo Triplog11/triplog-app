@@ -36,7 +36,7 @@ public class FcmToken {
     @JoinColumn(name = "users_id", nullable = false)
     private Users users;
 
-    @Column(name = "token", nullable = false, length = 512)
+    @Column(name = "token", nullable = false, unique = true, length = 512)
     private String token;
 
     @Column(name = "device_type", nullable = false, length = 50)

@@ -34,20 +34,21 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: 백엔드 빌드
-        run: ./gradlew clean build -x test
+        run: ./gradlew clean build tourismBatchJar -x test
 
       - name: 배포용 JAR 이름 변경
         run: |
           mkdir -p deploy
-          cp $(find build/libs -name "*.jar" ! -name "*-plain.jar") deploy/triplog-backend.jar
+          cp $(find build/libs -name "*.jar" ! -name "*-plain.jar" ! -name "*-batch.jar") deploy/triplog-backend.jar
+          cp $(find build/libs -name "*-batch.jar") deploy/triplog-tourism-batch.jar
 
-      - name: JAR 파일 서버 업로드
+      - name: API 및 Batch JAR 서버 업로드
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.BACKEND_SERVER_HOST }}
           username: ${{ secrets.BACKEND_SERVER_USERNAME }}
           key: ${{ secrets.BACKEND_SERVER_SSH_KEY }}
-          source: backend/deploy/triplog-backend.jar
+          source: backend/deploy/triplog-backend.jar,backend/deploy/triplog-tourism-batch.jar
           target: /home/g100dndudvkr/triplog
           strip_components: 2
 
@@ -60,7 +61,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
-          JPA_DDL_AUTO: update
+          JPA_DDL_AUTO: validate
           HIBERNATE_FORMAT_SQL: true
           HIBERNATE_SHOW_SQL: true
           HIBERNATE_DEFAULT_BATCH_FETCH_SIZE: 100
@@ -76,11 +77,12 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_REDIRECT_URI: ${{ secrets.GOOGLE_REDIRECT_URI }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TOUR_API_SERVICE_KEY: ${{ secrets.TOUR_API_SERVICE_KEY }}
         with:
           host: ${{ secrets.BACKEND_SERVER_HOST }}
           username: ${{ secrets.BACKEND_SERVER_USERNAME }}
           key: ${{ secrets.BACKEND_SERVER_SSH_KEY }}
-          envs: SPRING_PROFILES_ACTIVE,DB_URL,DB_USERNAME,DB_PASSWORD,REDIS_HOST,REDIS_PORT,JPA_DDL_AUTO,HIBERNATE_FORMAT_SQL,HIBERNATE_SHOW_SQL,HIBERNATE_DEFAULT_BATCH_FETCH_SIZE,LOG_LEVEL,SWAGGER_UI_PATH,API_DOCS_PATH,JWT_SECRET,JWT_ACCESS_TOKEN_VALIDITY,JWT_REFRESH_TOKEN_VALIDITY,NAVER_CLIENT_ID,NAVER_REDIRECT_URI,NAVER_CLIENT_SECRET,GOOGLE_CLIENT_ID,GOOGLE_REDIRECT_URI,GOOGLE_CLIENT_SECRET
+          envs: SPRING_PROFILES_ACTIVE,DB_URL,DB_USERNAME,DB_PASSWORD,REDIS_HOST,REDIS_PORT,JPA_DDL_AUTO,HIBERNATE_FORMAT_SQL,HIBERNATE_SHOW_SQL,HIBERNATE_DEFAULT_BATCH_FETCH_SIZE,LOG_LEVEL,SWAGGER_UI_PATH,API_DOCS_PATH,JWT_SECRET,JWT_ACCESS_TOKEN_VALIDITY,JWT_REFRESH_TOKEN_VALIDITY,NAVER_CLIENT_ID,NAVER_REDIRECT_URI,NAVER_CLIENT_SECRET,GOOGLE_CLIENT_ID,GOOGLE_REDIRECT_URI,GOOGLE_CLIENT_SECRET,TOUR_API_SERVICE_KEY
           script: |
             mkdir -p /home/g100dndudvkr/triplog
 
@@ -107,6 +109,7 @@ jobs:
             GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
             GOOGLE_REDIRECT_URI=$GOOGLE_REDIRECT_URI
             GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+            TOUR_API_SERVICE_KEY=$TOUR_API_SERVICE_KEY
             EOF
 
             sudo -n /usr/bin/systemctl restart triplog

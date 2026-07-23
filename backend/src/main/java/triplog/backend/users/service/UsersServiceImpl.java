@@ -37,6 +37,19 @@ public class UsersServiceImpl implements UsersService {
     private final StatsService statsService;
 
     /**
+     * 사용자 ID로 사용자를 조회합니다.
+     *
+     * @param usersId 조회할 사용자 ID
+     * @return 조회된 사용자
+     * @throws UsersException 사용자가 존재하지 않는 경우
+     */
+    @Override
+    public Users findById(String usersId) {
+        return usersRepository.findById(usersId)
+                .orElseThrow(() -> new UsersException(USER_NOT_FOUND));
+    }
+
+    /**
      * 이메일과 로그인 타입으로 인증 처리에 필요한 사용자 정보를 조회합니다.
      *
      * @param email 사용자 이메일

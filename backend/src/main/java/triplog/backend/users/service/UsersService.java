@@ -5,6 +5,7 @@ import triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest;
 import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.ProfileUpdateResponse;
+import triplog.backend.users.entity.Users;
 import java.util.Optional;
 
 /**
@@ -13,6 +14,15 @@ import java.util.Optional;
  * 회원 가입, 로그인, 사용자 정보 조회 및 수정 등 사용자 도메인의 비즈니스 기능을 선언합니다.
  */
 public interface UsersService {
+
+    /**
+     * 사용자 ID로 사용자를 조회합니다.
+     *
+     * @param usersId 조회할 사용자 ID
+     * @return 조회된 사용자
+     * @throws triplog.backend.users.exception.UsersException 사용자가 존재하지 않는 경우
+     */
+    Users findById(String usersId);
 
     /**
      * 이메일과 로그인 타입으로 인증 처리에 필요한 사용자 정보를 조회합니다.

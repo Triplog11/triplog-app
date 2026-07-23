@@ -7,6 +7,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,14 +70,65 @@ class AuthTestPageControllerTest {
         String code = "google-code";
 
         // when
-        String viewName = controller.googleCallbackPage(code, model);
+        Object result = controller.googleCallbackPage(code, null, null, model);
 
         // then
-        assertThat(viewName).isEqualTo("auth/login-test");
+        assertThat(result).isEqualTo("auth/login-test");
         assertCommonModelAttributes(model);
         assertThat(model.asMap().get("code")).isEqualTo(code);
         assertThat(model.asMap().get("provider")).isEqualTo("google");
         log.info("Google callback 모델 검증 완료");
+    }
+
+    /**
+     * 앱 Google OAuth callback이 인가 코드와 state를 딥링크로 전달하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("앱 Google callback은 code와 state를 Triplog 딥링크로 전달한다")
+    void 앱_Google_callback은_code와_state를_Triplog_딥링크로_전달한다() {
+        // given
+        Model model = new ExtendedModelMap();
+        String code = "google-code";
+        String state = "app:random-state";
+
+        // when
+        Object result = controller.googleCallbackPage(code, state, null, model);
+
+        // then
+        assertThat(result).isInstanceOf(ResponseEntity.class);
+        ResponseEntity<?> response = (ResponseEntity<?>) result;
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        UriComponents location = UriComponentsBuilder.fromUri(response.getHeaders().getLocation()).build();
+        assertThat(location.getScheme()).isEqualTo("triplog");
+        assertThat(location.getHost()).isEqualTo("oauth");
+        assertThat(location.getQueryParams().getFirst("code")).isEqualTo(code);
+        assertThat(location.getQueryParams().getFirst("state")).isEqualTo(state);
+        assertThat(location.getQueryParams()).containsOnlyKeys("code", "state");
+        assertThat(model.asMap()).isEmpty();
+    }
+
+    /**
+     * 앱 Google 인증 실패 callback이 오류 정보를 딥링크로 전달하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("앱 Google callback은 인증 오류를 Triplog 딥링크로 전달한다")
+    void 앱_Google_callback은_인증_오류를_Triplog_딥링크로_전달한다() {
+        // given
+        Model model = new ExtendedModelMap();
+        String state = "app:random-state";
+        String error = "access_denied";
+
+        // when
+        Object result = controller.googleCallbackPage(null, state, error, model);
+
+        // then
+        ResponseEntity<?> response = (ResponseEntity<?>) result;
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        UriComponents location = UriComponentsBuilder.fromUri(response.getHeaders().getLocation()).build();
+        assertThat(location.getQueryParams().getFirst("state")).isEqualTo(state);
+        assertThat(location.getQueryParams().getFirst("error")).isEqualTo(error);
+        assertThat(location.getQueryParams()).doesNotContainKey("code");
+        assertThat(model.asMap()).isEmpty();
     }
 
     /**
@@ -87,14 +142,65 @@ class AuthTestPageControllerTest {
         String code = "naver-code";
 
         // when
-        String viewName = controller.naverCallbackPage(code, model);
+        Object result = controller.naverCallbackPage(code, "naver-random-state", null, model);
 
         // then
-        assertThat(viewName).isEqualTo("auth/login-test");
+        assertThat(result).isEqualTo("auth/login-test");
         assertCommonModelAttributes(model);
         assertThat(model.asMap().get("code")).isEqualTo(code);
         assertThat(model.asMap().get("provider")).isEqualTo("naver");
         log.info("Naver callback 모델 검증 완료");
+    }
+
+    /**
+     * 앱 Naver OAuth callback이 인가 코드와 state를 딥링크로 전달하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("앱 Naver callback은 code와 state를 Triplog 딥링크로 전달한다")
+    void 앱_Naver_callback은_code와_state를_Triplog_딥링크로_전달한다() {
+        // given
+        Model model = new ExtendedModelMap();
+        String code = "naver-code";
+        String state = "app:random-state";
+
+        // when
+        Object result = controller.naverCallbackPage(code, state, null, model);
+
+        // then
+        assertThat(result).isInstanceOf(ResponseEntity.class);
+        ResponseEntity<?> response = (ResponseEntity<?>) result;
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        UriComponents location = UriComponentsBuilder.fromUri(response.getHeaders().getLocation()).build();
+        assertThat(location.getScheme()).isEqualTo("triplog");
+        assertThat(location.getHost()).isEqualTo("oauth");
+        assertThat(location.getQueryParams().getFirst("code")).isEqualTo(code);
+        assertThat(location.getQueryParams().getFirst("state")).isEqualTo(state);
+        assertThat(location.getQueryParams()).containsOnlyKeys("code", "state");
+        assertThat(model.asMap()).isEmpty();
+    }
+
+    /**
+     * 앱 Naver 인증 실패 callback이 오류 정보를 딥링크로 전달하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("앱 Naver callback은 인증 오류를 Triplog 딥링크로 전달한다")
+    void 앱_Naver_callback은_인증_오류를_Triplog_딥링크로_전달한다() {
+        // given
+        Model model = new ExtendedModelMap();
+        String state = "app:random-state";
+        String error = "access_denied";
+
+        // when
+        Object result = controller.naverCallbackPage(null, state, error, model);
+
+        // then
+        ResponseEntity<?> response = (ResponseEntity<?>) result;
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        UriComponents location = UriComponentsBuilder.fromUri(response.getHeaders().getLocation()).build();
+        assertThat(location.getQueryParams().getFirst("state")).isEqualTo(state);
+        assertThat(location.getQueryParams().getFirst("error")).isEqualTo(error);
+        assertThat(location.getQueryParams()).doesNotContainKey("code");
+        assertThat(model.asMap()).isEmpty();
     }
 
     /**
