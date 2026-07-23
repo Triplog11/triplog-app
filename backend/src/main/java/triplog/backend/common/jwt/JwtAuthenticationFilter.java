@@ -1,5 +1,6 @@
 package triplog.backend.common.jwt;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,9 +16,12 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import triplog.backend.common.auth.exception.AuthException;
 
 import java.io.IOException;
 import java.util.Collections;
+
+import static triplog.backend.common.auth.exception.AuthErrorCode.ACCESS_TOKEN_EXPIRED;
 
 /**
  * 요청의 Authorization 헤더에서 JWT를 추출해 인증 정보를 설정하는 필터입니다.
@@ -33,8 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String ADDITIONAL_INFO_PATH = "/auth/additional-info";
+    private static final String TOKEN_REISSUE_PATH = "/auth/reissue";
     private final JwtTokenProvider jwtTokenProvider;
     private final HandlerExceptionResolver handlerExceptionResolver;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return TOKEN_REISSUE_PATH.equals(request.getServletPath());
+    }
 
     /**
      * JWT 토큰을 검증하고 인증 객체를 SecurityContext에 저장합니다.
@@ -60,6 +70,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
+        } catch (ExpiredJwtException e) {
+            SecurityContextHolder.clearContext();
+            handlerExceptionResolver.resolveException(
+                    request, response, null, new AuthException(ACCESS_TOKEN_EXPIRED));
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
             handlerExceptionResolver.resolveException(request, response, null, e);

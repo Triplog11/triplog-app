@@ -4,10 +4,12 @@ import triplog.backend.common.auth.dto.request.AuthRequest.AdditionalInfoRequest
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LogoutRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.TokenReissueRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LogoutResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.TokenReissueResponse;
 
 /**
  * 인증(Auth) 도메인의 비즈니스 로직을 정의하는 Service 인터페이스입니다.
@@ -40,6 +42,14 @@ public interface AuthService {
      * @return 로그아웃 처리 여부 응답
      */
     LogoutResponse logout(String usersId, LogoutRequest request);
+
+    /**
+     * 유효한 Refresh Token을 검증하고 Access Token과 Refresh Token을 재발급합니다.
+     *
+     * @param request 토큰 재발급 요청 DTO
+     * @return 새 Access Token과 Refresh Token
+     */
+    TokenReissueResponse reissue(TokenReissueRequest request);
 
     /**
      * 회원가입용 임시 토큰에서 인증된 이메일과 추가정보를 기반으로 신규 사용자를 생성합니다.

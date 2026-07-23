@@ -20,11 +20,13 @@ import triplog.backend.common.auth.dto.request.AuthRequest.AdditionalInfoRequest
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LogoutRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.TokenReissueRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LogoutResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.TemporaryTokenResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.TokenReissueResponse;
 import triplog.backend.common.auth.service.AuthService;
 import triplog.backend.common.exception.ErrorResponse;
 
@@ -111,6 +113,44 @@ public class AuthController {
     ) {
         log.info("로그인 요청 수신: provider={}", request.getProvider());
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /**
+     * Refresh Token을 검증하고 Access Token과 Refresh Token을 재발급합니다.
+     *
+     * @param request 토큰 재발급 요청 DTO
+     * @return 새 Access Token과 Refresh Token
+     */
+    @Operation(
+            summary = "토큰 재발급",
+            description = "유효한 Refresh Token을 검증한 뒤 Access Token과 Refresh Token을 모두 새로 발급합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "토큰 재발급에 성공했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = TokenReissueResponse.class),
+                            examples = @ExampleObject(value = "{\"accessToken\":\"new-access-token\",\"refreshToken\":\"new-refresh-token\"}"))),
+            @ApiResponse(responseCode = "400", description = "Refresh Token이 누락되었습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\":400,\"message\":\"리프레시 토큰은 필수입니다.\"}"))),
+            @ApiResponse(responseCode = "401", description = "Refresh Token이 만료되었거나 유효하지 않습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(name = "만료된 토큰", value = "{\"status\":401,\"message\":\"리프레시 토큰이 만료되었습니다.\"}"),
+                                    @ExampleObject(name = "유효하지 않은 토큰", value = "{\"status\":401,\"message\":\"유효하지 않은 리프레시 토큰입니다.\"}")
+                            })),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = "{\"status\":500,\"message\":\"서버 내부 오류가 발생했습니다.\"}")))
+    })
+    @PostMapping("/reissue")
+    public ResponseEntity<TokenReissueResponse> reissue(
+            @Valid @RequestBody TokenReissueRequest request
+    ) {
+        return ResponseEntity.ok(authService.reissue(request));
     }
 
     /**

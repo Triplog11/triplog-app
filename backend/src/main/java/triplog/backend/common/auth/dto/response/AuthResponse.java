@@ -178,4 +178,26 @@ public class AuthResponse {
             return new LogoutResponse(isLogOut);
         }
     }
+
+    /**
+     * Access Token과 Refresh Token 재발급 응답 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "토큰 재발급 응답")
+    public static class TokenReissueResponse {
+
+        @Schema(description = "새로 발급된 서비스 접근 토큰", example = "new-access-token")
+        private String accessToken;
+
+        @Schema(description = "새로 발급된 서비스 갱신 토큰", example = "new-refresh-token")
+        private String refreshToken;
+
+        public static TokenReissueResponse toDto(
+                String accessToken,
+                String refreshToken
+        ) {
+            return new TokenReissueResponse(accessToken, refreshToken);
+        }
+    }
 }

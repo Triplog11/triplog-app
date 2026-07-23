@@ -137,4 +137,18 @@ public class AuthRequest {
         @Schema(description = "로그아웃 대상 Refresh Token", example = "refresh-token-value")
         private String refreshToken;
     }
+
+    /**
+     * 토큰 재발급 요청 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "토큰 재발급 요청")
+    public static class TokenReissueRequest {
+
+        @NotBlank(message = "리프레시 토큰은 필수입니다.")
+        @Schema(description = "토큰 재발급에 사용할 Refresh Token", example = "refresh-token-value")
+        private String refreshToken;
+    }
 }

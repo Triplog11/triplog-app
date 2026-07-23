@@ -11,9 +11,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import triplog.backend.common.auth.dto.request.AuthRequest.LoginRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.LogoutRequest;
 import triplog.backend.common.auth.dto.request.AuthRequest.SignupRequest;
+import triplog.backend.common.auth.dto.request.AuthRequest.TokenReissueRequest;
 import triplog.backend.common.auth.dto.response.AuthResponse.LoginSuccessResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.LogoutResponse;
 import triplog.backend.common.auth.dto.response.AuthResponse.SignupResponse;
+import triplog.backend.common.auth.dto.response.AuthResponse.TokenReissueResponse;
 import triplog.backend.common.auth.entity.RefreshToken;
 import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.common.auth.repository.RefreshTokenRepository;
@@ -40,6 +42,7 @@ import static triplog.backend.common.auth.exception.AuthErrorCode.LOGOUT_TOKEN_N
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_EMAIL_REQUIRED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_LOGIN_FAILED;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_PASSWORD_REQUIRED;
+import static triplog.backend.common.auth.exception.AuthErrorCode.REFRESH_TOKEN_INVALID;
 import static triplog.backend.users.entity.LoginType.LOCAL;
 
 /**
@@ -178,6 +181,55 @@ class AuthServiceImplTest {
                 .extracting("errorCode")
                 .isEqualTo(LOGOUT_TOKEN_NOT_FOUND);
         verify(refreshTokenRepository, never()).deleteById(any());
+    }
+
+    /**
+     * 유효하고 Redis에 저장된 Refresh Token이면 새 토큰 쌍을 발급하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("유효한 Refresh Token이면 Access Token과 Refresh Token을 재발급한다")
+    void reissue() {
+        // given
+        UUID usersId = UUID.randomUUID();
+        String newAccessToken = "new-access-token";
+        String newRefreshToken = "new-refresh-token";
+        TokenReissueRequest request = new TokenReissueRequest(REFRESH_TOKEN);
+        given(jwtTokenProvider.getUsersId(REFRESH_TOKEN)).willReturn(usersId);
+        given(refreshTokenRepository.findByRefreshToken(REFRESH_TOKEN))
+                .willReturn(Optional.of(new RefreshToken(usersId.toString(), REFRESH_TOKEN)));
+        given(jwtTokenProvider.createTokenRecord(usersId))
+                .willReturn(new JwtTokenRecord(newAccessToken, newRefreshToken, 3_600_000L));
+
+        // when
+        TokenReissueResponse response = authService.reissue(request);
+
+        // then
+        assertThat(response.getAccessToken()).isEqualTo(newAccessToken);
+        assertThat(response.getRefreshToken()).isEqualTo(newRefreshToken);
+        verify(jwtTokenProvider).validateToken(REFRESH_TOKEN);
+        verify(refreshTokenRepository).save(any(RefreshToken.class));
+    }
+
+    /**
+     * Redis에 저장되지 않은 Refresh Token이면 재발급을 거부하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("저장되지 않은 Refresh Token이면 재발급에 실패한다")
+    void reissue_TokenNotFound() {
+        // given
+        UUID usersId = UUID.randomUUID();
+        TokenReissueRequest request = new TokenReissueRequest(REFRESH_TOKEN);
+        given(jwtTokenProvider.getUsersId(REFRESH_TOKEN)).willReturn(usersId);
+        given(refreshTokenRepository.findByRefreshToken(REFRESH_TOKEN)).willReturn(Optional.empty());
+
+        // when
+        // then
+        assertThatThrownBy(() -> authService.reissue(request))
+                .isInstanceOf(AuthException.class)
+                .extracting("errorCode")
+                .isEqualTo(REFRESH_TOKEN_INVALID);
+        verify(jwtTokenProvider, never()).createTokenRecord(any());
+        verify(refreshTokenRepository, never()).save(any());
     }
 
     /**

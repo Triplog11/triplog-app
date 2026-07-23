@@ -12,12 +12,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
+import triplog.backend.common.auth.exception.AuthException;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static triplog.backend.common.auth.exception.AuthErrorCode.ACCESS_TOKEN_EXPIRED;
 
 /**
  * JwtAuthenticationFilter의 JWT 인증 처리 흐름을 검증하는 테스트입니다.
@@ -120,6 +122,38 @@ class JwtAuthenticationFilterTest {
         assertThat(resolvedException.get()).isNotNull();
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         log.info("JWT 예외 전달 성공 - 이유: 유효하지 않은 토큰이 HandlerExceptionResolver로 전달되었습니다.");
+    }
+
+    /**
+     * 만료된 Access Token이면 401 에러 코드의 인증 예외로 변환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("만료된 Access Token이면 401 인증 예외로 변환한다")
+    void 만료된_Access_Token이면_401_인증_예외로_변환한다() throws Exception {
+        // given
+        JwtTokenProvider jwtTokenProvider = new JwtTokenProvider(SECRET, -1L, REFRESH_TOKEN_VALIDITY);
+        AtomicReference<Exception> resolvedException = new AtomicReference<>();
+        HandlerExceptionResolver handlerExceptionResolver = (request, response, handler, exception) -> {
+            resolvedException.set(exception);
+            return new ModelAndView();
+        };
+        JwtAuthenticationFilter filter = createJwtAuthenticationFilter(jwtTokenProvider, handlerExceptionResolver);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        AtomicBoolean chainCalled = new AtomicBoolean(false);
+        String expiredAccessToken = jwtTokenProvider.createTokenRecord(UUID.randomUUID()).accessToken();
+        request.addHeader("Authorization", "Bearer " + expiredAccessToken);
+        FilterChain filterChain = (servletRequest, servletResponse) -> chainCalled.set(true);
+
+        // when
+        filter.doFilter(request, response, filterChain);
+
+        // then
+        assertThat(chainCalled).isFalse();
+        assertThat(resolvedException.get())
+                .isInstanceOfSatisfying(AuthException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ACCESS_TOKEN_EXPIRED));
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     /**

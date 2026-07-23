@@ -33,8 +33,9 @@ public class OpenApiConfig {
 
         return new OpenAPI()
                 .info(info)
-                .addServersItem(new Server().url("http://localhost:8080"))
-                .addServersItem(new Server().url("https://triplog11.store"))
+                .addServersItem(new Server()
+                        .url("/")
+                        .description("현재 접속한 서버"))
                 .addSecurityItem(securityRequirement)
                 .components(components);
     }
