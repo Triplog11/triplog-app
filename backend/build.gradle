@@ -37,7 +37,12 @@ dependencies {
 
 	// Database / JPA
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
+	runtimeOnly 'org.flywaydb:flyway-mysql'
 	runtimeOnly 'com.mysql:mysql-connector-j'
+
+	// CSV
+	implementation 'org.apache.commons:commons-csv:1.14.1'
 
 	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -64,4 +69,22 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
+tasks.register('tourismBatch', JavaExec) {
+	group = 'application'
+	description = '웹 서버 없이 지정한 TourAPI Spring Batch Job을 실행합니다.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'triplog.backend.TourismBatchApplication'
+}
+
+tasks.register('tourismBatchJar', BootJar) {
+	group = 'build'
+	description = 'TourAPI Batch 전용 실행 JAR을 생성합니다.'
+	archiveClassifier = 'batch'
+	mainClass = 'triplog.backend.TourismBatchApplication'
+	classpath = sourceSets.main.runtimeClasspath
+	targetJavaVersion = JavaVersion.VERSION_21
 }

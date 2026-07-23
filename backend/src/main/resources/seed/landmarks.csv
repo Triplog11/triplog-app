@@ -1,0 +1,5 @@
+content_id,display_name,expected_content_type_id,expected_legal_region_code,expected_legal_district_code,is_active
+126081,해운대해수욕장,12,26,350,true
+126166,경주 불국사,12,47,130,true
+126435,성산일출봉,12,50,130,true
+126508,경복궁,12,11,110,true

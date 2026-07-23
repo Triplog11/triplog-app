@@ -6,7 +6,7 @@ spring:
   # [JPA & Hibernate 설정]: 엔티티와 DB 테이블 매핑 및 SQL 출력 설정
   jpa:
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:update} # 애플리케이션 실행 시 엔티티 변경사항을 DB에 자동 반영
+      ddl-auto: ${JPA_DDL_AUTO:validate} # Flyway 스키마와 엔티티 매핑 일치 여부 검증
     properties:
       hibernate:
         format_sql: ${HIBERNATE_FORMAT_SQL:true} # SQL을 보기 좋게 정렬하여 출력
@@ -18,6 +18,16 @@ spring:
     url: ${DB_URL_TEST} # MySQL DB 접속 URL
     username: ${DB_USERNAME_TEST} # MySQL 접속 계정
     password: ${DB_PASSWORD_TEST} # MySQL 접속 비밀번호
+
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
+
+  batch:
+    job:
+      enabled: ${SPRING_BATCH_JOB_ENABLED:false}
+      name: ${SPRING_BATCH_JOB_NAME:regionSyncJob}
+    jdbc:
+      initialize-schema: ${SPRING_BATCH_JDBC_INITIALIZE_SCHEMA:never}
 
   # [Redis 설정]: 캐싱, 세션, 토큰 관리 등에 사용할 Redis 서버 연결 정보
   data:
@@ -54,3 +64,30 @@ google:
   client_id: ${GOOGLE_CLIENT_ID}
   redirect_uri: ${GOOGLE_REDIRECT_URI}
   client_secret: ${GOOGLE_CLIENT_SECRET}
+
+# [TourAPI]: 한국관광공사 국문 관광정보 서비스 연동 설정
+tour-api:
+  base-url: ${TOUR_API_BASE_URL:https://apis.data.go.kr/B551011/KorService2}
+  service-key: ${TOUR_API_SERVICE_KEY:}
+  mobile-os: ${TOUR_API_MOBILE_OS:ETC}
+  mobile-app: ${TOUR_API_MOBILE_APP:Triplog}
+  connect-timeout: ${TOUR_API_CONNECT_TIMEOUT:3s}
+  read-timeout: ${TOUR_API_READ_TIMEOUT:10s}
+  retry:
+    max-retries: ${TOUR_API_RETRY_MAX_RETRIES:3}
+    delays: ${TOUR_API_RETRY_DELAYS:1s,2s,4s}
+
+# [TourAPI 동기화]: 테스트에서는 자동 실행하지 않음
+tourism-sync:
+  festival:
+    past-days: ${TOURISM_SYNC_FESTIVAL_PAST_DAYS:30}
+    future-months: ${TOURISM_SYNC_FESTIVAL_FUTURE_MONTHS:12}
+  missing-threshold: ${TOURISM_SYNC_MISSING_THRESHOLD:3}
+  landmark-seed-path: ${TOURISM_SYNC_LANDMARK_SEED_PATH:classpath:seed/landmarks.csv}
+  scheduling:
+    enabled: ${TOURISM_SYNC_SCHEDULING_ENABLED:false}
+    region-cron: "${TOURISM_SYNC_REGION_CRON:0 0 3 1 * *}"
+    landmark-cron: "${TOURISM_SYNC_LANDMARK_CRON:0 30 3 * * *}"
+    festival-cron: "${TOURISM_SYNC_FESTIVAL_CRON:0 0 4 * * *}"
+    failure-retry-cron: "${TOURISM_SYNC_FAILURE_RETRY_CRON:0 30 4 * * *}"
+    zone: "${TOURISM_SYNC_SCHEDULING_ZONE:Asia/Seoul}"
