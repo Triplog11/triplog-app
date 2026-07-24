@@ -18,6 +18,7 @@ import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.fcmtoken.exception.FcmTokenException;
 import triplog.backend.image.exception.ImageException;
 import triplog.backend.notification.exception.NotificationException;
+import triplog.backend.rankpolicy.exception.RankPolicyException;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.users.exception.UsersException;
 
@@ -115,6 +116,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotificationException.class)
     protected ResponseEntity<ErrorResponse> handleNotificationException(NotificationException e) {
         log.warn("알림 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
+     * 랭크 정책 처리 중 발생한 {@link RankPolicyException}을 공통 오류 응답으로 변환합니다.
+     *
+     * @param e 랭크 정책 도메인에서 발생한 예외
+     * @return 랭크 정책 오류 코드에 해당하는 HTTP 상태와 메시지를 포함한 응답
+     */
+    @ExceptionHandler(RankPolicyException.class)
+    protected ResponseEntity<ErrorResponse> handleRankPolicyException(RankPolicyException e) {
+        log.warn("랭크 정책 도메인 예외 발생: {}", e.getErrorCode());
         return toResponseEntity(e.getErrorCode());
     }
 
