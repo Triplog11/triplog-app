@@ -18,6 +18,11 @@ public enum NotificationErrorCode implements BaseErrorCode {
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 정보를 찾을 수 없습니다."),
 
     /**
+     * 이미 읽음 처리된 알림을 다시 읽음 처리하는 경우 사용합니다.
+     */
+    NOTIFICATION_ALREADY_READ(HttpStatus.CONFLICT, "이미 읽은 알림입니다."),
+
+    /**
      * 요청한 알림 정책 정보를 찾을 수 없는 경우 사용합니다.
      */
     NOTIFICATION_POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 정책 정보를 찾을 수 없습니다.");
