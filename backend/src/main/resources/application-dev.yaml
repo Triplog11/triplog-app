@@ -3,6 +3,12 @@ spring:
   application:
     name: ${SPRING_APPLICATION_NAME:back} # Spring Boot 애플리케이션 이름
 
+  # [Multipart 설정]: 이미지 업로드 파일 및 전체 요청 크기 제한
+  servlet:
+    multipart:
+      max-file-size: ${IMAGE_UPLOAD_MAX_FILE_SIZE:10MB}
+      max-request-size: ${IMAGE_UPLOAD_MAX_REQUEST_SIZE:101MB}
+
   # [JPA & Hibernate 설정]: 엔티티와 DB 테이블 매핑 및 SQL 출력 설정
   jpa:
     hibernate:
@@ -91,3 +97,15 @@ tourism-sync:
     festival-cron: "${TOURISM_SYNC_FESTIVAL_CRON:0 0 4 * * *}"
     failure-retry-cron: "${TOURISM_SYNC_FAILURE_RETRY_CRON:0 30 4 * * *}"
     zone: "${TOURISM_SYNC_SCHEDULING_ZONE:Asia/Seoul}"
+
+# [이미지 업로드 - Cloudinary]: Cloudinary 키 정보
+cloudinary:
+  cloud:
+    name: ${CLOUDINARY_CLOUD_NAME}
+  api:
+    key: ${CLOUDINARY_API_KEY}
+    secret: ${CLOUDINARY_API_SECRET}
+  upload:
+    allowed-content-types: ${IMAGE_UPLOAD_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,image/heic,image/heif}
+    jpeg-conversion-content-types: ${IMAGE_UPLOAD_JPEG_CONVERSION_CONTENT_TYPES:image/heic,image/heif}
+    max-file-count: ${IMAGE_UPLOAD_MAX_FILE_COUNT:10}

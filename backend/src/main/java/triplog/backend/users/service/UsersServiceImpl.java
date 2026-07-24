@@ -31,7 +31,8 @@ import static triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND;
 @Transactional(readOnly = true)
 public class UsersServiceImpl implements UsersService {
 
-    private static final String DEFAULT_PROFILE_URL = "profile-default.png";
+    private static final String DEFAULT_PROFILE_URL =
+            "https://res.cloudinary.com/pvswis5a/image/upload/v1784864852/basic-profile_dcuxor.png";
 
     private final UsersRepository usersRepository;
     private final StatsService statsService;
