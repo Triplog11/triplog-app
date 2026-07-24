@@ -3,11 +3,19 @@ package triplog.backend.notification.service;
 import org.springframework.data.domain.Pageable;
 import triplog.backend.notification.dto.response.NotificationResponse.ListResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.ReadResponse;
+import triplog.backend.notification.dto.response.NotificationResponse.SettingsResponse;
 
 /**
  * 알림 관련 비즈니스 기능을 정의하는 서비스 인터페이스입니다.
  */
 public interface NotificationService {
+
+    /**
+     * 알림 정책별 활성화 상태를 조회합니다.
+     *
+     * @return 알림 설정 조회 응답
+     */
+    SettingsResponse getSettings();
 
     /**
      * 로그인 사용자의 알림 목록을 페이지 단위로 조회합니다.

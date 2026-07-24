@@ -11,7 +11,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import triplog.backend.notification.dto.response.NotificationResponse.ListResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.ReadResponse;
+import triplog.backend.notification.dto.response.NotificationResponse.SettingsResponse;
 import triplog.backend.notification.entity.Notification;
+import triplog.backend.notification.entity.NotificationPolicy;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.notification.repository.NotificationPolicyRepository;
 import triplog.backend.notification.repository.NotificationRepository;
@@ -20,11 +22,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_ALREADY_READ;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_NOT_FOUND;
+import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_SETTINGS_NOT_FOUND;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATIONS_NOT_FOUND;
 
 /**
@@ -50,6 +54,56 @@ class NotificationServiceImplTest {
                 notificationRepository,
                 notificationPolicyRepository
         );
+    }
+
+    /**
+     * 알림 정책이 모두 존재하면 각 정책의 활성화 여부가 설정 응답에 매핑되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("알림 설정을 조회하면 정책별 활성화 여부가 반환된다")
+    void getsNotificationSettings() {
+        // given
+        when(notificationPolicyRepository.findAllByNotificationTypeIn(anyCollection()))
+                .thenReturn(List.of(
+                        policy("LEVEL_UP", true),
+                        policy("RANK_UP", true),
+                        policy("BADGE_ACQUIRED", false),
+                        policy("CARD_ACQUIRED", true),
+                        policy("REGION_COMPLETED", true),
+                        policy("LANDMARK_VERIFIED", false),
+                        policy("WEEKLY_MISSION_COMPLETED", true)
+                ));
+
+        // when
+        SettingsResponse response = notificationService.getSettings();
+
+        // then
+        assertThat(response.getIsLevelUp()).isTrue();
+        assertThat(response.getIsRankUp()).isTrue();
+        assertThat(response.getIsBadgeAcquired()).isFalse();
+        assertThat(response.getIsCardAcquired()).isTrue();
+        assertThat(response.getIsRegionCompleted()).isTrue();
+        assertThat(response.getIsLandmarkVerified()).isFalse();
+        assertThat(response.getIsWeeklyMissonCompleted()).isTrue();
+        verify(notificationPolicyRepository).findAllByNotificationTypeIn(anyCollection());
+    }
+
+    /**
+     * 알림 설정에 필요한 정책이 누락되면 알림 설정 없음 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("알림 설정 정책이 누락되면 예외가 발생한다")
+    void rejectsMissingNotificationSettings() {
+        // given
+        when(notificationPolicyRepository.findAllByNotificationTypeIn(anyCollection()))
+                .thenReturn(List.of(policy("LEVEL_UP", true)));
+
+        // when
+        // then
+        assertThatThrownBy(notificationService::getSettings)
+                .isInstanceOf(NotificationException.class)
+                .extracting("errorCode")
+                .isEqualTo(NOTIFICATION_SETTINGS_NOT_FOUND);
     }
 
     /**
@@ -201,5 +255,24 @@ class NotificationServiceImplTest {
                 .isInstanceOf(NotificationException.class)
                 .extracting("errorCode")
                 .isEqualTo(NOTIFICATION_ALREADY_READ);
+    }
+
+    /**
+     * 테스트에 사용할 알림 정책을 생성합니다.
+     *
+     * @param notificationType 알림 유형
+     * @param active 알림 정책 활성화 여부
+     * @return 테스트용 알림 정책
+     */
+    private NotificationPolicy policy(String notificationType, boolean active) {
+        return new NotificationPolicy(
+                notificationType,
+                notificationType + " 정책",
+                notificationType + "_EVENT",
+                "알림 제목",
+                "알림 내용",
+                true,
+                active
+        );
     }
 }
