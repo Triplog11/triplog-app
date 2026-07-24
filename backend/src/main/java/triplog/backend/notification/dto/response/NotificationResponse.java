@@ -5,8 +5,11 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
+import triplog.backend.notification.entity.Notification;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 알림 관련 응답 DTO를 그룹화하는 클래스입니다.
@@ -14,6 +17,93 @@ import java.time.LocalDateTime;
 @Schema(description = "알림 관련 응답 DTO 그룹")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class NotificationResponse {
+
+    /**
+     * 페이징된 알림 목록을 반환하는 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "알림 목록 조회 응답")
+    public static class ListResponse {
+
+        @Schema(description = "현재 페이지 번호", example = "0")
+        private int page;
+
+        @Schema(description = "페이지 크기", example = "10")
+        private int size;
+
+        @Schema(description = "전체 알림 수", example = "25")
+        private long totalElements;
+
+        @Schema(description = "전체 페이지 수", example = "3")
+        private int totalPages;
+
+        @Schema(description = "알림 목록")
+        private List<NotificationItem> notifications;
+
+        /**
+         * 페이징된 알림 엔티티 조회 결과를 목록 응답 DTO로 변환합니다.
+         *
+         * @param result 페이징된 알림 조회 결과
+         * @return 알림 목록 조회 응답
+         */
+        public static ListResponse toDto(Page<Notification> result) {
+            List<NotificationItem> notifications = result.getContent().stream()
+                    .map(NotificationItem::toDto)
+                    .toList();
+            return new ListResponse(
+                    result.getNumber(),
+                    result.getSize(),
+                    result.getTotalElements(),
+                    result.getTotalPages(),
+                    notifications
+            );
+        }
+    }
+
+    /**
+     * 알림 목록의 개별 알림 정보를 반환하는 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "알림 목록 항목")
+    public static class NotificationItem {
+
+        @Schema(description = "알림 ID", example = "101")
+        private Long notificationId;
+
+        @Schema(description = "알림 제목", example = "미션 완료")
+        private String title;
+
+        @Schema(description = "알림 내용", example = "일일 미션을 완료했습니다.")
+        private String content;
+
+        @Schema(description = "알림 타입", example = "MISSION")
+        private String notificationType;
+
+        @Schema(description = "읽음 여부", example = "false")
+        private Boolean isRead;
+
+        @Schema(description = "생성 일시", example = "2026-06-25T10:30:00")
+        private LocalDateTime createdAt;
+
+        /**
+         * 알림 엔티티를 목록 항목 DTO로 변환합니다.
+         *
+         * @param notification 변환할 알림 엔티티
+         * @return 알림 목록 항목
+         */
+        public static NotificationItem toDto(Notification notification) {
+            return new NotificationItem(
+                    notification.getNotificationId(),
+                    notification.getNotificationTitle(),
+                    notification.getNotificationContent(),
+                    notification.getNotificationType(),
+                    notification.isRead(),
+                    notification.getNotificationCreatedAt()
+            );
+        }
+    }
 
     /**
      * 알림 읽음 처리 결과를 반환하는 DTO입니다.

@@ -7,11 +7,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import triplog.backend.notification.dto.response.NotificationResponse.ListResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.ReadResponse;
+import triplog.backend.notification.entity.Notification;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.notification.repository.NotificationPolicyRepository;
 import triplog.backend.notification.repository.NotificationRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_ALREADY_READ;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_NOT_FOUND;
+import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATIONS_NOT_FOUND;
 
 /**
  * {@link NotificationServiceImpl}의 알림 읽음 처리 흐름을 검증하는 테스트입니다.
@@ -44,6 +50,79 @@ class NotificationServiceImplTest {
                 notificationRepository,
                 notificationPolicyRepository
         );
+    }
+
+    /**
+     * 전체 알림 조회 시 페이지 정보와 알림 항목이 응답 DTO로 변환되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("알림 목록을 조회하면 페이지 정보와 알림 항목이 반환된다")
+    void getsNotifications() {
+        // given
+        PageRequest pageable = PageRequest.of(0, 10);
+        LocalDateTime createdAt = LocalDateTime.of(2026, 6, 25, 10, 30);
+        Notification notification = org.mockito.Mockito.mock(Notification.class);
+        when(notification.getNotificationId()).thenReturn(NOTIFICATION_ID);
+        when(notification.getNotificationTitle()).thenReturn("미션 완료");
+        when(notification.getNotificationContent()).thenReturn("일일 미션을 완료했습니다.");
+        when(notification.getNotificationType()).thenReturn("MISSION");
+        when(notification.isRead()).thenReturn(false);
+        when(notification.getNotificationCreatedAt()).thenReturn(createdAt);
+        when(notificationRepository.findNotifications(USERS_ID, false, pageable))
+                .thenReturn(new PageImpl<>(List.of(notification), pageable, 1));
+
+        // when
+        ListResponse response = notificationService.getNotifications(USERS_ID, false, pageable);
+
+        // then
+        assertThat(response.getPage()).isZero();
+        assertThat(response.getSize()).isEqualTo(10);
+        assertThat(response.getTotalElements()).isEqualTo(1);
+        assertThat(response.getTotalPages()).isEqualTo(1);
+        assertThat(response.getNotifications()).hasSize(1);
+        assertThat(response.getNotifications().getFirst().getNotificationId())
+                .isEqualTo(NOTIFICATION_ID);
+        assertThat(response.getNotifications().getFirst().getCreatedAt()).isEqualTo(createdAt);
+        verify(notificationRepository).findNotifications(USERS_ID, false, pageable);
+    }
+
+    /**
+     * 읽지 않은 알림만 조회하도록 요청하면 해당 조건이 Repository에 전달되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("읽지 않은 알림만 조회하도록 필터링할 수 있다")
+    void getsUnreadNotifications() {
+        // given
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(notificationRepository.findNotifications(USERS_ID, true, pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        // when
+        ListResponse response = notificationService.getNotifications(USERS_ID, true, pageable);
+
+        // then
+        assertThat(response.getNotifications()).isEmpty();
+        assertThat(response.getTotalElements()).isZero();
+        verify(notificationRepository).findNotifications(USERS_ID, true, pageable);
+    }
+
+    /**
+     * 요청 페이지가 전체 페이지 범위를 벗어나면 알림 목록 없음 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("요청 페이지가 조회 범위를 벗어나면 예외가 발생한다")
+    void rejectsOutOfRangeNotificationPage() {
+        // given
+        PageRequest pageable = PageRequest.of(2, 10);
+        when(notificationRepository.findNotifications(USERS_ID, false, pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 14));
+
+        // when
+        // then
+        assertThatThrownBy(() -> notificationService.getNotifications(USERS_ID, false, pageable))
+                .isInstanceOf(NotificationException.class)
+                .extracting("errorCode")
+                .isEqualTo(NOTIFICATIONS_NOT_FOUND);
     }
 
     /**
