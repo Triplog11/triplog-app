@@ -27,6 +27,22 @@ public interface StatsRepository extends JpaRepository<Stats, Long> {
     Optional<Stats> findByUsersUsersId(String usersId);
 
     /**
+     * 지정한 누적 점수보다 높은 점수를 보유한 사용자 수를 조회합니다.
+     *
+     * @param overallScore 기준 누적 점수
+     * @return 기준 점수보다 높은 사용자 수
+     */
+    long countByOverallScoreGreaterThan(int overallScore);
+
+    /**
+     * 지정한 월간 점수보다 높은 점수를 보유한 사용자 수를 조회합니다.
+     *
+     * @param monthScore 기준 월간 점수
+     * @return 기준 점수보다 높은 사용자 수
+     */
+    long countByMonthScoreGreaterThan(int monthScore);
+
+    /**
      * 사용자 주소 프로필 정보를 수정합니다.
      * <p>
      * 요청에서 전달되지 않은 필드는 {@code null}로 들어오며 기존 값을 유지합니다.

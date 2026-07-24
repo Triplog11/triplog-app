@@ -16,6 +16,11 @@ import triplog.backend.common.exception.BaseErrorCode;
 public enum StatsErrorCode implements BaseErrorCode {
 
     /**
+     * 로그인 사용자의 랭킹 정보를 찾을 수 없을 때 사용하는 에러 코드입니다.
+     */
+    MY_RANKING_NOT_FOUND(HttpStatus.NOT_FOUND, "내 랭킹 정보를 찾을 수 없습니다."),
+
+    /**
      * 요청한 사용자의 통계 정보를 찾을 수 없을 때 사용하는 에러 코드입니다.
      */
     STATS_NOT_FOUND(HttpStatus.NOT_FOUND, "통계 정보를 찾을 수 없습니다."),

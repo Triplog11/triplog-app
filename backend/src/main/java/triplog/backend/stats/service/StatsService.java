@@ -1,5 +1,7 @@
 package triplog.backend.stats.service;
 
+import triplog.backend.stats.dto.response.StatsResponse.MyRankingResponse;
+
 /**
  * 사용자 통계(Stats)와 관련된 비즈니스 로직을 정의하는 Service 인터페이스입니다.
  * <p>
@@ -7,6 +9,14 @@ package triplog.backend.stats.service;
  * Stats 도메인의 비즈니스 기능을 선언합니다.
  */
 public interface StatsService {
+
+    /**
+     * 로그인 사용자의 전체 및 월간 랭킹 정보를 조회합니다.
+     *
+     * @param usersId 조회할 사용자 ID
+     * @return 내 랭킹 정보
+     */
+    MyRankingResponse getMyRanking(String usersId);
 
     /**
      * 로그인 성공 응답에 포함할 사용자의 통계 정보를 조회합니다.
