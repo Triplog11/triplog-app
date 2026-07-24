@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +19,13 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.ListResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.ReadResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.SettingsResponse;
+import triplog.backend.notification.dto.request.NotificationRequest.SettingsUpdateRequest;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.notification.service.NotificationService;
 import static triplog.backend.notification.exception.NotificationErrorCode.INVALID_PAGE_REQUEST;
@@ -86,6 +89,56 @@ public class NotificationController {
     })
     public ResponseEntity<SettingsResponse> getSettings() {
         return ResponseEntity.ok(notificationService.getSettings());
+    }
+
+    /**
+     * 알림 정책별 활성화 상태를 수정합니다.
+     *
+     * @param request 알림 설정 수정 요청
+     * @return 수정된 알림 설정
+     */
+    @PatchMapping("/settings")
+    @Operation(summary = "알림 설정 수정", description = "알림 정책별 활성화 여부를 수정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "알림 설정 수정에 성공했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = SettingsResponse.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "isLevelUp": true,
+                                      "isRankUp": true,
+                                      "isBadgeAcquired": false,
+                                      "isCardAcquired": true,
+                                      "isRegionCompleted": true,
+                                      "isLandmarkVerified": false,
+                                      "isWeeklyMissonCompleted": true
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = "{\"status\":400,\"message\":\"잘못된 요청입니다.\"}"))),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요한 기능입니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = "{\"status\":401,\"message\":\"로그인이 필요한 기능입니다.\"}"))),
+            @ApiResponse(responseCode = "404", description = "알림 설정 정보를 찾을 수 없습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = "{\"status\":404,\"message\":\"알림 설정 정보를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = "{\"status\":500,\"message\":\"서버 내부 오류가 발생했습니다.\"}")))
+    })
+    public ResponseEntity<SettingsResponse> updateSettings(
+            @Valid @RequestBody SettingsUpdateRequest request
+    ) {
+        return ResponseEntity.ok(notificationService.updateSettings(request));
     }
 
     /**
