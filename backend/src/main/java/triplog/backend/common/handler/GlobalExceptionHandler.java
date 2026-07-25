@@ -102,7 +102,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ImageException.class)
     protected ResponseEntity<ErrorResponse> handleImageException(ImageException e) {
-        log.warn("이미지 도메인 예외 발생: {}", e.getErrorCode(), e);
+        log.warn("이미지 도메인 예외 발생: {}", e.getErrorCode());
         return toResponseEntity(e.getErrorCode());
     }
 
@@ -114,7 +114,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NotificationException.class)
     protected ResponseEntity<ErrorResponse> handleNotificationException(NotificationException e) {
-        log.warn("알림 도메인 예외 발생: {}", e.getErrorCode(), e);
+        log.warn("알림 도메인 예외 발생: {}", e.getErrorCode());
         return toResponseEntity(e.getErrorCode());
     }
 
