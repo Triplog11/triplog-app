@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.notification.dto.response.NotificationResponse.ListResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.ReadResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.SettingsResponse;
+import triplog.backend.notification.dto.request.NotificationRequest.SettingsUpdateRequest;
 import triplog.backend.notification.entity.Notification;
 import triplog.backend.notification.entity.NotificationPolicy;
 import triplog.backend.notification.exception.NotificationException;
@@ -69,6 +70,37 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         return SettingsResponse.toDto(policies);
+    }
+
+    /**
+     * 알림 정책별 활성화 상태를 수정하고 수정된 설정을 반환합니다.
+     *
+     * @param request 알림 설정 수정 요청
+     * @return 수정된 알림 설정
+     * @throws NotificationException 필요한 알림 정책 정보를 찾을 수 없는 경우
+     */
+    @Override
+    @Transactional
+    public SettingsResponse updateSettings(SettingsUpdateRequest request) {
+        List<NotificationPolicy> policies =
+                notificationPolicyRepository.findAllByNotificationTypeIn(SETTING_NOTIFICATION_TYPES);
+
+        if (policies.size() != SETTING_NOTIFICATION_TYPES.size()) {
+            throw new NotificationException(NOTIFICATION_SETTINGS_NOT_FOUND);
+        }
+
+        notificationPolicyRepository.updateActive("LEVEL_UP", request.getIsLevelUp());
+        notificationPolicyRepository.updateActive("RANK_UP", request.getIsRankUp());
+        notificationPolicyRepository.updateActive("BADGE_ACQUIRED", request.getIsBadgeAcquired());
+        notificationPolicyRepository.updateActive("CARD_ACQUIRED", request.getIsCardAcquired());
+        notificationPolicyRepository.updateActive("REGION_COMPLETED", request.getIsRegionCompleted());
+        notificationPolicyRepository.updateActive("LANDMARK_VERIFIED", request.getIsLandmarkVerified());
+        notificationPolicyRepository.updateActive(
+                "WEEKLY_MISSION_COMPLETED",
+                request.getIsWeeklyMissonCompleted()
+        );
+
+        return SettingsResponse.toDto(request);
     }
 
     /**

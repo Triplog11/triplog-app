@@ -1,6 +1,9 @@
 package triplog.backend.notification.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import triplog.backend.notification.entity.NotificationPolicy;
 import java.util.Collection;
 import java.util.List;
@@ -17,4 +20,22 @@ public interface NotificationPolicyRepository extends JpaRepository<Notification
      * @return 알림 유형에 해당하는 정책 목록
      */
     List<NotificationPolicy> findAllByNotificationTypeIn(Collection<String> notificationTypes);
+
+    /**
+     * 알림 유형에 해당하는 정책의 활성화 여부를 수정합니다.
+     *
+     * @param notificationType 수정할 알림 유형
+     * @param active 변경할 활성화 여부
+     * @return 수정된 행 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update NotificationPolicy np
+            set np.active = :active
+            where np.notificationType = :notificationType
+            """)
+    int updateActive(
+            @Param("notificationType") String notificationType,
+            @Param("active") boolean active
+    );
 }

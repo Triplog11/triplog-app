@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 import triplog.backend.notification.entity.Notification;
 import triplog.backend.notification.entity.NotificationPolicy;
+import triplog.backend.notification.dto.request.NotificationRequest.SettingsUpdateRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,24 @@ public class NotificationResponse {
                     policyMap.get("REGION_COMPLETED").isActive(),
                     policyMap.get("LANDMARK_VERIFIED").isActive(),
                     policyMap.get("WEEKLY_MISSION_COMPLETED").isActive()
+            );
+        }
+
+        /**
+         * 알림 설정 수정 요청을 수정 결과 응답으로 변환합니다.
+         *
+         * @param request 알림 설정 수정 요청
+         * @return 알림 설정 수정 응답
+         */
+        public static SettingsResponse toDto(SettingsUpdateRequest request) {
+            return new SettingsResponse(
+                    request.getIsLevelUp(),
+                    request.getIsRankUp(),
+                    request.getIsBadgeAcquired(),
+                    request.getIsCardAcquired(),
+                    request.getIsRegionCompleted(),
+                    request.getIsLandmarkVerified(),
+                    request.getIsWeeklyMissonCompleted()
             );
         }
     }

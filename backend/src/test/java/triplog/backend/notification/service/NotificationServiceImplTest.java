@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import triplog.backend.notification.dto.response.NotificationResponse.ListResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.ReadResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.SettingsResponse;
+import triplog.backend.notification.dto.request.NotificationRequest.SettingsUpdateRequest;
 import triplog.backend.notification.entity.Notification;
 import triplog.backend.notification.entity.NotificationPolicy;
 import triplog.backend.notification.exception.NotificationException;
@@ -23,8 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_ALREADY_READ;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_NOT_FOUND;
@@ -104,6 +108,67 @@ class NotificationServiceImplTest {
                 .isInstanceOf(NotificationException.class)
                 .extracting("errorCode")
                 .isEqualTo(NOTIFICATION_SETTINGS_NOT_FOUND);
+    }
+
+    /**
+     * 알림 설정 수정 시 모든 정책의 활성화 여부가 변경되고 요청값이 응답되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("알림 설정을 수정하면 정책별 활성화 여부가 변경된다")
+    void updatesNotificationSettings() {
+        // given
+        SettingsUpdateRequest request =
+                new SettingsUpdateRequest(true, true, false, true, true, false, true);
+        when(notificationPolicyRepository.findAllByNotificationTypeIn(anyCollection()))
+                .thenReturn(List.of(
+                        policy("LEVEL_UP", false),
+                        policy("RANK_UP", false),
+                        policy("BADGE_ACQUIRED", true),
+                        policy("CARD_ACQUIRED", false),
+                        policy("REGION_COMPLETED", false),
+                        policy("LANDMARK_VERIFIED", true),
+                        policy("WEEKLY_MISSION_COMPLETED", false)
+                ));
+
+        // when
+        SettingsResponse response = notificationService.updateSettings(request);
+
+        // then
+        verify(notificationPolicyRepository).updateActive("LEVEL_UP", true);
+        verify(notificationPolicyRepository).updateActive("RANK_UP", true);
+        verify(notificationPolicyRepository).updateActive("BADGE_ACQUIRED", false);
+        verify(notificationPolicyRepository).updateActive("CARD_ACQUIRED", true);
+        verify(notificationPolicyRepository).updateActive("REGION_COMPLETED", true);
+        verify(notificationPolicyRepository).updateActive("LANDMARK_VERIFIED", false);
+        verify(notificationPolicyRepository).updateActive("WEEKLY_MISSION_COMPLETED", true);
+        assertThat(response.getIsLevelUp()).isTrue();
+        assertThat(response.getIsRankUp()).isTrue();
+        assertThat(response.getIsBadgeAcquired()).isFalse();
+        assertThat(response.getIsCardAcquired()).isTrue();
+        assertThat(response.getIsRegionCompleted()).isTrue();
+        assertThat(response.getIsLandmarkVerified()).isFalse();
+        assertThat(response.getIsWeeklyMissonCompleted()).isTrue();
+    }
+
+    /**
+     * 알림 설정 정책이 누락되면 어떤 정책도 수정하지 않는지 검증합니다.
+     */
+    @Test
+    @DisplayName("알림 설정 정책이 누락되면 수정하지 않고 예외가 발생한다")
+    void rejectsUpdateWhenNotificationSettingsAreMissing() {
+        // given
+        SettingsUpdateRequest request =
+                new SettingsUpdateRequest(true, true, false, true, true, false, true);
+        when(notificationPolicyRepository.findAllByNotificationTypeIn(anyCollection()))
+                .thenReturn(List.of(policy("LEVEL_UP", true)));
+
+        // when
+        // then
+        assertThatThrownBy(() -> notificationService.updateSettings(request))
+                .isInstanceOf(NotificationException.class)
+                .extracting("errorCode")
+                .isEqualTo(NOTIFICATION_SETTINGS_NOT_FOUND);
+        verify(notificationPolicyRepository, never()).updateActive(anyString(), anyBoolean());
     }
 
     /**
