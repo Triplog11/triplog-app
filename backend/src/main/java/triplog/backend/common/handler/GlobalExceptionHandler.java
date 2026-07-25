@@ -10,11 +10,13 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.badge.exception.BadgeException;
 import triplog.backend.common.exception.CommonErrorCode;
 import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.fcmtoken.exception.FcmTokenException;
+import triplog.backend.image.exception.ImageException;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.users.exception.UsersException;
 
@@ -92,6 +94,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 이미지 업로드 처리 중 발생한 {@link ImageException}을 공통 오류 응답으로 변환합니다.
+     *
+     * @param e 이미지 도메인에서 발생한 예외
+     * @return 이미지 오류 코드에 해당하는 HTTP 상태와 메시지를 포함한 응답
+     */
+    @ExceptionHandler(ImageException.class)
+    protected ResponseEntity<ErrorResponse> handleImageException(ImageException e) {
+        log.warn("이미지 도메인 예외 발생: {}", e.getErrorCode(), e);
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
      * {@code @Valid} 어노테이션을 통한 요청 데이터 유효성 검증 실패 예외를 처리합니다.
      * <p>
      * 검증 실패 필드의 기본 메시지를 우선 사용하고, 존재하지 않는 경우 공통 잘못된 요청 메시지를 사용합니다.
@@ -119,7 +133,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             MethodArgumentTypeMismatchException.class,
             HttpMessageNotReadableException.class,
-            MissingServletRequestParameterException.class
+            MissingServletRequestParameterException.class,
+            MissingServletRequestPartException.class
     })
     protected ResponseEntity<ErrorResponse> handleBadRequestException(Exception e) {
         log.warn("잘못된 요청 예외 발생: {}", e.getMessage());

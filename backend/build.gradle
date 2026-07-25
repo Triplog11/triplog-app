@@ -50,6 +50,9 @@ dependencies {
 	// Swagger / OpenAPI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
 
+	// Cloudinary
+	implementation 'com.cloudinary:cloudinary-http5:2.0.0'
+
 	// Prometheus
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 

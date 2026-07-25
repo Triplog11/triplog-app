@@ -59,7 +59,6 @@ public class SecurityConfig {
                                 "/auth/additional-info",
                                 "/users/nickname/check",
                                 "/users/email/check",
-                                "/images/**",
                                 "/fcm-tokens/test",
                                 "/firebase-messaging-sw.js",
                                 "/scalar/**",

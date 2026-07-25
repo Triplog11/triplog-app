@@ -30,7 +30,8 @@ class UsersServiceImplTest {
     private static final String NICKNAME = "여행자";
     private static final String PASSWORD = "encoded-password";
     private static final String PROFILE_URL = "https://example.com/profile.png";
-    private static final String DEFAULT_PROFILE_URL = "profile-default.png";
+    private static final String DEFAULT_PROFILE_URL =
+            "https://res.cloudinary.com/pvswis5a/image/upload/v1784864852/basic-profile_dcuxor.png";
 
     @Mock
     private UsersRepository usersRepository;

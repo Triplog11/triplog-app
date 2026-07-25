@@ -61,7 +61,11 @@ public class AuthRequest {
         @Schema(description = "닉네임", example = "여행자")
         private String nickname;
 
-        @Schema(description = "프로필 이미지 URL", example = "profile-default.png", nullable = true)
+        @Schema(
+                description = "프로필 이미지 URL",
+                example = "https://res.cloudinary.com/pvswis5a/image/upload/v1784864852/basic-profile_dcuxor.png",
+                nullable = true
+        )
         private String profileUrl;
 
         @NotBlank(message = "시는 필수입니다.")
@@ -95,7 +99,11 @@ public class AuthRequest {
         @Schema(description = "닉네임", example = "여행자")
         private String nickname;
 
-        @Schema(description = "프로필 이미지 URL", example = "profile-default.png", nullable = true)
+        @Schema(
+                description = "프로필 이미지 URL",
+                example = "https://res.cloudinary.com/pvswis5a/image/upload/v1784864852/basic-profile_dcuxor.png",
+                nullable = true
+        )
         private String profileUrl;
 
         @NotBlank(message = "시는 필수입니다.")
