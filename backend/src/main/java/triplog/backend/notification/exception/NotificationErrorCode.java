@@ -13,6 +13,16 @@ import triplog.backend.common.exception.BaseErrorCode;
 public enum NotificationErrorCode implements BaseErrorCode {
 
     /**
+     * 요청한 알림 목록 페이지를 찾을 수 없는 경우 사용합니다.
+     */
+    NOTIFICATIONS_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 정보들을 찾을 수 없습니다."),
+
+    /**
+     * 알림 목록의 페이지 번호 또는 크기가 올바르지 않은 경우 사용합니다.
+     */
+    INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
+
+    /**
      * 요청한 알림 정보를 찾을 수 없는 경우 사용합니다.
      */
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 정보를 찾을 수 없습니다."),

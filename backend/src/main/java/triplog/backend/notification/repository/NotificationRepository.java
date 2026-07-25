@@ -1,5 +1,7 @@
 package triplog.backend.notification.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +15,29 @@ import java.time.LocalDateTime;
  */
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+    /**
+     * 로그인 사용자의 알림 목록을 최신순으로 조회합니다.
+     * <p>
+     * {@code unreadOnly}가 {@code true}이면 읽지 않은 알림만 조회합니다.
+     *
+     * @param usersId 알림을 조회할 사용자 식별자
+     * @param unreadOnly 읽지 않은 알림만 조회할지 여부
+     * @param pageable 페이지 정보
+     * @return 조회 조건에 맞는 알림 페이지
+     */
+    @Query("""
+            select n
+            from Notification n
+            where n.users.usersId = :usersId
+              and (:unreadOnly = false or n.read = false)
+            order by n.notificationCreatedAt desc, n.notificationId desc
+            """)
+    Page<Notification> findNotifications(
+            @Param("usersId") String usersId,
+            @Param("unreadOnly") boolean unreadOnly,
+            Pageable pageable
+    );
 
     /**
      * 로그인 사용자가 해당 알림을 소유하고 있는지 확인합니다.
