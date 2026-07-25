@@ -7,16 +7,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.notification.dto.response.NotificationResponse.ListResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.ReadResponse;
+import triplog.backend.notification.dto.response.NotificationResponse.SettingsResponse;
 import triplog.backend.notification.entity.Notification;
+import triplog.backend.notification.entity.NotificationPolicy;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.notification.repository.NotificationPolicyRepository;
 import triplog.backend.notification.repository.NotificationRepository;
-
 import java.time.LocalDateTime;
-
+import java.util.List;
+import java.util.Set;
 import static triplog.backend.notification.dto.response.NotificationResponse.ReadResponse.toDto;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_ALREADY_READ;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_NOT_FOUND;
+import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_SETTINGS_NOT_FOUND;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATIONS_NOT_FOUND;
 
 /**
@@ -28,6 +31,19 @@ import static triplog.backend.notification.exception.NotificationErrorCode.NOTIF
 public class NotificationServiceImpl implements NotificationService {
 
     /**
+     * 알림 설정 조회에 사용하는 알림 정책 유형입니다.
+     */
+    private static final Set<String> SETTING_NOTIFICATION_TYPES = Set.of(
+            "LEVEL_UP",
+            "RANK_UP",
+            "BADGE_ACQUIRED",
+            "CARD_ACQUIRED",
+            "REGION_COMPLETED",
+            "LANDMARK_VERIFIED",
+            "WEEKLY_MISSION_COMPLETED"
+    );
+
+    /**
      * 알림 저장과 조회를 담당하는 Repository입니다.
      */
     private final NotificationRepository notificationRepository;
@@ -36,6 +52,24 @@ public class NotificationServiceImpl implements NotificationService {
      * 알림 정책 저장과 조회를 담당하는 Repository입니다.
      */
     private final NotificationPolicyRepository notificationPolicyRepository;
+
+    /**
+     * 알림 정책별 활성화 상태를 조회하여 알림 설정 응답으로 반환합니다.
+     *
+     * @return 알림 설정 조회 응답
+     * @throws NotificationException 필요한 알림 정책 정보를 찾을 수 없는 경우
+     */
+    @Override
+    public SettingsResponse getSettings() {
+        List<NotificationPolicy> policies =
+                notificationPolicyRepository.findAllByNotificationTypeIn(SETTING_NOTIFICATION_TYPES);
+
+        if (policies.size() != SETTING_NOTIFICATION_TYPES.size()) {
+            throw new NotificationException(NOTIFICATION_SETTINGS_NOT_FOUND);
+        }
+
+        return SettingsResponse.toDto(policies);
+    }
 
     /**
      * 로그인 사용자의 알림 목록을 조회 조건과 페이지 정보에 따라 반환합니다.

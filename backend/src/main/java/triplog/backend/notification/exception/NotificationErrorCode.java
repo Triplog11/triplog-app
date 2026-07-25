@@ -33,6 +33,11 @@ public enum NotificationErrorCode implements BaseErrorCode {
     NOTIFICATION_ALREADY_READ(HttpStatus.CONFLICT, "이미 읽은 알림입니다."),
 
     /**
+     * 알림 설정에 필요한 정책 정보를 찾을 수 없는 경우 사용합니다.
+     */
+    NOTIFICATION_SETTINGS_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 설정 정보를 찾을 수 없습니다."),
+
+    /**
      * 요청한 알림 정책 정보를 찾을 수 없는 경우 사용합니다.
      */
     NOTIFICATION_POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "알림 정책 정보를 찾을 수 없습니다.");
