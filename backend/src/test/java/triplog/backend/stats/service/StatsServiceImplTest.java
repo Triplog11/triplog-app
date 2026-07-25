@@ -7,11 +7,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import triplog.backend.rankpolicy.service.RankPolicyInfo;
+import triplog.backend.rankpolicy.service.RankPolicyService;
+import triplog.backend.stats.dto.response.StatsResponse.MyRankingResponse;
 import triplog.backend.stats.entity.Stats;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.stats.repository.StatsRepository;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
+import triplog.backend.users.service.UsersRankingInfo;
+import triplog.backend.users.service.UsersRankingService;
 
 import java.util.Optional;
 
@@ -20,7 +25,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static triplog.backend.stats.exception.StatsErrorCode.MY_RANKING_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.STATS_NOT_FOUND;
 import static triplog.backend.users.entity.LoginType.GOOGLE;
 
@@ -44,6 +52,12 @@ class StatsServiceImplTest {
     @Mock
     private UsersRepository usersRepository;
 
+    @Mock
+    private RankPolicyService rankPolicyService;
+
+    @Mock
+    private UsersRankingService usersRankingService;
+
     private StatsServiceImpl statsService;
 
     /**
@@ -51,7 +65,93 @@ class StatsServiceImplTest {
      */
     @BeforeEach
     void setUp() {
-        statsService = new StatsServiceImpl(statsRepository, usersRepository);
+        statsService = new StatsServiceImpl(
+                statsRepository,
+                usersRepository,
+                usersRankingService,
+                rankPolicyService
+        );
+    }
+
+    /**
+     * 사용자 점수보다 높은 사용자 수를 기준으로 전체 및 월간 순위를 계산하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("내 랭킹 정보와 다음 티어 정책을 조회한다")
+    void getMyRanking() {
+        // given
+        Stats stats = mock(Stats.class);
+        UsersRankingInfo usersInfo = new UsersRankingInfo(NICKNAME, PROFILE_URL);
+        RankPolicyInfo nextRankPolicy = new RankPolicyInfo("SILVER", 1500);
+        when(stats.getOverallScore()).thenReturn(1250);
+        when(stats.getMonthScore()).thenReturn(220);
+        when(stats.getStatsLevel()).thenReturn(3);
+        when(stats.getCurrentTier()).thenReturn("BRONZE");
+        given(statsRepository.findByUsersUsersId(USERS_ID)).willReturn(Optional.of(stats));
+        given(statsRepository.countByOverallScoreGreaterThan(1250)).willReturn(119L);
+        given(statsRepository.countByMonthScoreGreaterThan(220)).willReturn(33L);
+        given(usersRankingService.getRankingInfo(USERS_ID)).willReturn(usersInfo);
+        given(rankPolicyService.findNextRankPolicy(1250))
+                .willReturn(Optional.of(nextRankPolicy));
+
+        // when
+        MyRankingResponse response = statsService.getMyRanking(USERS_ID);
+
+        // then
+        assertThat(response.getNickname()).isEqualTo(NICKNAME);
+        assertThat(response.getProfileUrl()).isEqualTo(PROFILE_URL);
+        assertThat(response.getTotalRank()).isEqualTo(120);
+        assertThat(response.getMonthlyRank()).isEqualTo(34);
+        assertThat(response.getOverallScore()).isEqualTo(1250);
+        assertThat(response.getMonthScore()).isEqualTo(220);
+        assertThat(response.getLevel()).isEqualTo(3);
+        assertThat(response.getTier()).isEqualTo("BRONZE");
+        assertThat(response.getNextTier()).isEqualTo("SILVER");
+        assertThat(response.getRequiredScore()).isEqualTo(1500);
+    }
+
+    /**
+     * 다음 랭크 정책이 없는 최고 티어 사용자는 다음 티어 정보를 빈 값으로 반환하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("최고 티어이면 다음 티어 정보가 null로 반환된다")
+    void getMyRankingAtHighestTier() {
+        // given
+        Stats stats = mock(Stats.class);
+        when(stats.getOverallScore()).thenReturn(5000);
+        when(stats.getMonthScore()).thenReturn(1000);
+        given(statsRepository.findByUsersUsersId(USERS_ID)).willReturn(Optional.of(stats));
+        given(usersRankingService.getRankingInfo(USERS_ID))
+                .willReturn(new UsersRankingInfo(NICKNAME, PROFILE_URL));
+        given(rankPolicyService.findNextRankPolicy(5000))
+                .willReturn(Optional.empty());
+
+        // when
+        MyRankingResponse response = statsService.getMyRanking(USERS_ID);
+
+        // then
+        assertThat(response.getNextTier()).isNull();
+        assertThat(response.getRequiredScore()).isNull();
+    }
+
+    /**
+     * 로그인 사용자의 통계가 없으면 내 랭킹 정보 없음 예외가 발생하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("내 랭킹 정보를 찾을 수 없으면 예외가 발생한다")
+    void getMyRankingNotFound() {
+        // given
+        given(statsRepository.findByUsersUsersId(USERS_ID)).willReturn(Optional.empty());
+
+        // when
+        // then
+        assertThatThrownBy(() -> statsService.getMyRanking(USERS_ID))
+                .isInstanceOf(StatsException.class)
+                .extracting("errorCode")
+                .isEqualTo(MY_RANKING_NOT_FOUND);
+        verify(statsRepository, never()).countByOverallScoreGreaterThan(any(Integer.class));
+        verify(usersRankingService, never()).getRankingInfo(USERS_ID);
+        verify(rankPolicyService, never()).findNextRankPolicy(any(Integer.class));
     }
 
     /**

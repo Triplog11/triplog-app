@@ -5,12 +5,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.stats.entity.Stats;
+import triplog.backend.stats.dto.response.StatsResponse.MyRankingResponse;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.stats.repository.StatsRepository;
+import triplog.backend.rankpolicy.service.RankPolicyService;
+import triplog.backend.rankpolicy.service.RankPolicyInfo;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
+import triplog.backend.users.service.UsersRankingInfo;
+import triplog.backend.users.service.UsersRankingService;
+
+import java.util.Optional;
 
 import static triplog.backend.stats.exception.StatsErrorCode.PROFILE_UPDATE_TARGET_NOT_FOUND;
+import static triplog.backend.stats.exception.StatsErrorCode.MY_RANKING_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.STATS_NOT_FOUND;
 
 /**
@@ -27,6 +35,48 @@ public class StatsServiceImpl implements StatsService {
 
     private final StatsRepository statsRepository;
     private final UsersRepository usersRepository;
+
+    private final UsersRankingService usersRankingService;
+
+    private final RankPolicyService rankPolicyService;
+
+    /**
+     * 로그인 사용자의 통계와 점수 순위 및 다음 티어 정보를 조회합니다.
+     * <p>
+     * 자신보다 점수가 높은 사용자 수에 1을 더하여 동점자에게 같은 순위를 부여합니다.
+     *
+     * @param usersId 조회할 사용자 ID
+     * @return 내 랭킹 정보
+     * @throws StatsException 사용자 통계 정보를 찾을 수 없는 경우
+     */
+    @Override
+    public MyRankingResponse getMyRanking(String usersId) {
+        Stats stats = statsRepository.findByUsersUsersId(usersId)
+                .orElseThrow(() -> new StatsException(MY_RANKING_NOT_FOUND));
+
+        int totalRank = Math.toIntExact(
+                statsRepository.countByOverallScoreGreaterThan(stats.getOverallScore()) + 1
+        );
+        int monthlyRank = Math.toIntExact(
+                statsRepository.countByMonthScoreGreaterThan(stats.getMonthScore()) + 1
+        );
+        UsersRankingInfo usersInfo = usersRankingService.getRankingInfo(usersId);
+        Optional<RankPolicyInfo> nextRankPolicy =
+                rankPolicyService.findNextRankPolicy(stats.getOverallScore());
+
+        return new MyRankingResponse(
+                usersInfo.nickname(),
+                usersInfo.profileUrl(),
+                totalRank,
+                monthlyRank,
+                stats.getOverallScore(),
+                stats.getMonthScore(),
+                stats.getStatsLevel(),
+                stats.getCurrentTier(),
+                nextRankPolicy.map(RankPolicyInfo::tier).orElse(null),
+                nextRankPolicy.map(RankPolicyInfo::requiredScore).orElse(null)
+        );
+    }
 
     /**
      * 사용자 ID로 로그인 응답에 필요한 통계 정보를 조회합니다.
