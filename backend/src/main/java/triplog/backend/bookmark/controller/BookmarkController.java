@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import triplog.backend.bookmark.dto.request.BookmarkRequest.CreateRequest;
+import triplog.backend.bookmark.dto.response.BookmarkResponse.BookmarkListResult;
 import triplog.backend.bookmark.dto.response.BookmarkResponse.CreateResponse;
 import triplog.backend.bookmark.dto.response.BookmarkResponse.DeleteResponse;
 import triplog.backend.bookmark.service.BookmarkService;
@@ -242,7 +243,7 @@ public class BookmarkController {
                             examples = @ExampleObject(
                                     value = "{\"status\":500,\"message\":\"서버 내부 오류가 발생했습니다.\"}")))
     })
-    public ResponseEntity<Object> getBookmarks(
+    public ResponseEntity<BookmarkListResult> getBookmarks(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "북마크 타입 (EVENT, LANDMARK)", example = "EVENT")
             @RequestParam String bookmarkType,

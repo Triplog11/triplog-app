@@ -5,7 +5,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
 import triplog.backend.bookmark.entity.Bookmark;
+import triplog.backend.event.entity.Event;
+import triplog.backend.landmark.entity.Landmark;
+import triplog.backend.region.entity.Region;
+
 import java.util.List;
 
 /**
@@ -14,6 +19,12 @@ import java.util.List;
 @Schema(description = "북마크 관련 응답 DTO 그룹")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BookmarkResponse {
+
+    /**
+     * 북마크 목록 응답의 공통 타입입니다.
+     */
+    public interface BookmarkListResult {
+    }
 
     /**
      * 북마크 해제 응답 DTO입니다.
@@ -79,7 +90,7 @@ public class BookmarkResponse {
     @Getter
     @AllArgsConstructor
     @Schema(description = "북마크 이벤트 목록 응답")
-    public static class EventListResponse {
+    public static class EventListResponse implements BookmarkListResult {
 
         @Schema(description = "현재 페이지", example = "0")
         private Integer page;
@@ -95,6 +106,26 @@ public class BookmarkResponse {
 
         @Schema(description = "저장 이벤트 목록")
         private List<EventBookmarkEntry> bookmarks;
+
+        /**
+         * 북마크 페이지와 이벤트 조회 함수로부터 응답 DTO를 생성합니다.
+         *
+         * @param bookmarkPage 북마크 페이지
+         * @param events 북마크 식별자로 이벤트를 조회하는 함수
+         * @return 이벤트 목록 응답 DTO
+         */
+        public static EventListResponse toDto(Page<Bookmark> bookmarkPage,
+                                              java.util.function.Function<Long, Event> events) {
+            List<EventBookmarkEntry> entries = bookmarkPage.getContent().stream()
+                    .map(bookmark -> EventBookmarkEntry.toDto(bookmark, events.apply(bookmark.getBookmarkIdentifier())))
+                    .filter(entry -> entry != null)
+                    .toList();
+
+            return new EventListResponse(
+                    bookmarkPage.getNumber(), bookmarkPage.getSize(),
+                    bookmarkPage.getTotalElements(), bookmarkPage.getTotalPages(), entries
+            );
+        }
     }
 
     /**
@@ -122,6 +153,25 @@ public class BookmarkResponse {
 
         @Schema(description = "종료 일시", example = "2026-07-07T18:00:00", nullable = true)
         private String eventEnd;
+
+        /**
+         * 북마크와 이벤트 엔티티로부터 항목 DTO를 생성합니다.
+         *
+         * @param bookmark 북마크 엔티티
+         * @param event 이벤트 엔티티 (null이면 null 반환)
+         * @return 이벤트 북마크 항목 DTO
+         */
+        public static EventBookmarkEntry toDto(Bookmark bookmark, Event event) {
+            if (event == null) return null;
+            return new EventBookmarkEntry(
+                    bookmark.getBookmarkId(),
+                    event.getEventId(),
+                    event.getTourismContent().getTitle(),
+                    event.getTourismContent().getPrimaryImageUrl(),
+                    event.getEventStartDate() != null ? event.getEventStartDate().toString() : null,
+                    event.getEventEndDate() != null ? event.getEventEndDate().toString() : null
+            );
+        }
     }
 
     /**
@@ -130,7 +180,7 @@ public class BookmarkResponse {
     @Getter
     @AllArgsConstructor
     @Schema(description = "북마크 랜드마크 목록 응답")
-    public static class LandmarkListResponse {
+    public static class LandmarkListResponse implements BookmarkListResult {
 
         @Schema(description = "현재 페이지", example = "0")
         private Integer page;
@@ -146,6 +196,26 @@ public class BookmarkResponse {
 
         @Schema(description = "저장 장소 목록")
         private List<LandmarkBookmarkEntry> bookmarks;
+
+        /**
+         * 북마크 페이지와 랜드마크 조회 함수로부터 응답 DTO를 생성합니다.
+         *
+         * @param bookmarkPage 북마크 페이지
+         * @param landmarks 북마크 식별자로 랜드마크를 조회하는 함수
+         * @return 랜드마크 목록 응답 DTO
+         */
+        public static LandmarkListResponse toDto(Page<Bookmark> bookmarkPage,
+                                                 java.util.function.Function<Long, Landmark> landmarks) {
+            List<LandmarkBookmarkEntry> entries = bookmarkPage.getContent().stream()
+                    .map(bookmark -> LandmarkBookmarkEntry.toDto(bookmark, landmarks.apply(bookmark.getBookmarkIdentifier())))
+                    .filter(entry -> entry != null)
+                    .toList();
+
+            return new LandmarkListResponse(
+                    bookmarkPage.getNumber(), bookmarkPage.getSize(),
+                    bookmarkPage.getTotalElements(), bookmarkPage.getTotalPages(), entries
+            );
+        }
     }
 
     /**
@@ -173,6 +243,25 @@ public class BookmarkResponse {
 
         @Schema(description = "Tour API 식별자", example = "TOUR-10001")
         private String contentId;
+
+        /**
+         * 북마크와 랜드마크 엔티티로부터 항목 DTO를 생성합니다.
+         *
+         * @param bookmark 북마크 엔티티
+         * @param landmark 랜드마크 엔티티 (null이면 null 반환)
+         * @return 랜드마크 북마크 항목 DTO
+         */
+        public static LandmarkBookmarkEntry toDto(Bookmark bookmark, Landmark landmark) {
+            if (landmark == null) return null;
+            return new LandmarkBookmarkEntry(
+                    bookmark.getBookmarkId(),
+                    landmark.getLandmarkId(),
+                    landmark.getLandmarkName(),
+                    landmark.getTourismContent().getRegion().getRegionId(),
+                    landmark.getTourismContent().getRegion().getRegionName(),
+                    landmark.getTourismContent().getExternalContentId()
+            );
+        }
     }
 
     /**
@@ -181,7 +270,7 @@ public class BookmarkResponse {
     @Getter
     @AllArgsConstructor
     @Schema(description = "북마크 지역 목록 응답")
-    public static class RegionListResponse {
+    public static class RegionListResponse implements BookmarkListResult {
 
         @Schema(description = "현재 페이지", example = "0")
         private Integer page;
@@ -197,6 +286,26 @@ public class BookmarkResponse {
 
         @Schema(description = "저장 지역 목록")
         private List<RegionBookmarkEntry> bookmarks;
+
+        /**
+         * 북마크 페이지와 지역 조회 함수로부터 응답 DTO를 생성합니다.
+         *
+         * @param bookmarkPage 북마크 페이지
+         * @param regions 북마크 식별자로 지역을 조회하는 함수
+         * @return 지역 목록 응답 DTO
+         */
+        public static RegionListResponse toDto(Page<Bookmark> bookmarkPage,
+                                               java.util.function.Function<Long, Region> regions) {
+            List<RegionBookmarkEntry> entries = bookmarkPage.getContent().stream()
+                    .map(bookmark -> RegionBookmarkEntry.toDto(bookmark, regions.apply(bookmark.getBookmarkIdentifier())))
+                    .filter(entry -> entry != null)
+                    .toList();
+
+            return new RegionListResponse(
+                    bookmarkPage.getNumber(), bookmarkPage.getSize(),
+                    bookmarkPage.getTotalElements(), bookmarkPage.getTotalPages(), entries
+            );
+        }
     }
 
     /**
@@ -215,5 +324,21 @@ public class BookmarkResponse {
 
         @Schema(description = "지역명", example = "서울특별시 강남구")
         private String regionName;
+
+        /**
+         * 북마크와 지역 엔티티로부터 항목 DTO를 생성합니다.
+         *
+         * @param bookmark 북마크 엔티티
+         * @param region 지역 엔티티 (null이면 null 반환)
+         * @return 지역 북마크 항목 DTO
+         */
+        public static RegionBookmarkEntry toDto(Bookmark bookmark, Region region) {
+            if (region == null) return null;
+            return new RegionBookmarkEntry(
+                    bookmark.getBookmarkId(),
+                    region.getRegionId(),
+                    region.getRegionName()
+            );
+        }
     }
 }

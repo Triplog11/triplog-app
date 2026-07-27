@@ -1,6 +1,7 @@
 package triplog.backend.bookmark.service;
 
 import triplog.backend.bookmark.dto.request.BookmarkRequest.CreateRequest;
+import triplog.backend.bookmark.dto.response.BookmarkResponse.BookmarkListResult;
 import triplog.backend.bookmark.dto.response.BookmarkResponse.CreateResponse;
 import triplog.backend.bookmark.dto.response.BookmarkResponse.DeleteResponse;
 
@@ -31,10 +32,10 @@ public interface BookmarkService {
      * 로그인 사용자의 북마크 목록을 타입별로 조회합니다.
      *
      * @param usersId 로그인 사용자 ID
-     * @param bookmarkType 북마크 타입 (EVENT, LANDMARK)
+     * @param bookmarkType 북마크 타입 (EVENT, LANDMARK, REGION)
      * @param page 페이지 번호
      * @param size 페이지 크기
      * @return 타입에 맞는 북마크 목록 응답
      */
-    Object getBookmarks(String usersId, String bookmarkType, int page, int size);
+    BookmarkListResult getBookmarks(String usersId, String bookmarkType, int page, int size);
 }
