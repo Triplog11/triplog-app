@@ -1,6 +1,8 @@
 package triplog.backend.stats.service;
 
 import triplog.backend.stats.dto.response.StatsResponse.MyRankingResponse;
+import triplog.backend.stats.dto.response.StatsResponse.MyStatsResponse;
+import triplog.backend.stats.dto.response.StatsResponse.RankingListResponse;
 
 /**
  * 사용자 통계(Stats)와 관련된 비즈니스 로직을 정의하는 Service 인터페이스입니다.
@@ -47,4 +49,22 @@ public interface StatsService {
      * @return 수정 후 주소 프로필 요약 정보
      */
     StatsProfileInfo updateProfileAddress(String usersId, String addressSi, String addressDoGun, String addressGu);
+
+    /**
+     * 전체 랭킹을 페이지 단위로 조회합니다.
+     *
+     * @param rankingType 랭킹 타입 (TOTAL, MONTHLY, QUARTER)
+     * @param page 페이지 번호 (0부터 시작)
+     * @param size 페이지 크기
+     * @return 랭킹 목록 응답
+     */
+    RankingListResponse getRankings(String rankingType, int page, int size);
+
+    /**
+     * 로그인 사용자의 스탯 정보를 조회합니다.
+     *
+     * @param usersId 조회할 사용자 ID
+     * @return 내 스탯 정보
+     */
+    MyStatsResponse getMyStats(String usersId);
 }
