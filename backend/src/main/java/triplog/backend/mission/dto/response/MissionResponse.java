@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import triplog.backend.mission.entity.Mission;
+import triplog.backend.mission.entity.UsersMission;
 
 import java.util.List;
 
@@ -67,6 +69,36 @@ public class MissionResponse {
 
         @Schema(description = "완료 일시", example = "2026-06-22T00:00:00", nullable = true)
         private String completedAt;
+
+        /**
+         * Mission 엔티티와 사용자 완료 정보로부터 응답 DTO를 생성합니다.
+         *
+         * @param mission 미션 엔티티
+         * @param usersMission 사용자 완료 정보 (null이면 미완료)
+         * @return 미션 진행 현황 DTO
+         */
+        public static MissionEntry toDto(Mission mission, UsersMission usersMission) {
+            boolean completed = usersMission != null;
+            String completedAt = completed
+                    ? usersMission.getUsersMissionCreatedAt().toString()
+                    : null;
+
+            return new MissionEntry(
+                    mission.getMissionId(),
+                    mission.getMissionName(),
+                    mission.getMissionType(),
+                    mission.getMissionTarget(),
+                    stripJsonQuotes(mission.getMissionFilter()),
+                    mission.getMissionWeekStart() != null
+                            ? mission.getMissionWeekStart().toString() : null,
+                    mission.getMissionWeekEnd() != null
+                            ? mission.getMissionWeekEnd().toString() : null,
+                    mission.getMissionScore(),
+                    mission.getMissionXp(),
+                    completed,
+                    completedAt
+            );
+        }
     }
 
     /**
@@ -115,5 +147,40 @@ public class MissionResponse {
 
         @Schema(description = "보상 경험치", example = "150")
         private Integer rewardXp;
+
+        /**
+         * Mission 엔티티로부터 응답 DTO를 생성합니다.
+         *
+         * @param mission 미션 엔티티
+         * @return 미션 요약 DTO
+         */
+        public static MissionSummary toDto(Mission mission) {
+            return new MissionSummary(
+                    mission.getMissionId(),
+                    mission.getMissionName(),
+                    mission.getMissionType(),
+                    mission.getMissionTarget(),
+                    stripJsonQuotes(mission.getMissionFilter()),
+                    mission.getMissionWeekStart() != null
+                            ? mission.getMissionWeekStart().toString() : null,
+                    mission.getMissionWeekEnd() != null
+                            ? mission.getMissionWeekEnd().toString() : null,
+                    mission.getMissionScore(),
+                    mission.getMissionXp()
+            );
+        }
+    }
+
+    /**
+     * JSON 문자열 값의 양쪽 따옴표를 제거합니다.
+     *
+     * @param value JSON 문자열 값
+     * @return 따옴표가 제거된 문자열
+     */
+    private static String stripJsonQuotes(String value) {
+        if (value != null && value.startsWith("\"") && value.endsWith("\"")) {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
     }
 }

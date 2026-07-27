@@ -17,7 +17,6 @@ import triplog.backend.mission.repository.UsersMissionRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static triplog.backend.mission.exception.MissionErrorCode.MISSION_NOT_FOUND;
@@ -33,8 +32,6 @@ import static triplog.backend.mission.exception.MissionErrorCode.MISSION_PROGRES
 @Slf4j
 @Transactional(readOnly = true)
 public class MissionServiceImpl implements MissionService {
-
-    private static final Set<String> VALID_MISSION_TYPES = Set.of("WEEKLY", "DAILY");
 
     private final MissionRepository missionRepository;
     private final UsersMissionRepository usersMissionRepository;
@@ -54,7 +51,7 @@ public class MissionServiceImpl implements MissionService {
      */
     @Override
     public MyMissionListResponse getMyMissions(String usersId, String missionType) {
-        if (missionType != null && !VALID_MISSION_TYPES.contains(missionType)) {
+        if (missionType != null && !"WEEKLY".equals(missionType) && !"DAILY".equals(missionType)) {
             throw new MissionException(MISSION_PROGRESS_NOT_FOUND);
         }
 
@@ -79,29 +76,7 @@ public class MissionServiceImpl implements MissionService {
                 ));
 
         List<MissionEntry> entries = missions.stream()
-                .map(mission -> {
-                    UsersMission usersMission = completedMap.get(mission.getMissionId());
-                    boolean completed = usersMission != null;
-                    String completedAt = completed
-                            ? usersMission.getUsersMissionCreatedAt().toString()
-                            : null;
-
-                    return new MissionEntry(
-                            mission.getMissionId(),
-                            mission.getMissionName(),
-                            mission.getMissionType(),
-                            mission.getMissionTarget(),
-                            stripJsonQuotes(mission.getMissionFilter()),
-                            mission.getMissionWeekStart() != null
-                                    ? mission.getMissionWeekStart().toString() : null,
-                            mission.getMissionWeekEnd() != null
-                                    ? mission.getMissionWeekEnd().toString() : null,
-                            mission.getMissionScore(),
-                            mission.getMissionXp(),
-                            completed,
-                            completedAt
-                    );
-                })
+                .map(mission -> MissionEntry.toDto(mission, completedMap.get(mission.getMissionId())))
                 .toList();
 
         return new MyMissionListResponse(entries);
@@ -120,7 +95,7 @@ public class MissionServiceImpl implements MissionService {
      */
     @Override
     public MissionListResponse getMissions(String missionType) {
-        if (missionType != null && !VALID_MISSION_TYPES.contains(missionType)) {
+        if (missionType != null && !"WEEKLY".equals(missionType) && !"DAILY".equals(missionType)) {
             throw new MissionException(MISSION_NOT_FOUND);
         }
 
@@ -132,19 +107,7 @@ public class MissionServiceImpl implements MissionService {
         }
 
         List<MissionSummary> summaries = missions.stream()
-                .map(mission -> new MissionSummary(
-                        mission.getMissionId(),
-                        mission.getMissionName(),
-                        mission.getMissionType(),
-                        mission.getMissionTarget(),
-                        stripJsonQuotes(mission.getMissionFilter()),
-                        mission.getMissionWeekStart() != null
-                                ? mission.getMissionWeekStart().toString() : null,
-                        mission.getMissionWeekEnd() != null
-                                ? mission.getMissionWeekEnd().toString() : null,
-                        mission.getMissionScore(),
-                        mission.getMissionXp()
-                ))
+                .map(MissionSummary::toDto)
                 .toList();
 
         return new MissionListResponse(summaries);
@@ -165,18 +128,5 @@ public class MissionServiceImpl implements MissionService {
         return missionRepository
                 .findByMissionTypeAndMissionWeekStartLessThanEqualAndMissionWeekEndGreaterThanEqual(
                         missionType, now, now);
-    }
-
-    /**
-     * JSON 문자열 값의 양쪽 따옴표를 제거합니다.
-     *
-     * @param value JSON 문자열 값
-     * @return 따옴표가 제거된 문자열
-     */
-    private String stripJsonQuotes(String value) {
-        if (value != null && value.startsWith("\"") && value.endsWith("\"")) {
-            return value.substring(1, value.length() - 1);
-        }
-        return value;
     }
 }
