@@ -15,8 +15,5 @@ import triplog.backend.rankpolicy.service.RankPolicyService;
 @Tag(name = "Rank Policy API", description = "랭크 정책 API")
 public class RankPolicyController {
 
-    /**
-     * 랭크 정책 비즈니스 로직을 처리하는 서비스입니다.
-     */
     private final RankPolicyService rankPolicyService;
 }

@@ -26,6 +26,16 @@ public enum StatsErrorCode implements BaseErrorCode {
     STATS_NOT_FOUND(HttpStatus.NOT_FOUND, "통계 정보를 찾을 수 없습니다."),
 
     /**
+     * 전체 랭킹 정보를 찾을 수 없을 때 사용하는 에러 코드입니다.
+     */
+    RANKING_NOT_FOUND(HttpStatus.NOT_FOUND, "전체 랭킹 정보를 찾을 수 없습니다."),
+
+    /**
+     * 내 스탯 정보를 찾을 수 없을 때 사용하는 에러 코드입니다.
+     */
+    MY_STATS_NOT_FOUND(HttpStatus.NOT_FOUND, "내 스탯 정보를 찾을 수 없습니다."),
+
+    /**
      * 프로필 수정 대상 통계 정보가 존재하지 않는 경우 사용하는 에러 코드입니다.
      */
     PROFILE_UPDATE_TARGET_NOT_FOUND(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");

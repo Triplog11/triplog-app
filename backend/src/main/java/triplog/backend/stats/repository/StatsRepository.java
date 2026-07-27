@@ -1,5 +1,7 @@
 package triplog.backend.stats.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -67,4 +69,36 @@ public interface StatsRepository extends JpaRepository<Stats, Long> {
             @Param("addressDoGun") String addressDoGun,
             @Param("addressGu") String addressGu
     );
+
+    /**
+     * 누적 점수 기준 내림차순으로 랭킹을 페이지 단위로 조회합니다.
+     *
+     * @param pageable 페이지네이션 정보
+     * @return 누적 점수 기준 정렬된 Stats 페이지
+     */
+    Page<Stats> findAllByOrderByOverallScoreDesc(Pageable pageable);
+
+    /**
+     * 월간 점수 기준 내림차순으로 랭킹을 페이지 단위로 조회합니다.
+     *
+     * @param pageable 페이지네이션 정보
+     * @return 월간 점수 기준 정렬된 Stats 페이지
+     */
+    Page<Stats> findAllByOrderByMonthScoreDesc(Pageable pageable);
+
+    /**
+     * 분기 점수 기준 내림차순으로 랭킹을 페이지 단위로 조회합니다.
+     *
+     * @param pageable 페이지네이션 정보
+     * @return 분기 점수 기준 정렬된 Stats 페이지
+     */
+    Page<Stats> findAllByOrderByQuarterScoreDesc(Pageable pageable);
+
+    /**
+     * 지정한 분기 점수보다 높은 점수를 보유한 사용자 수를 조회합니다.
+     *
+     * @param quarterScore 기준 분기 점수
+     * @return 기준 점수보다 높은 사용자 수
+     */
+    long countByQuarterScoreGreaterThan(int quarterScore);
 }
