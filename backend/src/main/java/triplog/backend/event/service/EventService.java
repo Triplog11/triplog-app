@@ -18,4 +18,12 @@ public interface EventService {
      * @throws InvalidEventContentTypeException 콘텐츠 타입이 15가 아닌 경우
      */
     Event upsert(TourismContent tourismContent, EventSyncData syncData);
+
+    /**
+     * 해당 ID의 Event가 존재하는지 확인합니다.
+     *
+     * @param eventId Event 식별자
+     * @return 존재하면 true
+     */
+    boolean existsById(Long eventId);
 }

@@ -25,4 +25,12 @@ public interface RegionService {
      * @return 생성하거나 갱신한 Region
      */
     Region upsert(RegionSyncData syncData);
+
+    /**
+     * 해당 ID의 Region이 존재하는지 확인합니다.
+     *
+     * @param regionId Region 식별자
+     * @return 존재하면 true
+     */
+    boolean existsById(Long regionId);
 }

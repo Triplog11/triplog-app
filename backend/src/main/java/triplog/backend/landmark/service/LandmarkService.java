@@ -18,4 +18,12 @@ public interface LandmarkService {
      * @throws InvalidLandmarkContentTypeException 콘텐츠 타입이 12가 아닌 경우
      */
     Landmark upsert(TourismContent tourismContent, String displayName);
+
+    /**
+     * 해당 ID의 Landmark가 존재하는지 확인합니다.
+     *
+     * @param landmarkId Landmark 식별자
+     * @return 존재하면 true
+     */
+    boolean existsById(Long landmarkId);
 }

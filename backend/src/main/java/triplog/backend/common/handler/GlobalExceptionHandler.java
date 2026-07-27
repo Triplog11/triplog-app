@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import triplog.backend.bookmark.exception.BookmarkException;
 import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.badge.exception.BadgeException;
 import triplog.backend.common.exception.CommonErrorCode;
@@ -43,6 +44,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadgeException.class)
     protected ResponseEntity<ErrorResponse> handleBadgeException(BadgeException e) {
         log.warn("배지 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
+     * 북마크 처리 중 발생한 {@link BookmarkException}을 공통 오류 응답으로 변환합니다.
+     *
+     * @param e 북마크 도메인에서 발생한 예외
+     * @return 북마크 오류 코드에 해당하는 HTTP 상태와 메시지를 포함한 응답
+     */
+    @ExceptionHandler(BookmarkException.class)
+    protected ResponseEntity<ErrorResponse> handleBookmarkException(BookmarkException e) {
+        log.warn("북마크 도메인 예외 발생: {}", e.getErrorCode());
         return toResponseEntity(e.getErrorCode());
     }
 
