@@ -46,4 +46,16 @@ public class LandmarkServiceImpl implements LandmarkService {
                         new Landmark(tourismContent, displayName)
                 ));
     }
+
+    /**
+     * 해당 ID의 Landmark가 존재하는지 확인합니다.
+     *
+     * @param landmarkId Landmark 식별자
+     * @return 존재하면 true
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsById(Long landmarkId) {
+        return landmarkRepository.existsById(landmarkId);
+    }
 }

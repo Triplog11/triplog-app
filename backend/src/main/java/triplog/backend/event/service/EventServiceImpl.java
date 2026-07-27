@@ -44,4 +44,16 @@ public class EventServiceImpl implements EventService {
                 })
                 .orElseGet(() -> eventRepository.save(new Event(tourismContent, syncData)));
     }
+
+    /**
+     * 해당 ID의 Event가 존재하는지 확인합니다.
+     *
+     * @param eventId Event 식별자
+     * @return 존재하면 true
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsById(Long eventId) {
+        return eventRepository.existsById(eventId);
+    }
 }

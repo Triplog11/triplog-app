@@ -61,4 +61,16 @@ public class RegionServiceImpl implements RegionService {
                         syncData.legalDistrictCode()
                 )));
     }
+
+    /**
+     * 해당 ID의 Region이 존재하는지 확인합니다.
+     *
+     * @param regionId Region 식별자
+     * @return 존재하면 true
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsById(Long regionId) {
+        return regionRepository.existsById(regionId);
+    }
 }
