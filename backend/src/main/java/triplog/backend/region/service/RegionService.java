@@ -1,5 +1,9 @@
 package triplog.backend.region.service;
 
+import triplog.backend.region.dto.response.RegionResponse.NationwideMapResponse;
+import triplog.backend.region.dto.response.RegionResponse.ProvinceMapResponse;
+import triplog.backend.region.dto.response.RegionResponse.RegionDetailResponse;
+import triplog.backend.region.dto.response.RegionResponse.RegionListResponse;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.exception.RegionNotFoundException;
 
@@ -33,4 +37,40 @@ public interface RegionService {
      * @return 존재하면 true
      */
     boolean existsById(Long regionId);
+
+    /**
+     * 전국 지도 현황을 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 전국 지도 현황 응답
+     */
+    NationwideMapResponse getNationwideMap(String usersId);
+
+    /**
+     * 광역 지도 현황을 조회합니다.
+     *
+     * @param usersId      사용자 식별자
+     * @param provinceCode 광역 코드
+     * @return 광역 지도 현황 응답
+     */
+    ProvinceMapResponse getProvinceMap(String usersId, String provinceCode);
+
+    /**
+     * 지역 상세 정보를 조회합니다.
+     *
+     * @param usersId  사용자 식별자
+     * @param regionId 지역 ID
+     * @return 지역 상세 응답
+     */
+    RegionDetailResponse getRegionDetail(String usersId, Long regionId);
+
+    /**
+     * 지역 목록을 페이징하여 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param page    페이지 번호
+     * @param size    페이지 크기
+     * @return 지역 목록 응답
+     */
+    RegionListResponse getRegionList(String usersId, int page, int size);
 }

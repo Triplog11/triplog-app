@@ -1,11 +1,27 @@
 package triplog.backend.region.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplog.backend.region.dto.response.RegionResponse.NationwideMapResponse;
+import triplog.backend.region.dto.response.RegionResponse.ProvinceMapResponse;
+import triplog.backend.region.dto.response.RegionResponse.RegionDetailResponse;
+import triplog.backend.region.dto.response.RegionResponse.RegionListResponse;
+import triplog.backend.landmark.entity.Landmark;
+import triplog.backend.landmark.service.LandmarkService;
 import triplog.backend.region.entity.Region;
+import triplog.backend.region.entity.UsersRegion;
+import triplog.backend.region.exception.RegionErrorCode;
+import triplog.backend.region.exception.RegionException;
 import triplog.backend.region.exception.RegionNotFoundException;
 import triplog.backend.region.repository.RegionRepository;
+import triplog.backend.region.repository.UsersRegionRepository;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * {@link RegionService}의 기본 구현체입니다.
@@ -16,6 +32,8 @@ import triplog.backend.region.repository.RegionRepository;
 public class RegionServiceImpl implements RegionService {
 
     private final RegionRepository regionRepository;
+    private final UsersRegionRepository usersRegionRepository;
+    private final LandmarkService landmarkService;
 
     /**
      * 법정동 시도·시군구 코드 조합으로 Region을 조회합니다.
@@ -72,5 +90,105 @@ public class RegionServiceImpl implements RegionService {
     @Transactional(readOnly = true)
     public boolean existsById(Long regionId) {
         return regionRepository.existsById(regionId);
+    }
+
+    /**
+     * 전국 지도 현황을 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 전국 지도 현황 응답
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public NationwideMapResponse getNationwideMap(String usersId) {
+        List<Region> allRegions = regionRepository.findAll();
+        if (allRegions.isEmpty()) {
+            throw new RegionException(RegionErrorCode.NATIONWIDE_MAP_NOT_FOUND);
+        }
+
+        List<UsersRegion> userRegions = usersRegionRepository.findByUsersId(usersId);
+        Set<Long> visitedRegionIds = userRegions.stream()
+                .map(ur -> ur.getRegion().getRegionId())
+                .collect(Collectors.toSet());
+
+        Map<Long, Long> landmarkCountMap = landmarkService.countLandmarksByRegion();
+
+        Map<Long, Long> visitedLandmarkMap = landmarkService.countVisitedLandmarksByRegionAndUser(usersId);
+
+        return NationwideMapResponse.toDto(allRegions, visitedRegionIds, landmarkCountMap, visitedLandmarkMap);
+    }
+
+    /**
+     * 광역 지도 현황을 조회합니다.
+     *
+     * @param usersId      사용자 식별자
+     * @param provinceCode 광역 코드
+     * @return 광역 지도 현황 응답
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public ProvinceMapResponse getProvinceMap(String usersId, String provinceCode) {
+        List<Region> provinceRegions = regionRepository.findByLegalRegionCode(provinceCode);
+        if (provinceRegions.isEmpty()) {
+            throw new RegionException(RegionErrorCode.PROVINCE_MAP_NOT_FOUND);
+        }
+
+        List<UsersRegion> userRegions = usersRegionRepository.findByUsersId(usersId);
+        Set<Long> visitedRegionIds = userRegions.stream()
+                .map(ur -> ur.getRegion().getRegionId())
+                .collect(Collectors.toSet());
+
+        Map<Long, Long> landmarkCountMap = landmarkService.countLandmarksByRegion();
+
+        Map<Long, Long> visitedLandmarkMap = landmarkService.countVisitedLandmarksByRegionAndUser(usersId);
+
+        return ProvinceMapResponse.toDto(provinceRegions, visitedRegionIds, landmarkCountMap, visitedLandmarkMap);
+    }
+
+    /**
+     * 지역 상세 정보를 조회합니다.
+     *
+     * @param usersId  사용자 식별자
+     * @param regionId 지역 ID
+     * @return 지역 상세 응답
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public RegionDetailResponse getRegionDetail(String usersId, Long regionId) {
+        Region region = regionRepository.findById(regionId)
+                .orElseThrow(() -> new RegionException(RegionErrorCode.REGION_DETAIL_NOT_FOUND));
+
+        UsersRegion usersRegion = usersRegionRepository.findByUsersIdAndRegionRegionId(usersId, regionId)
+                .orElse(null);
+
+        List<Landmark> landmarks = landmarkService.findByRegionId(regionId);
+
+        Set<Long> acquiredLandmarkIds = landmarkService.findAcquiredLandmarkIdsByUsersId(usersId);
+
+        return RegionDetailResponse.toDto(region, usersRegion, landmarks, acquiredLandmarkIds);
+    }
+
+    /**
+     * 지역 목록을 페이징하여 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param page    페이지 번호
+     * @param size    페이지 크기
+     * @return 지역 목록 응답
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public RegionListResponse getRegionList(String usersId, int page, int size) {
+        Page<Region> regionPage = regionRepository.findAll(PageRequest.of(page, size));
+        if (regionPage.isEmpty()) {
+            throw new RegionException(RegionErrorCode.REGION_LIST_NOT_FOUND);
+        }
+
+        List<UsersRegion> userRegions = usersRegionRepository.findByUsersId(usersId);
+        Set<Long> visitedRegionIds = userRegions.stream()
+                .map(ur -> ur.getRegion().getRegionId())
+                .collect(Collectors.toSet());
+
+        return RegionListResponse.toDto(regionPage, visitedRegionIds);
     }
 }

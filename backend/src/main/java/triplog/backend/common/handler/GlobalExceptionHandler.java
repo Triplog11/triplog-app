@@ -18,9 +18,11 @@ import triplog.backend.common.exception.CommonErrorCode;
 import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.fcmtoken.exception.FcmTokenException;
 import triplog.backend.image.exception.ImageException;
+import triplog.backend.landmark.exception.LandmarkException;
 import triplog.backend.mission.exception.MissionException;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.rankpolicy.exception.RankPolicyException;
+import triplog.backend.region.exception.RegionException;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.users.exception.UsersException;
 
@@ -154,6 +156,30 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissionException.class)
     protected ResponseEntity<ErrorResponse> handleMissionException(MissionException e) {
         log.warn("미션 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
+     * 지역(Region) 도메인 비즈니스 로직에서 발생하는 {@link RegionException}을 처리합니다.
+     *
+     * @param e 지역 도메인에서 발생한 예외
+     * @return 지역 에러 코드에 해당하는 HTTP 상태 코드와 에러 메시지를 포함한 응답
+     */
+    @ExceptionHandler(RegionException.class)
+    protected ResponseEntity<ErrorResponse> handleRegionException(RegionException e) {
+        log.warn("지역 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
+     * 랜드마크(Landmark) 도메인 비즈니스 로직에서 발생하는 {@link LandmarkException}을 처리합니다.
+     *
+     * @param e 랜드마크 도메인에서 발생한 예외
+     * @return 랜드마크 에러 코드에 해당하는 HTTP 상태 코드와 에러 메시지를 포함한 응답
+     */
+    @ExceptionHandler(LandmarkException.class)
+    protected ResponseEntity<ErrorResponse> handleLandmarkException(LandmarkException e) {
+        log.warn("랜드마크 도메인 예외 발생: {}", e.getErrorCode());
         return toResponseEntity(e.getErrorCode());
     }
 
