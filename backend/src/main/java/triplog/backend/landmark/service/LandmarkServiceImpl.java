@@ -3,10 +3,19 @@ package triplog.backend.landmark.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResponse;
 import triplog.backend.landmark.entity.Landmark;
+import triplog.backend.landmark.entity.UsersCardLandmark;
 import triplog.backend.landmark.exception.InvalidLandmarkContentTypeException;
+import triplog.backend.landmark.exception.LandmarkErrorCode;
+import triplog.backend.landmark.exception.LandmarkException;
 import triplog.backend.landmark.repository.LandmarkRepository;
+import triplog.backend.landmark.repository.UsersCardLandmarkRepository;
 import triplog.backend.tourismcontent.entity.TourismContent;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * {@link LandmarkService}의 기본 구현체입니다.
@@ -19,6 +28,7 @@ public class LandmarkServiceImpl implements LandmarkService {
     private static final String LANDMARK_CONTENT_TYPE_ID = "12";
 
     private final LandmarkRepository landmarkRepository;
+    private final UsersCardLandmarkRepository usersCardLandmarkRepository;
 
     /**
      * TourismContent 기준으로 Landmark를 생성하거나 표시명을 갱신합니다.
@@ -57,5 +67,80 @@ public class LandmarkServiceImpl implements LandmarkService {
     @Transactional(readOnly = true)
     public boolean existsById(Long landmarkId) {
         return landmarkRepository.existsById(landmarkId);
+    }
+
+    /**
+     * 랜드마크 상세 정보를 조회합니다.
+     *
+     * @param usersId    사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     * @return 랜드마크 상세 응답
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public LandmarkDetailResponse getLandmarkDetail(String usersId, Long landmarkId) {
+        Landmark landmark = landmarkRepository.findByIdWithTourismContentAndRegion(landmarkId)
+                .orElseThrow(() -> new LandmarkException(LandmarkErrorCode.LANDMARK_DETAIL_NOT_FOUND));
+
+        UsersCardLandmark usersCardLandmark = usersCardLandmarkRepository
+                .findByUsersIdAndLandmarkLandmarkId(usersId, landmarkId)
+                .orElse(null);
+
+        return LandmarkDetailResponse.toDto(landmark, usersCardLandmark);
+    }
+
+    /**
+     * 특정 지역에 속한 랜드마크 목록을 조회합니다.
+     *
+     * @param regionId 지역 식별자
+     * @return 해당 지역의 랜드마크 목록
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<Landmark> findByRegionId(Long regionId) {
+        return landmarkRepository.findByRegionId(regionId);
+    }
+
+    /**
+     * 지역별 전체 랜드마크 수를 조회합니다.
+     *
+     * @return 지역 ID와 랜드마크 수 맵
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, Long> countLandmarksByRegion() {
+        return landmarkRepository.countLandmarksByRegion().stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
+
+    /**
+     * 특정 사용자가 방문한 랜드마크 수를 지역별로 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 지역 ID와 방문 랜드마크 수 맵
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, Long> countVisitedLandmarksByRegionAndUser(String usersId) {
+        return landmarkRepository.countVisitedLandmarksByRegionAndUser(usersId).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
+
+    /**
+     * 특정 사용자가 획득한 랜드마크 ID 집합을 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 획득한 랜드마크 ID 집합
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Set<Long> findAcquiredLandmarkIdsByUsersId(String usersId) {
+        return usersCardLandmarkRepository.findAcquiredLandmarkIdsByUsersId(usersId);
     }
 }

@@ -3,6 +3,7 @@ package triplog.backend.region.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import triplog.backend.region.entity.Region;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -21,4 +22,12 @@ public interface RegionRepository extends JpaRepository<Region, Long> {
             String legalRegionCode,
             String legalDistrictCode
     );
+
+    /**
+     * 광역 코드로 해당 광역에 속한 지역 목록을 조회합니다.
+     *
+     * @param legalRegionCode 광역 코드 (법정동 시도 코드)
+     * @return 광역에 속한 지역 목록
+     */
+    List<Region> findByLegalRegionCode(String legalRegionCode);
 }

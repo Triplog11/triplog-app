@@ -1,8 +1,12 @@
 package triplog.backend.landmark.service;
 
+import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResponse;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.exception.InvalidLandmarkContentTypeException;
 import triplog.backend.tourismcontent.entity.TourismContent;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Landmark 생성과 표시명 갱신 기능을 정의하는 도메인 서비스입니다.
@@ -26,4 +30,44 @@ public interface LandmarkService {
      * @return 존재하면 true
      */
     boolean existsById(Long landmarkId);
+
+    /**
+     * 랜드마크 상세 정보를 조회합니다.
+     *
+     * @param usersId    사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     * @return 랜드마크 상세 응답
+     */
+    LandmarkDetailResponse getLandmarkDetail(String usersId, Long landmarkId);
+
+    /**
+     * 특정 지역에 속한 랜드마크 목록을 조회합니다.
+     *
+     * @param regionId 지역 식별자
+     * @return 해당 지역의 랜드마크 목록
+     */
+    List<Landmark> findByRegionId(Long regionId);
+
+    /**
+     * 지역별 전체 랜드마크 수를 조회합니다.
+     *
+     * @return 지역 ID와 랜드마크 수 맵
+     */
+    Map<Long, Long> countLandmarksByRegion();
+
+    /**
+     * 특정 사용자가 방문한 랜드마크 수를 지역별로 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 지역 ID와 방문 랜드마크 수 맵
+     */
+    Map<Long, Long> countVisitedLandmarksByRegionAndUser(String usersId);
+
+    /**
+     * 특정 사용자가 획득한 랜드마크 ID 집합을 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 획득한 랜드마크 ID 집합
+     */
+    Set<Long> findAcquiredLandmarkIdsByUsersId(String usersId);
 }
