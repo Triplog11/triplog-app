@@ -85,8 +85,8 @@ class RegionServiceImplTest {
         assertThat(response.getCompletedRegionCount()).isEqualTo(1);
         assertThat(response.getOverallCompletionRate()).isEqualTo(50.0);
         assertThat(response.getRegions()).hasSize(2);
-        assertThat(response.getRegions().get(0).getRegionZipcode()).isEqualTo("41110");
-        assertThat(response.getRegions().get(0).getProvinceCode()).isEqualTo("41");
+        assertThat(response.getRegions().get(0).getLegalRegionCode()).isEqualTo("41");
+        assertThat(response.getRegions().get(0).getLegalDistrictCode()).isEqualTo("110");
         assertThat(response.getRegions().get(0).getVisited()).isTrue();
         assertThat(response.getRegions().get(0).getCompleted()).isTrue();
         assertThat(response.getRegions().get(0).getCompletionRate()).isEqualTo(100.0);
@@ -183,7 +183,8 @@ class RegionServiceImplTest {
         // then
         assertThat(response.getRegionId()).isEqualTo(1L);
         assertThat(response.getRegionName()).isEqualTo("수원시");
-        assertThat(response.getRegionZipcode()).isEqualTo("41110");
+        assertThat(response.getLegalRegionCode()).isEqualTo("41");
+        assertThat(response.getLegalDistrictCode()).isEqualTo("110");
         assertThat(response.getVisited()).isTrue();
         assertThat(response.getVisitedCount()).isEqualTo(3);
         assertThat(response.getLandmarks()).hasSize(1);

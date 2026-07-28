@@ -39,8 +39,11 @@ public class LandmarkResponse {
         @Schema(description = "Tour API 식별자", example = "TOUR-10001")
         private final String contentId;
 
-        @Schema(description = "랜드마크 법정동 코드", example = "41110")
-        private final String landmarkZipcode;
+        @Schema(description = "법정동 시도 코드", example = "41")
+        private final String legalRegionCode;
+
+        @Schema(description = "법정동 시군구 코드", example = "110")
+        private final String legalDistrictCode;
 
         @Schema(description = "카드 획득 여부", example = "true")
         private final Boolean acquired;
@@ -61,7 +64,6 @@ public class LandmarkResponse {
         public static LandmarkDetailResponse toDto(Landmark landmark,
                                                    UsersCardLandmark usersCardLandmark) {
             Region region = landmark.getTourismContent().getRegion();
-            String landmarkZipcode = region.getLegalRegionCode() + region.getLegalDistrictCode();
 
             boolean acquired = usersCardLandmark != null;
             String acquiredAt = acquired
@@ -77,7 +79,8 @@ public class LandmarkResponse {
                     region.getRegionId(),
                     region.getRegionName(),
                     landmark.getTourismContent().getExternalContentId(),
-                    landmarkZipcode,
+                    region.getLegalRegionCode(),
+                    region.getLegalDistrictCode(),
                     acquired,
                     acquiredAt,
                     visitCount

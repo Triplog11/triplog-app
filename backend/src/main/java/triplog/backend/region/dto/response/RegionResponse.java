@@ -8,9 +8,11 @@ import lombok.NoArgsConstructor;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.entity.UsersRegion;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.springframework.data.domain.Page;
 
 /**
@@ -45,15 +47,6 @@ public class RegionResponse {
         @Schema(description = "지역 지도 상태 목록")
         private final List<RegionMapItem> regions;
 
-        /**
-         * 전체 지역 목록과 사용자 방문 정보, 랜드마크 통계를 기반으로 전국 지도 현황 응답을 생성합니다.
-         *
-         * @param allRegions           전체 지역 목록
-         * @param visitedRegionIds     사용자가 방문한 지역 ID 집합
-         * @param landmarkCountMap     지역별 전체 랜드마크 수 (regionId → count)
-         * @param visitedLandmarkMap   지역별 사용자가 방문한 랜드마크 수 (regionId → count)
-         * @return 전국 지도 현황 응답 DTO
-         */
         public static NationwideMapResponse toDto(List<Region> allRegions,
                                                   Set<Long> visitedRegionIds,
                                                   Map<Long, Long> landmarkCountMap,
@@ -123,15 +116,6 @@ public class RegionResponse {
         @Schema(description = "시군구 지도 상태 목록")
         private final List<ProvinceRegionItem> regions;
 
-        /**
-         * 광역 내 지역 목록과 사용자 방문 정보, 랜드마크 통계를 기반으로 광역 지도 현황 응답을 생성합니다.
-         *
-         * @param regions              광역 내 지역 목록
-         * @param visitedRegionIds     사용자가 방문한 지역 ID 집합
-         * @param landmarkCountMap     지역별 전체 랜드마크 수 (regionId → count)
-         * @param visitedLandmarkMap   지역별 사용자가 방문한 랜드마크 수 (regionId → count)
-         * @return 광역 지도 현황 응답 DTO
-         */
         public static ProvinceMapResponse toDto(List<Region> regions,
                                                 Set<Long> visitedRegionIds,
                                                 Map<Long, Long> landmarkCountMap,
@@ -192,8 +176,11 @@ public class RegionResponse {
         @Schema(description = "지역명", example = "수원시")
         private final String regionName;
 
-        @Schema(description = "지역 코드", example = "41110")
-        private final String regionZipcode;
+        @Schema(description = "법정동 시도 코드", example = "41")
+        private final String legalRegionCode;
+
+        @Schema(description = "법정동 시군구 코드", example = "110")
+        private final String legalDistrictCode;
 
         @Schema(description = "방문 여부", example = "true")
         private final Boolean visited;
@@ -204,23 +191,13 @@ public class RegionResponse {
         @Schema(description = "지역 완료율 (0~100)", example = "70.0")
         private final Double completionRate;
 
-        /**
-         * Region 엔티티와 방문/완료 상태를 기반으로 광역 내 시군구 항목을 생성합니다.
-         *
-         * @param region         지역 엔티티
-         * @param visited        방문 여부
-         * @param completed      완료 여부
-         * @param completionRate 완료율
-         * @return 광역 내 시군구 지도 상태 DTO
-         */
         public static ProvinceRegionItem toDto(Region region, boolean visited,
                                                boolean completed, double completionRate) {
-            String regionZipcode = region.getLegalRegionCode() + region.getLegalDistrictCode();
-
             return new ProvinceRegionItem(
                     region.getRegionId(),
                     region.getRegionName(),
-                    regionZipcode,
+                    region.getLegalRegionCode(),
+                    region.getLegalDistrictCode(),
                     visited,
                     completed,
                     completionRate
@@ -242,11 +219,11 @@ public class RegionResponse {
         @Schema(description = "지역명", example = "수원시")
         private final String regionName;
 
-        @Schema(description = "지역 코드", example = "41110")
-        private final String regionZipcode;
+        @Schema(description = "법정동 시도 코드", example = "41")
+        private final String legalRegionCode;
 
-        @Schema(description = "광역 코드", example = "41")
-        private final String provinceCode;
+        @Schema(description = "법정동 시군구 코드", example = "110")
+        private final String legalDistrictCode;
 
         @Schema(description = "방문 여부", example = "true")
         private final Boolean visited;
@@ -257,25 +234,13 @@ public class RegionResponse {
         @Schema(description = "지역 완료율 (0~100)", example = "100.0")
         private final Double completionRate;
 
-        /**
-         * Region 엔티티와 방문/완료 상태를 기반으로 지역 지도 항목을 생성합니다.
-         *
-         * @param region         지역 엔티티
-         * @param visited        방문 여부
-         * @param completed      완료 여부
-         * @param completionRate 완료율
-         * @return 지역 지도 상태 DTO
-         */
         public static RegionMapItem toDto(Region region, boolean visited,
                                           boolean completed, double completionRate) {
-            String regionZipcode = region.getLegalRegionCode() + region.getLegalDistrictCode();
-            String provinceCode = region.getLegalRegionCode();
-
             return new RegionMapItem(
                     region.getRegionId(),
                     region.getRegionName(),
-                    regionZipcode,
-                    provinceCode,
+                    region.getLegalRegionCode(),
+                    region.getLegalDistrictCode(),
                     visited,
                     completed,
                     completionRate
@@ -300,8 +265,11 @@ public class RegionResponse {
         @Schema(description = "지역 설명", example = "역사와 문화가 있는 지역")
         private final String regionOverview;
 
-        @Schema(description = "지역 법정동 코드", example = "41110")
-        private final String regionZipcode;
+        @Schema(description = "법정동 시도 코드", example = "41")
+        private final String legalRegionCode;
+
+        @Schema(description = "법정동 시군구 코드", example = "110")
+        private final String legalDistrictCode;
 
         @Schema(description = "방문 여부", example = "true")
         private final Boolean visited;
@@ -312,15 +280,6 @@ public class RegionResponse {
         @Schema(description = "지역 랜드마크 목록")
         private final List<LandmarkItem> landmarks;
 
-        /**
-         * Region 엔티티, 사용자 방문 정보, 랜드마크 목록을 기반으로 지역 상세 응답을 생성합니다.
-         *
-         * @param region              지역 엔티티
-         * @param usersRegion         사용자 지역 방문 정보 (없으면 null)
-         * @param landmarks           해당 지역의 랜드마크 목록
-         * @param acquiredLandmarkIds 사용자가 획득한 랜드마크 ID 집합
-         * @return 지역 상세 응답 DTO
-         */
         public static RegionDetailResponse toDto(Region region,
                                                  UsersRegion usersRegion,
                                                  List<Landmark> landmarks,
@@ -328,17 +287,16 @@ public class RegionResponse {
             boolean visited = usersRegion != null;
             int visitedCount = visited ? usersRegion.getUsersRegionVisitedCount() : 0;
 
-            String regionZipcode = region.getLegalRegionCode() + region.getLegalDistrictCode();
-
             List<LandmarkItem> landmarkItems = landmarks.stream()
-                    .map(landmark -> LandmarkItem.toDto(landmark, regionZipcode, acquiredLandmarkIds))
+                    .map(landmark -> LandmarkItem.toDto(landmark, region, acquiredLandmarkIds))
                     .toList();
 
             return new RegionDetailResponse(
                     region.getRegionId(),
                     region.getRegionName(),
                     region.getRegionOverview(),
-                    regionZipcode,
+                    region.getLegalRegionCode(),
+                    region.getLegalDistrictCode(),
                     visited,
                     visitedCount,
                     landmarkItems
@@ -363,27 +321,23 @@ public class RegionResponse {
         @Schema(description = "Tour API 식별자", example = "TOUR-10001")
         private final String contentId;
 
-        @Schema(description = "랜드마크 법정동 코드", example = "41110")
-        private final String landmarkZipcode;
+        @Schema(description = "법정동 시도 코드", example = "41")
+        private final String legalRegionCode;
+
+        @Schema(description = "법정동 시군구 코드", example = "110")
+        private final String legalDistrictCode;
 
         @Schema(description = "카드 획득 여부", example = "false")
         private final Boolean acquired;
 
-        /**
-         * Landmark 엔티티와 획득 정보를 기반으로 랜드마크 항목을 생성합니다.
-         *
-         * @param landmark            랜드마크 엔티티
-         * @param regionZipcode       해당 지역의 법정동 코드
-         * @param acquiredLandmarkIds 사용자가 획득한 랜드마크 ID 집합
-         * @return 랜드마크 항목 DTO
-         */
-        public static LandmarkItem toDto(Landmark landmark, String regionZipcode,
+        public static LandmarkItem toDto(Landmark landmark, Region region,
                                          Set<Long> acquiredLandmarkIds) {
             return new LandmarkItem(
                     landmark.getLandmarkId(),
                     landmark.getLandmarkName(),
                     landmark.getTourismContent().getExternalContentId(),
-                    regionZipcode,
+                    region.getLegalRegionCode(),
+                    region.getLegalDistrictCode(),
                     acquiredLandmarkIds.contains(landmark.getLandmarkId())
             );
         }
@@ -412,13 +366,6 @@ public class RegionResponse {
         @Schema(description = "지역 목록")
         private final List<RegionListItem> regions;
 
-        /**
-         * Page 결과와 사용자 방문 정보를 기반으로 지역 목록 응답을 생성합니다.
-         *
-         * @param regionPage       페이징된 지역 목록
-         * @param visitedRegionIds 사용자가 방문한 지역 ID 집합
-         * @return 지역 목록 응답 DTO
-         */
         public static RegionListResponse toDto(Page<Region> regionPage, Set<Long> visitedRegionIds) {
             List<RegionListItem> regions = regionPage.getContent().stream()
                     .map(region -> RegionListItem.toDto(region, visitedRegionIds))
@@ -451,27 +398,22 @@ public class RegionResponse {
         @Schema(description = "지역 설명", example = "역사와 문화가 있는 지역", nullable = true)
         private final String regionOverview;
 
-        @Schema(description = "지역 법정동 코드", example = "41110")
-        private final String regionZipcode;
+        @Schema(description = "법정동 시도 코드", example = "41")
+        private final String legalRegionCode;
+
+        @Schema(description = "법정동 시군구 코드", example = "110")
+        private final String legalDistrictCode;
 
         @Schema(description = "방문 여부", example = "false")
         private final Boolean visited;
 
-        /**
-         * Region 엔티티와 방문 정보를 기반으로 지역 목록 항목을 생성합니다.
-         *
-         * @param region           지역 엔티티
-         * @param visitedRegionIds 사용자가 방문한 지역 ID 집합
-         * @return 지역 목록 항목 DTO
-         */
         public static RegionListItem toDto(Region region, Set<Long> visitedRegionIds) {
-            String regionZipcode = region.getLegalRegionCode() + region.getLegalDistrictCode();
-
             return new RegionListItem(
                     region.getRegionId(),
                     region.getRegionName(),
                     region.getRegionOverview(),
-                    regionZipcode,
+                    region.getLegalRegionCode(),
+                    region.getLegalDistrictCode(),
                     visitedRegionIds.contains(region.getRegionId())
             );
         }

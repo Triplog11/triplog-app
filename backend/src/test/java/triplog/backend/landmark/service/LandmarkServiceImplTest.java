@@ -88,7 +88,8 @@ class LandmarkServiceImplTest {
         assertThat(response.getRegionId()).isEqualTo(1L);
         assertThat(response.getRegionName()).isEqualTo("수원시");
         assertThat(response.getContentId()).isEqualTo("EXT-101");
-        assertThat(response.getLandmarkZipcode()).isEqualTo("41110");
+        assertThat(response.getLegalRegionCode()).isEqualTo("41");
+        assertThat(response.getLegalDistrictCode()).isEqualTo("110");
         assertThat(response.getAcquired()).isTrue();
         assertThat(response.getAcquiredAt()).isEqualTo("2026-06-20T14:30");
         assertThat(response.getVisitCount()).isEqualTo(2);
