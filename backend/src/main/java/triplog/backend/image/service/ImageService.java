@@ -17,4 +17,12 @@ public interface ImageService {
      * @return 업로드된 이미지 URL 목록을 포함한 응답
      */
     ImageUploadResponse upload(List<MultipartFile> files);
+
+    /**
+     * 이미지 파일을 업로드하고 리뷰에 연결하여 저장합니다.
+     *
+     * @param reviewId 리뷰 식별자
+     * @param files    이미지 파일 목록
+     */
+    void uploadAndSave(Long reviewId, List<MultipartFile> files);
 }

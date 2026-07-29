@@ -23,6 +23,7 @@ import triplog.backend.mission.exception.MissionException;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.rankpolicy.exception.RankPolicyException;
 import triplog.backend.region.exception.RegionException;
+import triplog.backend.review.exception.ReviewException;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.users.exception.UsersException;
 
@@ -180,6 +181,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LandmarkException.class)
     protected ResponseEntity<ErrorResponse> handleLandmarkException(LandmarkException e) {
         log.warn("랜드마크 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
+     * 리뷰(Review) 도메인 비즈니스 로직에서 발생하는 {@link ReviewException}을 처리합니다.
+     *
+     * @param e 리뷰 도메인에서 발생한 예외
+     * @return 리뷰 에러 코드에 해당하는 HTTP 상태 코드와 에러 메시지를 포함한 응답
+     */
+    @ExceptionHandler(ReviewException.class)
+    protected ResponseEntity<ErrorResponse> handleReviewException(ReviewException e) {
+        log.warn("리뷰 도메인 예외 발생: {}", e.getErrorCode());
         return toResponseEntity(e.getErrorCode());
     }
 

@@ -40,4 +40,17 @@ public class UsersRegion {
 
     @Column(name = "users_region_visited_count", nullable = false)
     private Integer usersRegionVisitedCount;
+
+    /**
+     * 사용자의 지역 방문 정보를 생성합니다.
+     *
+     * @param region 지역
+     * @param usersId 사용자 식별자
+     */
+    public UsersRegion(Region region, String usersId) {
+        this.region = region;
+        this.usersId = usersId;
+        this.usersRegionVisitedAt = LocalDateTime.now();
+        this.usersRegionVisitedCount = 1;
+    }
 }

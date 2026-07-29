@@ -278,18 +278,26 @@ public class RegionResponse {
         private final Integer visitedCount;
 
         @Schema(description = "지역 랜드마크 목록")
-        private final List<LandmarkItem> landmarks;
+        private final LandmarkListDto landmarks;
 
         public static RegionDetailResponse toDto(Region region,
                                                  UsersRegion usersRegion,
                                                  List<Landmark> landmarks,
                                                  Set<Long> acquiredLandmarkIds) {
-            boolean visited = usersRegion != null;
-            int visitedCount = visited ? usersRegion.getUsersRegionVisitedCount() : 0;
+            LandmarkListDto landmarkListDto = LandmarkListDto.toDto(landmarks, region, acquiredLandmarkIds);
 
-            List<LandmarkItem> landmarkItems = landmarks.stream()
-                    .map(landmark -> LandmarkItem.toDto(landmark, region, acquiredLandmarkIds))
-                    .toList();
+            if (usersRegion == null) {
+                return new RegionDetailResponse(
+                        region.getRegionId(),
+                        region.getRegionName(),
+                        region.getRegionOverview(),
+                        region.getLegalRegionCode(),
+                        region.getLegalDistrictCode(),
+                        false,
+                        0,
+                        landmarkListDto
+                );
+            }
 
             return new RegionDetailResponse(
                     region.getRegionId(),
@@ -297,10 +305,38 @@ public class RegionResponse {
                     region.getRegionOverview(),
                     region.getLegalRegionCode(),
                     region.getLegalDistrictCode(),
-                    visited,
-                    visitedCount,
-                    landmarkItems
+                    true,
+                    usersRegion.getUsersRegionVisitedCount(),
+                    landmarkListDto
             );
+        }
+    }
+
+    /**
+     * 랜드마크 목록을 감싸는 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "랜드마크 목록")
+    public static class LandmarkListDto {
+
+        @Schema(description = "랜드마크 항목 목록")
+        private final List<LandmarkItem> items;
+
+        /**
+         * 랜드마크 목록 DTO를 생성합니다.
+         *
+         * @param landmarks           랜드마크 엔티티 목록
+         * @param region              지역 엔티티
+         * @param acquiredLandmarkIds 사용자가 획득한 랜드마크 ID 집합
+         * @return 랜드마크 목록 DTO
+         */
+        public static LandmarkListDto toDto(List<Landmark> landmarks, Region region,
+                                            Set<Long> acquiredLandmarkIds) {
+            List<LandmarkItem> items = landmarks.stream()
+                    .map(landmark -> LandmarkItem.toDto(landmark, region, acquiredLandmarkIds))
+                    .toList();
+            return new LandmarkListDto(items);
         }
     }
 

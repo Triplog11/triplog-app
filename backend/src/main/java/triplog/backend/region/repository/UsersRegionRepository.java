@@ -1,6 +1,9 @@
 package triplog.backend.region.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import triplog.backend.region.entity.UsersRegion;
 
 import java.util.List;
@@ -27,4 +30,13 @@ public interface UsersRegionRepository extends JpaRepository<UsersRegion, Long> 
      * @return 사용자의 해당 지역 방문 정보
      */
     Optional<UsersRegion> findByUsersIdAndRegionRegionId(String usersId, Long regionId);
+
+    /**
+     * 사용자의 지역 방문 횟수를 1 증가시킵니다.
+     *
+     * @param usersRegionId 사용자 지역 식별자
+     */
+    @Modifying
+    @Query("UPDATE UsersRegion ur SET ur.usersRegionVisitedCount = ur.usersRegionVisitedCount + 1 WHERE ur.usersRegionId = :usersRegionId")
+    void incrementVisitCount(@Param("usersRegionId") Long usersRegionId);
 }

@@ -22,11 +22,9 @@ import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
 import triplog.backend.users.service.UsersRankingInfo;
 import triplog.backend.users.service.UsersRankingService;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import static triplog.backend.stats.exception.StatsErrorCode.PROFILE_UPDATE_TARGET_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.MY_RANKING_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.MY_STATS_NOT_FOUND;
@@ -269,5 +267,18 @@ public class StatsServiceImpl implements StatsService {
                 nextRankPolicy.map(RankPolicyInfo::tier).orElse(null),
                 nextRankPolicy.map(RankPolicyInfo::requiredScore).orElse(null)
         );
+    }
+
+    /**
+     * 사용자에게 XP와 Score를 지급합니다.
+     *
+     * @param usersId 사용자 ID
+     * @param xp      추가할 경험치
+     * @param score   추가할 점수
+     */
+    @Override
+    @Transactional
+    public void addXpAndScore(String usersId, int xp, int score) {
+        statsRepository.addXpAndScore(usersId, xp, score);
     }
 }

@@ -73,4 +73,12 @@ public interface RegionService {
      * @return 지역 목록 응답
      */
     RegionListResponse getRegionList(String usersId, int page, int size);
+
+    /**
+     * 지역 방문을 기록합니다. (없으면 생성, 있으면 count+1)
+     *
+     * @param usersId  사용자 식별자
+     * @param regionId 지역 식별자
+     */
+    void recordRegionVisit(String usersId, Long regionId);
 }
