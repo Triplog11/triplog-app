@@ -60,7 +60,8 @@ public class RegionController {
                                           "regionId": 101,
                                           "regionName": "수원시",
                                           "regionOverview": "역사와 문화가 있는 지역",
-                                          "regionZipcode": "41110",
+                                          "legalRegionCode": "41",
+                                          "legalDistrictCode": "110",
                                           "visited": false
                                         }
                                       ]
@@ -119,8 +120,8 @@ public class RegionController {
                                         {
                                           "regionId": 101,
                                           "regionName": "수원시",
-                                          "regionZipcode": "41110",
-                                          "provinceCode": "41",
+                                          "legalRegionCode": "41",
+                                          "legalDistrictCode": "110",
                                           "visited": true,
                                           "completed": true,
                                           "completionRate": 100.0
@@ -178,7 +179,8 @@ public class RegionController {
                                         {
                                           "regionId": 101,
                                           "regionName": "수원시",
-                                          "regionZipcode": "41110",
+                                          "legalRegionCode": "41",
+                                          "legalDistrictCode": "110",
                                           "visited": true,
                                           "completed": false,
                                           "completionRate": 70.0
@@ -233,7 +235,8 @@ public class RegionController {
                                       "regionId": 101,
                                       "regionName": "수원시",
                                       "regionOverview": "역사와 문화가 있는 지역",
-                                      "regionZipcode": "41110",
+                                      "legalRegionCode": "41",
+                                      "legalDistrictCode": "110",
                                       "visited": true,
                                       "visitedCount": 3,
                                       "landmarks": [
@@ -241,7 +244,8 @@ public class RegionController {
                                           "landmarkId": 301,
                                           "landmarkName": "수원화성",
                                           "contentId": "TOUR-10001",
-                                          "landmarkZipcode": "41110",
+                                          "legalRegionCode": "41",
+                                          "legalDistrictCode": "110",
                                           "acquired": false
                                         }
                                       ]

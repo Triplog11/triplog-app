@@ -40,11 +40,14 @@ class LandmarkServiceImplTest {
     @Mock
     private UsersCardLandmarkRepository usersCardLandmarkRepository;
 
+    @Mock
+    private triplog.backend.landmarkvisitlog.service.LandmarkVisitLogService landmarkVisitLogService;
+
     private LandmarkServiceImpl landmarkService;
 
     @BeforeEach
     void setUp() {
-        landmarkService = new LandmarkServiceImpl(landmarkRepository, usersCardLandmarkRepository);
+        landmarkService = new LandmarkServiceImpl(landmarkRepository, usersCardLandmarkRepository, landmarkVisitLogService);
     }
 
     /**

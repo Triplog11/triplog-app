@@ -65,13 +65,20 @@ public class LandmarkResponse {
                                                    UsersCardLandmark usersCardLandmark) {
             Region region = landmark.getTourismContent().getRegion();
 
-            boolean acquired = usersCardLandmark != null;
-            String acquiredAt = acquired
-                    ? usersCardLandmark.getUsersCardLandmarkVisitedAt().toString()
-                    : null;
-            Integer visitCount = acquired
-                    ? usersCardLandmark.getUsersCardLandmarkCount()
-                    : null;
+            if (usersCardLandmark == null) {
+                return new LandmarkDetailResponse(
+                        landmark.getLandmarkId(),
+                        landmark.getLandmarkName(),
+                        region.getRegionId(),
+                        region.getRegionName(),
+                        landmark.getTourismContent().getExternalContentId(),
+                        region.getLegalRegionCode(),
+                        region.getLegalDistrictCode(),
+                        false,
+                        null,
+                        null
+                );
+            }
 
             return new LandmarkDetailResponse(
                     landmark.getLandmarkId(),
@@ -81,9 +88,9 @@ public class LandmarkResponse {
                     landmark.getTourismContent().getExternalContentId(),
                     region.getLegalRegionCode(),
                     region.getLegalDistrictCode(),
-                    acquired,
-                    acquiredAt,
-                    visitCount
+                    true,
+                    usersCardLandmark.getUsersCardLandmarkVisitedAt().toString(),
+                    usersCardLandmark.getUsersCardLandmarkCount()
             );
         }
     }

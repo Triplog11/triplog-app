@@ -18,8 +18,10 @@ import triplog.backend.region.exception.RegionException;
 import triplog.backend.region.exception.RegionNotFoundException;
 import triplog.backend.region.repository.RegionRepository;
 import triplog.backend.region.repository.UsersRegionRepository;
+import triplog.backend.regionvisitlog.service.RegionVisitLogService;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,7 @@ public class RegionServiceImpl implements RegionService {
 
     private final RegionRepository regionRepository;
     private final UsersRegionRepository usersRegionRepository;
+    private final RegionVisitLogService regionVisitLogService;
     private final LandmarkService landmarkService;
 
     /**
@@ -190,5 +193,28 @@ public class RegionServiceImpl implements RegionService {
                 .collect(Collectors.toSet());
 
         return RegionListResponse.toDto(regionPage, visitedRegionIds);
+    }
+
+    /**
+     * 지역 방문을 기록합니다. (없으면 생성, 있으면 count+1)
+     *
+     * @param usersId  사용자 식별자
+     * @param regionId 지역 식별자
+     */
+    @Override
+    @Transactional
+    public void recordRegionVisit(String usersId, Long regionId) {
+
+        Optional<UsersRegion> existingVisit = usersRegionRepository.findByUsersIdAndRegionRegionId(usersId, regionId);
+
+        if (existingVisit.isPresent()) {
+            usersRegionRepository.incrementVisitCount(existingVisit.get().getUsersRegionId());
+        } else {
+            Region region = regionRepository.findById(regionId)
+                    .orElseThrow(() -> new RegionException(RegionErrorCode.REGION_DETAIL_NOT_FOUND));
+            usersRegionRepository.save(new UsersRegion(region, usersId));
+        }
+
+        regionVisitLogService.createLog(usersId, regionId);
     }
 }

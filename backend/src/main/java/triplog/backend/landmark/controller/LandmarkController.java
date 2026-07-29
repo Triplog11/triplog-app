@@ -51,7 +51,8 @@ public class LandmarkController {
                                       "regionId": 101,
                                       "regionName": "수원시",
                                       "contentId": "TOUR-10001",
-                                      "landmarkZipcode": "41110",
+                                      "legalRegionCode": "41",
+                                      "legalDistrictCode": "110",
                                       "acquired": true,
                                       "acquiredAt": "2026-06-20T14:30:00",
                                       "visitCount": 2

@@ -70,4 +70,28 @@ public interface LandmarkService {
      * @return 획득한 랜드마크 ID 집합
      */
     Set<Long> findAcquiredLandmarkIdsByUsersId(String usersId);
+
+    /**
+     * 랜드마크를 TourismContent 및 Region과 함께 조회합니다.
+     *
+     * @param landmarkId 랜드마크 식별자
+     * @return 랜드마크 엔티티
+     */
+    Landmark findByIdWithContent(Long landmarkId);
+
+    /**
+     * 랜드마크 방문 로그를 저장합니다.
+     *
+     * @param usersId    사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     */
+    void saveVisitLog(String usersId, Long landmarkId);
+
+    /**
+     * 사용자의 랜드마크 카드를 획득 처리합니다. (최초 1회)
+     *
+     * @param usersId    사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     */
+    void acquireCard(String usersId, Long landmarkId);
 }

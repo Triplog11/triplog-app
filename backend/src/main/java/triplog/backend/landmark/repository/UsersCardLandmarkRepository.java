@@ -1,9 +1,11 @@
 package triplog.backend.landmark.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import triplog.backend.landmark.entity.UsersCardLandmark;
+
 import java.util.Optional;
 import java.util.Set;
 
@@ -29,4 +31,15 @@ public interface UsersCardLandmarkRepository extends JpaRepository<UsersCardLand
      * @return 사용자의 해당 랜드마크 카드 획득 정보
      */
     Optional<UsersCardLandmark> findByUsersIdAndLandmarkLandmarkId(String usersId, Long landmarkId);
+
+    /**
+     * 사용자의 랜드마크 카드 획득 정보를 저장합니다.
+     *
+     * @param usersId    사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     */
+    @Modifying
+    @Query(value = "INSERT INTO users_card_landmark (landmark_id, card_id, users_id, users_card_landmark_visited_at, users_card_landmark_count) " +
+            "VALUES (:landmarkId, 1, :usersId, NOW(), 1)", nativeQuery = true)
+    void saveCard(@Param("usersId") String usersId, @Param("landmarkId") Long landmarkId);
 }

@@ -69,5 +69,4 @@ public class Stats {
         this.statsLevel = 1;
         this.statsXp = 0;
     }
-
 }

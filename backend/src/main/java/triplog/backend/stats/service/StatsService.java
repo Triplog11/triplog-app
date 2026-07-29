@@ -67,4 +67,13 @@ public interface StatsService {
      * @return 내 스탯 정보
      */
     MyStatsResponse getMyStats(String usersId);
+
+    /**
+     * 사용자에게 XP와 Score를 지급합니다.
+     *
+     * @param usersId 사용자 ID
+     * @param xp      추가할 경험치
+     * @param score   추가할 점수
+     */
+    void addXpAndScore(String usersId, int xp, int score);
 }

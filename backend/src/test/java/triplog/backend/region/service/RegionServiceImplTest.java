@@ -51,11 +51,14 @@ class RegionServiceImplTest {
     @Mock
     private LandmarkService landmarkService;
 
+    @Mock
+    private triplog.backend.regionvisitlog.service.RegionVisitLogService regionVisitLogService;
+
     private RegionServiceImpl regionService;
 
     @BeforeEach
     void setUp() {
-        regionService = new RegionServiceImpl(regionRepository, usersRegionRepository, landmarkService);
+        regionService = new RegionServiceImpl(regionRepository, usersRegionRepository, regionVisitLogService, landmarkService);
     }
 
     /**

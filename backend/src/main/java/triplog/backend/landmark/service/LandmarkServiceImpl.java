@@ -11,6 +11,7 @@ import triplog.backend.landmark.exception.LandmarkErrorCode;
 import triplog.backend.landmark.exception.LandmarkException;
 import triplog.backend.landmark.repository.LandmarkRepository;
 import triplog.backend.landmark.repository.UsersCardLandmarkRepository;
+import triplog.backend.landmarkvisitlog.service.LandmarkVisitLogService;
 import triplog.backend.tourismcontent.entity.TourismContent;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class LandmarkServiceImpl implements LandmarkService {
 
     private final LandmarkRepository landmarkRepository;
     private final UsersCardLandmarkRepository usersCardLandmarkRepository;
+    private final LandmarkVisitLogService landmarkVisitLogService;
 
     /**
      * TourismContent 기준으로 Landmark를 생성하거나 표시명을 갱신합니다.
@@ -142,5 +144,46 @@ public class LandmarkServiceImpl implements LandmarkService {
     @Transactional(readOnly = true)
     public Set<Long> findAcquiredLandmarkIdsByUsersId(String usersId) {
         return usersCardLandmarkRepository.findAcquiredLandmarkIdsByUsersId(usersId);
+    }
+
+    /**
+     * 랜드마크를 TourismContent 및 Region과 함께 조회합니다.
+     *
+     * @param landmarkId 랜드마크 식별자
+     * @return 랜드마크 엔티티
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Landmark findByIdWithContent(Long landmarkId) {
+        return landmarkRepository.findByIdWithTourismContentAndRegion(landmarkId)
+                .orElseThrow(() -> new LandmarkException(LandmarkErrorCode.LANDMARK_DETAIL_NOT_FOUND));
+    }
+
+    /**
+     * 랜드마크 방문 로그를 저장합니다.
+     *
+     * @param usersId    사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     */
+    @Override
+    @Transactional
+    public void saveVisitLog(String usersId, Long landmarkId) {
+        landmarkVisitLogService.createLog(usersId, landmarkId);
+    }
+
+    /**
+     * 사용자의 랜드마크 카드를 획득 처리합니다. (최초 1회)
+     * 이미 획득한 경우 무시합니다.
+     *
+     * @param usersId    사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     */
+    @Override
+    @Transactional
+    public void acquireCard(String usersId, Long landmarkId) {
+        if (usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(usersId, landmarkId).isPresent()) {
+            return;
+        }
+        usersCardLandmarkRepository.saveCard(usersId, landmarkId);
     }
 }

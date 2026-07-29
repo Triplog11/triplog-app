@@ -101,4 +101,27 @@ public interface StatsRepository extends JpaRepository<Stats, Long> {
      * @return 기준 점수보다 높은 사용자 수
      */
     long countByQuarterScoreGreaterThan(int quarterScore);
+
+    /**
+     * 사용자에게 XP와 Score를 추가합니다.
+     *
+     * @param usersId 사용자 ID
+     * @param xp      추가할 경험치
+     * @param score   추가할 점수
+     * @return 수정된 행 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Stats s
+            set s.statsXp = s.statsXp + :xp,
+                s.overallScore = s.overallScore + :score,
+                s.monthScore = s.monthScore + :score,
+                s.quarterScore = s.quarterScore + :score
+            where s.users.usersId = :usersId
+            """)
+    int addXpAndScore(
+            @Param("usersId") String usersId,
+            @Param("xp") int xp,
+            @Param("score") int score
+    );
 }

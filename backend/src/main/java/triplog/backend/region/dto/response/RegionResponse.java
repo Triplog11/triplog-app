@@ -284,12 +284,22 @@ public class RegionResponse {
                                                  UsersRegion usersRegion,
                                                  List<Landmark> landmarks,
                                                  Set<Long> acquiredLandmarkIds) {
-            boolean visited = usersRegion != null;
-            int visitedCount = visited ? usersRegion.getUsersRegionVisitedCount() : 0;
-
             List<LandmarkItem> landmarkItems = landmarks.stream()
                     .map(landmark -> LandmarkItem.toDto(landmark, region, acquiredLandmarkIds))
                     .toList();
+
+            if (usersRegion == null) {
+                return new RegionDetailResponse(
+                        region.getRegionId(),
+                        region.getRegionName(),
+                        region.getRegionOverview(),
+                        region.getLegalRegionCode(),
+                        region.getLegalDistrictCode(),
+                        false,
+                        0,
+                        landmarkItems
+                );
+            }
 
             return new RegionDetailResponse(
                     region.getRegionId(),
@@ -297,8 +307,8 @@ public class RegionResponse {
                     region.getRegionOverview(),
                     region.getLegalRegionCode(),
                     region.getLegalDistrictCode(),
-                    visited,
-                    visitedCount,
+                    true,
+                    usersRegion.getUsersRegionVisitedCount(),
                     landmarkItems
             );
         }

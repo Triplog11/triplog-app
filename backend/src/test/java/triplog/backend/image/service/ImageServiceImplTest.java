@@ -27,6 +27,9 @@ class ImageServiceImplTest {
     @Mock
     private CloudinaryImageUploader cloudinaryImageUploader;
 
+    @Mock
+    private triplog.backend.image.repository.ImageRepository imageRepository;
+
     private ImageService imageService;
 
     @BeforeEach
@@ -40,7 +43,7 @@ class ImageServiceImplTest {
                 "image/heic",
                 "image/heif"
         ), 10);
-        imageService = new ImageServiceImpl(cloudinaryImageUploader, imageUploadProperties);
+        imageService = new ImageServiceImpl(cloudinaryImageUploader, imageUploadProperties, imageRepository);
     }
 
     /**

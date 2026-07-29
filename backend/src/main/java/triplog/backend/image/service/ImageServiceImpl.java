@@ -6,10 +6,11 @@ import org.springframework.web.multipart.MultipartFile;
 import triplog.backend.image.client.CloudinaryImageUploader;
 import triplog.backend.image.config.ImageUploadProperties;
 import triplog.backend.image.dto.response.ImageResponse.ImageUploadResponse;
+import triplog.backend.image.entity.Image;
 import triplog.backend.image.exception.ImageException;
-
+import triplog.backend.image.repository.ImageRepository;
 import java.util.List;
-
+import java.util.UUID;
 import static triplog.backend.image.dto.response.ImageResponse.ImageUploadResponse.toDto;
 import static triplog.backend.image.exception.ImageErrorCode.INVALID_IMAGE_FILE;
 
@@ -22,6 +23,7 @@ public class ImageServiceImpl implements ImageService {
 
     private final CloudinaryImageUploader cloudinaryImageUploader;
     private final ImageUploadProperties imageUploadProperties;
+    private final ImageRepository imageRepository;
 
     /**
      * 요청 파일들이 유효한 이미지인지 검증한 후 Cloudinary에 업로드합니다.
@@ -32,6 +34,7 @@ public class ImageServiceImpl implements ImageService {
      */
     @Override
     public ImageUploadResponse upload(List<MultipartFile> files) {
+
         if (files == null
                 || files.isEmpty()
                 || files.size() > imageUploadProperties.maxFileCount()
@@ -47,5 +50,32 @@ public class ImageServiceImpl implements ImageService {
                 .toList();
 
         return toDto(imageUrls);
+    }
+
+    /**
+     * 이미지 파일을 업로드하고 리뷰에 연결하여 저장합니다.
+     *
+     * @param reviewId 리뷰 식별자
+     * @param files    이미지 파일 목록
+     */
+    @Override
+    public void uploadAndSave(Long reviewId, List<MultipartFile> files) {
+        files.stream()
+                .map(file -> {
+                    String imageUrl = cloudinaryImageUploader.upload(file);
+
+                    String originalName;
+                    if (file.getOriginalFilename() != null) {
+                        originalName = file.getOriginalFilename();
+                    } else {
+                        originalName = "unknown";
+                    }
+
+                    String savedName = UUID.randomUUID() + "_" + originalName;
+                    int fileSize = (int) file.getSize();
+
+                    return new Image(reviewId, originalName, savedName, imageUrl, fileSize);
+                })
+                .forEach(imageRepository::save);
     }
 }
