@@ -190,10 +190,10 @@ class RegionServiceImplTest {
         assertThat(response.getLegalDistrictCode()).isEqualTo("110");
         assertThat(response.getVisited()).isTrue();
         assertThat(response.getVisitedCount()).isEqualTo(3);
-        assertThat(response.getLandmarks()).hasSize(1);
-        assertThat(response.getLandmarks().get(0).getLandmarkId()).isEqualTo(101L);
-        assertThat(response.getLandmarks().get(0).getContentId()).isEqualTo("EXT-101");
-        assertThat(response.getLandmarks().get(0).getAcquired()).isTrue();
+        assertThat(response.getLandmarks().getItems()).hasSize(1);
+        assertThat(response.getLandmarks().getItems().get(0).getLandmarkId()).isEqualTo(101L);
+        assertThat(response.getLandmarks().getItems().get(0).getContentId()).isEqualTo("EXT-101");
+        assertThat(response.getLandmarks().getItems().get(0).getAcquired()).isTrue();
     }
 
     /**
