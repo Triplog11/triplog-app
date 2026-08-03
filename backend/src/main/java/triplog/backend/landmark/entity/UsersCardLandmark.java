@@ -9,9 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
@@ -19,9 +17,14 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users_card_landmark")
 public class UsersCardLandmark {
+
+    /**
+     * JPA 엔티티 생성을 위한 기본 생성자입니다.
+     */
+    protected UsersCardLandmark() {
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

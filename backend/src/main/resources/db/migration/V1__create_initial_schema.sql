@@ -102,13 +102,22 @@ CREATE TABLE tourism_content (
 );
 
 CREATE TABLE landmark (
-                          landmark_id BIGINT NOT NULL AUTO_INCREMENT,
-                          tourism_content_id BIGINT NOT NULL,
-                          landmark_name VARCHAR(100),
+                          landmark_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '랜드마크 식별자',
+                          tourism_content_id BIGINT NOT NULL COMMENT 'TourAPI 공통 관광 콘텐츠 식별자',
+                          landmark_name VARCHAR(100) COMMENT '랜드마크 표시명',
                           PRIMARY KEY (landmark_id),
                           UNIQUE KEY uk_landmark_tourism_content (tourism_content_id),
                           CONSTRAINT fk_landmark_content FOREIGN KEY (tourism_content_id) REFERENCES tourism_content (tourism_content_id)
-);
+) COMMENT='서비스에서 선정한 랜드마크';
+
+CREATE TABLE attraction (
+                            attraction_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '일반 관광지 식별자',
+                            tourism_content_id BIGINT NOT NULL COMMENT 'TourAPI 공통 관광 콘텐츠 식별자',
+                            PRIMARY KEY (attraction_id),
+                            UNIQUE KEY uk_attraction_tourism_content (tourism_content_id),
+                            CONSTRAINT fk_attraction_content FOREIGN KEY (tourism_content_id)
+                                REFERENCES tourism_content (tourism_content_id)
+) COMMENT='서비스에서 선정한 일반 관광지';
 
 CREATE TABLE event (
                        event_id BIGINT NOT NULL AUTO_INCREMENT,

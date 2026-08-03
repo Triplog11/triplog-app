@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LandmarkServiceImpl implements LandmarkService {
 
-    private static final String LANDMARK_CONTENT_TYPE_ID = "12";
+    private static final Set<String> LANDMARK_CONTENT_TYPE_IDS = Set.of("12", "14", "28");
 
     private final LandmarkRepository landmarkRepository;
     private final UsersCardLandmarkRepository usersCardLandmarkRepository;
@@ -35,15 +35,15 @@ public class LandmarkServiceImpl implements LandmarkService {
     /**
      * TourismContent 기준으로 Landmark를 생성하거나 표시명을 갱신합니다.
      *
-     * @param tourismContent contentTypeId가 12인 관광 콘텐츠
+     * @param tourismContent contentTypeId가 12, 14, 28 중 하나인 관광 콘텐츠
      * @param displayName CSV에서 관리하는 표시명 오버라이드
      * @return 생성하거나 갱신한 Landmark
-     * @throws InvalidLandmarkContentTypeException 콘텐츠 타입이 12가 아닌 경우
+     * @throws InvalidLandmarkContentTypeException 콘텐츠 타입이 12, 14, 28 중 하나가 아닌 경우
      */
     @Override
     @Transactional
     public Landmark upsert(TourismContent tourismContent, String displayName) {
-        if (!LANDMARK_CONTENT_TYPE_ID.equals(tourismContent.getContentTypeId())) {
+        if (!LANDMARK_CONTENT_TYPE_IDS.contains(tourismContent.getContentTypeId())) {
             throw new InvalidLandmarkContentTypeException(tourismContent.getContentTypeId());
         }
 

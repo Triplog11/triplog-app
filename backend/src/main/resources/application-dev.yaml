@@ -90,10 +90,11 @@ tourism-sync:
     future-months: ${TOURISM_SYNC_FESTIVAL_FUTURE_MONTHS:12}
   missing-threshold: ${TOURISM_SYNC_MISSING_THRESHOLD:3}
   landmark-seed-path: ${TOURISM_SYNC_LANDMARK_SEED_PATH:classpath:seed/landmarks.csv}
+  attraction-seed-path: ${TOURISM_SYNC_ATTRACTION_SEED_PATH:classpath:seed/attractions.csv}
   scheduling:
     enabled: ${TOURISM_SYNC_SCHEDULING_ENABLED:false}
     region-cron: "${TOURISM_SYNC_REGION_CRON:0 0 3 1 * *}"
-    landmark-cron: "${TOURISM_SYNC_LANDMARK_CRON:0 30 3 * * *}"
+    selected-content-cron: "${TOURISM_SYNC_SELECTED_CONTENT_CRON:0 30 3 * * *}"
     festival-cron: "${TOURISM_SYNC_FESTIVAL_CRON:0 0 4 * * *}"
     failure-retry-cron: "${TOURISM_SYNC_FAILURE_RETRY_CRON:0 30 4 * * *}"
     zone: "${TOURISM_SYNC_SCHEDULING_ZONE:Asia/Seoul}"

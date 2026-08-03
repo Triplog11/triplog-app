@@ -1,4 +1,4 @@
-package triplog.backend.landmark.entity;
+package triplog.backend.attraction.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,49 +16,35 @@ import lombok.NoArgsConstructor;
 import triplog.backend.tourismcontent.entity.TourismContent;
 
 /**
- * 카드와 방문 인증 대상으로 선정된 관광지 엔티티입니다.
+ * 서비스에서 일반 관광지로 선정한 관광 콘텐츠입니다.
  */
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        name = "landmark",
+        name = "attraction",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_landmark_tourism_content",
+                name = "uk_attraction_tourism_content",
                 columnNames = "tourism_content_id"
         )
 )
-public class Landmark {
+public class Attraction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "landmark_id", nullable = false)
-    private Long landmarkId;
+    @Column(name = "attraction_id", nullable = false)
+    private Long attractionId;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tourism_content_id", nullable = false)
     private TourismContent tourismContent;
 
-    @Column(name = "landmark_name", length = 100)
-    private String landmarkName;
-
     /**
-     * 관광 콘텐츠와 표시명으로 Landmark를 생성합니다.
+     * 선정한 관광 콘텐츠와 연결된 일반 관광지를 생성합니다.
      *
-     * @param tourismContent contentTypeId가 12, 14, 28 중 하나인 관광 콘텐츠
-     * @param landmarkName 서비스 표시명 오버라이드
+     * @param tourismContent contentTypeId가 12, 14, 28 중 하나인 TourAPI 공통 관광 콘텐츠
      */
-    public Landmark(TourismContent tourismContent, String landmarkName) {
+    public Attraction(TourismContent tourismContent) {
         this.tourismContent = tourismContent;
-        this.landmarkName = landmarkName;
-    }
-
-    /**
-     * CSV 시드의 최신 표시명 오버라이드를 반영합니다.
-     *
-     * @param landmarkName 서비스 표시명 오버라이드
-     */
-    public void updateName(String landmarkName) {
-        this.landmarkName = landmarkName;
     }
 }

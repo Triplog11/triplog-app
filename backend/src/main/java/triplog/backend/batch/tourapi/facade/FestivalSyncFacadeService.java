@@ -1,5 +1,6 @@
 package triplog.backend.batch.tourapi.facade;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import triplog.backend.batch.tourapi.client.TourApiClient;
@@ -34,6 +35,7 @@ import java.util.Map;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FestivalSyncFacadeService {
 
     private static final String FESTIVAL_CONTENT_TYPE_ID = "15";
@@ -50,31 +52,6 @@ public class FestivalSyncFacadeService {
     private final TourismSyncCheckpointService checkpointService;
     private final TourismSyncProperties properties;
     private final Clock clock;
-
-    /**
-     * 축제 동기화에 필요한 외부 Client, 도메인 서비스 및 설정을 주입받습니다.
-     */
-    public FestivalSyncFacadeService(
-            TourApiClient tourApiClient,
-            RegionService regionService,
-            TourismContentService tourismContentService,
-            EventService eventService,
-            TourismContentImageService imageService,
-            TourismSyncFailureService failureService,
-            TourismSyncCheckpointService checkpointService,
-            TourismSyncProperties properties,
-            Clock clock
-    ) {
-        this.tourApiClient = tourApiClient;
-        this.regionService = regionService;
-        this.tourismContentService = tourismContentService;
-        this.eventService = eventService;
-        this.imageService = imageService;
-        this.failureService = failureService;
-        this.checkpointService = checkpointService;
-        this.properties = properties;
-        this.clock = clock;
-    }
 
     /**
      * 기준일의 과거·미래 설정 범위에 포함되는 전국 축제를 동기화합니다.

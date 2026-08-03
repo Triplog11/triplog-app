@@ -20,7 +20,7 @@ public class TourismSyncScheduler {
 
     private final JobOperator jobOperator;
     private final Job regionSyncJob;
-    private final Job landmarkSyncJob;
+    private final Job selectedContentSyncJob;
     private final Job festivalSyncJob;
     private final Job tourismSyncFailureRetryJob;
 
@@ -29,20 +29,20 @@ public class TourismSyncScheduler {
      *
      * @param jobOperator Batch Job 실행 및 관리 기능
      * @param regionSyncJob 지역 동기화 Job
-     * @param landmarkSyncJob 랜드마크 동기화 Job
+     * @param selectedContentSyncJob 선정 랜드마크·관광지 동기화 Job
      * @param festivalSyncJob 축제 동기화 Job
      * @param tourismSyncFailureRetryJob 동기화 실패 이력 재처리 Job
      */
     public TourismSyncScheduler(
             JobOperator jobOperator,
             @Qualifier("regionSyncJob") Job regionSyncJob,
-            @Qualifier("landmarkSyncJob") Job landmarkSyncJob,
+            @Qualifier("selectedContentSyncJob") Job selectedContentSyncJob,
             @Qualifier("festivalSyncJob") Job festivalSyncJob,
             @Qualifier("tourismSyncFailureRetryJob") Job tourismSyncFailureRetryJob
     ) {
         this.jobOperator = jobOperator;
         this.regionSyncJob = regionSyncJob;
-        this.landmarkSyncJob = landmarkSyncJob;
+        this.selectedContentSyncJob = selectedContentSyncJob;
         this.festivalSyncJob = festivalSyncJob;
         this.tourismSyncFailureRetryJob = tourismSyncFailureRetryJob;
     }
@@ -59,14 +59,14 @@ public class TourismSyncScheduler {
     }
 
     /**
-     * 설정된 cron과 시간대에 랜드마크 동기화 Job을 실행합니다.
+     * 설정된 cron과 시간대에 선정 랜드마크·관광지 동기화 Job을 실행합니다.
      */
     @Scheduled(
-            cron = "${tourism-sync.scheduling.landmark-cron}",
+            cron = "${tourism-sync.scheduling.selected-content-cron}",
             zone = "${tourism-sync.scheduling.zone:Asia/Seoul}"
     )
-    public void synchronizeLandmarks() {
-        run(landmarkSyncJob, "랜드마크");
+    public void synchronizeSelectedContents() {
+        run(selectedContentSyncJob, "선정 랜드마크·관광지");
     }
 
     /**

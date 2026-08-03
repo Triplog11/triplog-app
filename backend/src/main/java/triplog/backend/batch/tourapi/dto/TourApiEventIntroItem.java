@@ -11,6 +11,21 @@ import java.util.Map;
 
 /**
  * TourAPI 축제 소개정보 응답을 Event 동기화 입력값으로 변환합니다.
+ *
+ * @param contentId TourAPI 콘텐츠 식별자
+ * @param contentTypeId TourAPI 콘텐츠 유형 식별자
+ * @param eventStartDate 행사 시작일 문자열
+ * @param eventEndDate 행사 종료일 문자열
+ * @param eventPlace 행사 장소
+ * @param playTime 공연 또는 운영 시간
+ * @param ageLimit 관람 가능 연령
+ * @param usageFee 이용 요금
+ * @param sponsorName 주최자명
+ * @param sponsorTelephone 주최자 전화번호
+ * @param progressType 행사 진행 유형
+ * @param festivalType 축제 유형
+ * @param program 행사 프로그램
+ * @param spendTime 관람 소요 시간
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TourApiEventIntroItem(

@@ -1,5 +1,6 @@
 package triplog.backend.batch.tourapi.facade;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import triplog.backend.batch.tourapi.client.TourApiClient;
 import triplog.backend.batch.tourapi.entity.TourismSyncFailure;
@@ -21,37 +22,17 @@ import java.util.List;
  * 미해결 동기화 실패를 작업 유형에 맞는 유스케이스로 다시 전달합니다.
  */
 @Service
+@RequiredArgsConstructor
 public class TourismSyncFailureRetryFacadeService {
 
     private static final int IMAGE_PAGE_SIZE = 100;
     private final TourismSyncFailureService failureService;
-    private final LandmarkSyncFacadeService landmarkSyncFacadeService;
+    private final SelectedContentSyncFacadeService selectedContentSyncFacadeService;
     private final FestivalSyncFacadeService festivalSyncFacadeService;
     private final TourApiClient tourApiClient;
     private final TourismContentService tourismContentService;
     private final TourismContentImageService imageService;
     private final Clock clock;
-
-    /**
-     * 실패 이력과 유형별 재처리에 필요한 서비스를 주입받습니다.
-     */
-    public TourismSyncFailureRetryFacadeService(
-            TourismSyncFailureService failureService,
-            LandmarkSyncFacadeService landmarkSyncFacadeService,
-            FestivalSyncFacadeService festivalSyncFacadeService,
-            TourApiClient tourApiClient,
-            TourismContentService tourismContentService,
-            TourismContentImageService imageService,
-            Clock clock
-    ) {
-        this.failureService = failureService;
-        this.landmarkSyncFacadeService = landmarkSyncFacadeService;
-        this.festivalSyncFacadeService = festivalSyncFacadeService;
-        this.tourApiClient = tourApiClient;
-        this.tourismContentService = tourismContentService;
-        this.imageService = imageService;
-        this.clock = clock;
-    }
 
     /**
      * 현재 PENDING 상태인 실패를 한 번씩 재처리하고 결과 상태를 반영합니다.
@@ -98,7 +79,10 @@ public class TourismSyncFailureRetryFacadeService {
      */
     private void retryOne(TourismSyncFailure failure) {
         switch (failure.getSyncType()) {
-            case LANDMARK -> landmarkSyncFacadeService.retryOne(failure.getExternalContentId());
+            case LANDMARK, ATTRACTION -> selectedContentSyncFacadeService.retryOne(
+                    failure.getSyncType(),
+                    failure.getExternalContentId()
+            );
             case FESTIVAL -> festivalSyncFacadeService.retryOne(failure.getExternalContentId());
             case IMAGE -> retryImages(failure.getExternalContentId());
             case REGION -> throw new IllegalStateException("Region 실패는 전체 Region Job으로 재처리해야 합니다.");
