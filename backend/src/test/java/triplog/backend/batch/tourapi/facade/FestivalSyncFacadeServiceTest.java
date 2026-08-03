@@ -34,6 +34,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * {@link FestivalSyncFacadeService}의 축제 변경 감지 흐름을 검증합니다.
+ */
 @ExtendWith(MockitoExtension.class)
 class FestivalSyncFacadeServiceTest {
 
@@ -72,6 +75,7 @@ class FestivalSyncFacadeServiceTest {
                 .thenReturn(new TourApiPage<>(List.of(), 1, 100, 0));
     }
 
+    /** 수정시각이 동일한 축제의 상세 API 호출을 생략하는지 검증합니다. */
     @Test
     @DisplayName("수정시각이 같은 기존 축제는 상세 API를 호출하지 않는다")
     void 수정시각이_같은_기존_축제는_상세_API를_호출하지_않는다() {

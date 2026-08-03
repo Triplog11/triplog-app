@@ -1,5 +1,6 @@
 package triplog.backend.attraction.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.attraction.entity.Attraction;
@@ -13,20 +14,12 @@ import java.util.Set;
  * 일반 관광지 선정 정보를 생성하는 기본 구현체입니다.
  */
 @Service
+@RequiredArgsConstructor
 public class AttractionServiceImpl implements AttractionService {
 
     private static final Set<String> ATTRACTION_CONTENT_TYPE_IDS = Set.of("12", "14", "28");
 
     private final AttractionRepository attractionRepository;
-
-    /**
-     * 일반 관광지 저장소를 주입받습니다.
-     *
-     * @param attractionRepository 일반 관광지 영속성 저장소
-     */
-    public AttractionServiceImpl(AttractionRepository attractionRepository) {
-        this.attractionRepository = attractionRepository;
-    }
 
     /**
      * 관광 콘텐츠를 일반 관광지로 생성하거나 기존 관광지를 반환합니다.

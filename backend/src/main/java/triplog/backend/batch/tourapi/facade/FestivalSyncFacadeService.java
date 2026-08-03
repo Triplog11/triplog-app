@@ -1,5 +1,6 @@
 package triplog.backend.batch.tourapi.facade;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import triplog.backend.batch.tourapi.client.TourApiClient;
@@ -34,6 +35,7 @@ import java.util.Map;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FestivalSyncFacadeService {
 
     private static final String FESTIVAL_CONTENT_TYPE_ID = "15";
@@ -50,41 +52,6 @@ public class FestivalSyncFacadeService {
     private final TourismSyncCheckpointService checkpointService;
     private final TourismSyncProperties properties;
     private final Clock clock;
-
-    /**
-     * 축제 동기화에 필요한 외부 Client, 도메인 서비스 및 설정을 주입받습니다.
-     *
-     * @param tourApiClient TourAPI 호출 클라이언트
-     * @param regionService 법정동 코드 기반 Region 조회 서비스
-     * @param tourismContentService 공통 관광 콘텐츠 저장 서비스
-     * @param eventService 축제 상세정보 저장 서비스
-     * @param imageService TourAPI 이미지 동기화 서비스
-     * @param failureService 동기화 실패 이력 서비스
-     * @param checkpointService 축제 성공 체크포인트 서비스
-     * @param properties 축제 검색 기간과 동기화 정책 설정
-     * @param clock 동기화 시각 계산용 Clock
-     */
-    public FestivalSyncFacadeService(
-            TourApiClient tourApiClient,
-            RegionService regionService,
-            TourismContentService tourismContentService,
-            EventService eventService,
-            TourismContentImageService imageService,
-            TourismSyncFailureService failureService,
-            TourismSyncCheckpointService checkpointService,
-            TourismSyncProperties properties,
-            Clock clock
-    ) {
-        this.tourApiClient = tourApiClient;
-        this.regionService = regionService;
-        this.tourismContentService = tourismContentService;
-        this.eventService = eventService;
-        this.imageService = imageService;
-        this.failureService = failureService;
-        this.checkpointService = checkpointService;
-        this.properties = properties;
-        this.clock = clock;
-    }
 
     /**
      * 기준일의 과거·미래 설정 범위에 포함되는 전국 축제를 동기화합니다.

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,19 +25,11 @@ import triplog.backend.landmark.service.LandmarkService;
  */
 @RestController
 @RequestMapping("/landmarks")
+@RequiredArgsConstructor
 @Tag(name = "Landmark API", description = "랜드마크 API")
 public class LandmarkController {
 
     private final LandmarkService landmarkService;
-
-    /**
-     * 랜드마크 조회 서비스를 주입받습니다.
-     *
-     * @param landmarkService 랜드마크 조회 서비스
-     */
-    public LandmarkController(LandmarkService landmarkService) {
-        this.landmarkService = landmarkService;
-    }
 
     /**
      * 랜드마크 상세 정보를 조회합니다.

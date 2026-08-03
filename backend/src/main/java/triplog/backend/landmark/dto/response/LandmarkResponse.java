@@ -1,7 +1,9 @@
 package triplog.backend.landmark.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.entity.UsersCardLandmark;
 import triplog.backend.region.entity.Region;
@@ -10,13 +12,8 @@ import triplog.backend.region.entity.Region;
  * 랜드마크(Landmark) 관련 응답 데이터를 전달하기 위한 DTO입니다.
  */
 @Schema(description = "랜드마크 관련 응답 DTO 그룹")
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class LandmarkResponse {
-
-    /**
-     * DTO 그룹 클래스의 인스턴스 생성을 제한합니다.
-     */
-    private LandmarkResponse() {
-    }
 
     /**
      * 랜드마크 상세 조회 응답 DTO입니다.

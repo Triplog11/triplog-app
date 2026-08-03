@@ -1,5 +1,6 @@
 package triplog.backend.batch.tourapi.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.batch.tourapi.entity.TourismSyncFailure;
@@ -14,18 +15,10 @@ import java.util.List;
  * TourAPI 콘텐츠 동기화 실패 이력의 생성, 갱신, 해결을 담당합니다.
  */
 @Service
+@RequiredArgsConstructor
 public class TourismSyncFailureService {
 
     private final TourismSyncFailureRepository failureRepository;
-
-    /**
-     * 동기화 실패 이력 저장소를 주입받습니다.
-     *
-     * @param failureRepository 동기화 실패 이력 저장소
-     */
-    public TourismSyncFailureService(TourismSyncFailureRepository failureRepository) {
-        this.failureRepository = failureRepository;
-    }
 
     /**
      * 아직 해결되지 않은 실패 이력을 조회합니다.

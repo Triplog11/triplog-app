@@ -32,6 +32,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * {@link SelectedContentSyncFacadeService}의 선정 콘텐츠 분류와 저장 흐름을 검증합니다.
+ */
 @ExtendWith(MockitoExtension.class)
 class SelectedContentSyncFacadeServiceTest {
 
@@ -72,6 +75,7 @@ class SelectedContentSyncFacadeServiceTest {
         );
     }
 
+    /** 두 CSV의 콘텐츠를 랜드마크와 일반 관광지로 각각 저장하는지 검증합니다. */
     @Test
     @DisplayName("두 CSV의 contentId를 각각 랜드마크와 관광지로 저장한다")
     void 두_CSV의_contentId를_각_유형으로_저장한다() {

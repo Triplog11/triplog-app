@@ -56,6 +56,7 @@ class LandmarkServiceImplTest {
         landmarkService = new LandmarkServiceImpl(landmarkRepository, usersCardLandmarkRepository, landmarkVisitLogService);
     }
 
+    /** 허용한 콘텐츠 타입을 랜드마크로 저장하는지 검증합니다. */
     @ParameterizedTest
     @ValueSource(strings = {"12", "14", "28"})
     @DisplayName("허용한 contentTypeId의 관광 콘텐츠를 랜드마크로 저장한다")
@@ -77,6 +78,7 @@ class LandmarkServiceImplTest {
         verify(landmarkRepository).save(any(Landmark.class));
     }
 
+    /** 허용하지 않은 콘텐츠 타입의 랜드마크 저장을 거부하는지 검증합니다. */
     @Test
     @DisplayName("허용하지 않은 contentTypeId는 랜드마크로 저장하지 않는다")
     void 허용하지_않은_콘텐츠는_랜드마크로_저장하지_않는다() {

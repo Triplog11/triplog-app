@@ -1,5 +1,6 @@
 package triplog.backend.landmark.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResponse;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
  * 관광 콘텐츠를 기준으로 랜드마크를 생성하거나 표시명을 갱신합니다.
  */
 @Service
+@RequiredArgsConstructor
 public class LandmarkServiceImpl implements LandmarkService {
 
     private static final Set<String> LANDMARK_CONTENT_TYPE_IDS = Set.of("12", "14", "28");
@@ -29,23 +31,6 @@ public class LandmarkServiceImpl implements LandmarkService {
     private final LandmarkRepository landmarkRepository;
     private final UsersCardLandmarkRepository usersCardLandmarkRepository;
     private final LandmarkVisitLogService landmarkVisitLogService;
-
-    /**
-     * 랜드마크 저장소와 방문 기록 서비스를 주입받습니다.
-     *
-     * @param landmarkRepository 랜드마크 저장소
-     * @param usersCardLandmarkRepository 사용자 랜드마크 카드 저장소
-     * @param landmarkVisitLogService 랜드마크 방문 기록 서비스
-     */
-    public LandmarkServiceImpl(
-            LandmarkRepository landmarkRepository,
-            UsersCardLandmarkRepository usersCardLandmarkRepository,
-            LandmarkVisitLogService landmarkVisitLogService
-    ) {
-        this.landmarkRepository = landmarkRepository;
-        this.usersCardLandmarkRepository = usersCardLandmarkRepository;
-        this.landmarkVisitLogService = landmarkVisitLogService;
-    }
 
     /**
      * TourismContent 기준으로 Landmark를 생성하거나 표시명을 갱신합니다.

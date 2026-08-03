@@ -22,6 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * {@link TourismSyncFailureRetryFacadeService}의 실패 재처리 흐름을 검증합니다.
+ */
 @ExtendWith(MockitoExtension.class)
 class TourismSyncFailureRetryFacadeServiceTest {
 
@@ -32,6 +35,7 @@ class TourismSyncFailureRetryFacadeServiceTest {
     @Mock private TourismContentService tourismContentService;
     @Mock private TourismContentImageService imageService;
 
+    /** 랜드마크 재처리가 성공하면 실패 이력을 해결 상태로 변경하는지 검증합니다. */
     @Test
     @DisplayName("랜드마크 실패를 재처리하고 성공하면 해결 상태로 변경한다")
     void 랜드마크_실패를_재처리하고_성공하면_해결_상태로_변경한다() {

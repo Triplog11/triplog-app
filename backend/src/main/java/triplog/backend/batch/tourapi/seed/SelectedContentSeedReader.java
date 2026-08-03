@@ -1,5 +1,6 @@
 package triplog.backend.batch.tourapi.seed;
 
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -20,26 +21,13 @@ import java.util.Set;
  * content_id 한 열로 구성된 랜드마크·일반 관광지 선정 CSV를 읽습니다.
  */
 @Component
+@RequiredArgsConstructor
 public class SelectedContentSeedReader {
 
     private static final String CONTENT_ID_HEADER = "content_id";
 
     private final ResourceLoader resourceLoader;
     private final TourismSyncProperties properties;
-
-    /**
-     * CSV 리소스 로더와 선정 목록 경로 설정을 주입받습니다.
-     *
-     * @param resourceLoader classpath 또는 파일 리소스 로더
-     * @param properties 랜드마크·일반 관광지 CSV 경로 설정
-     */
-    public SelectedContentSeedReader(
-            ResourceLoader resourceLoader,
-            TourismSyncProperties properties
-    ) {
-        this.resourceLoader = resourceLoader;
-        this.properties = properties;
-    }
 
     /**
      * 두 선정 목록을 읽고 파일 내부 및 파일 간 contentId 중복을 검증합니다.

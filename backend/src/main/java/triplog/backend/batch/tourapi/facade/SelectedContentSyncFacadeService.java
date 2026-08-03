@@ -1,5 +1,6 @@
 package triplog.backend.batch.tourapi.facade;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import triplog.backend.attraction.service.AttractionService;
 import triplog.backend.batch.tourapi.client.TourApiClient;
@@ -30,6 +31,7 @@ import java.util.Set;
  * 외부 API 호출을 포함하므로 장기 트랜잭션을 선언하지 않습니다.
  */
 @Service
+@RequiredArgsConstructor
 public class SelectedContentSyncFacadeService {
 
     private static final int PAGE_SIZE = 100;
@@ -45,44 +47,6 @@ public class SelectedContentSyncFacadeService {
     private final TourismSyncCheckpointService checkpointService;
     private final TourismSyncProperties syncProperties;
     private final Clock clock;
-
-    /**
-     * 선정 콘텐츠 동기화에 필요한 외부 API 경계 객체와 도메인 서비스를 주입받습니다.
-     *
-     * @param seedReader 랜드마크·일반 관광지 선정 CSV Reader
-     * @param tourApiClient TourAPI 호출 클라이언트
-     * @param regionService 법정동 코드 기반 Region 조회 서비스
-     * @param tourismContentService 공통 관광 콘텐츠 저장 서비스
-     * @param landmarkService 랜드마크 저장 서비스
-     * @param attractionService 일반 관광지 저장 서비스
-     * @param failureService 동기화 실패 이력 서비스
-     * @param checkpointService 유형별 성공 체크포인트 서비스
-     * @param syncProperties 동기화 임계값과 CSV 경로 설정
-     * @param clock 동기화 시각 계산용 Clock
-     */
-    public SelectedContentSyncFacadeService(
-            SelectedContentSeedReader seedReader,
-            TourApiClient tourApiClient,
-            RegionService regionService,
-            TourismContentService tourismContentService,
-            LandmarkService landmarkService,
-            AttractionService attractionService,
-            TourismSyncFailureService failureService,
-            TourismSyncCheckpointService checkpointService,
-            TourismSyncProperties syncProperties,
-            Clock clock
-    ) {
-        this.seedReader = seedReader;
-        this.tourApiClient = tourApiClient;
-        this.regionService = regionService;
-        this.tourismContentService = tourismContentService;
-        this.landmarkService = landmarkService;
-        this.attractionService = attractionService;
-        this.failureService = failureService;
-        this.checkpointService = checkpointService;
-        this.syncProperties = syncProperties;
-        this.clock = clock;
-    }
 
     /**
      * 두 CSV의 모든 선정 콘텐츠를 상세 조회해 최초 적재합니다.

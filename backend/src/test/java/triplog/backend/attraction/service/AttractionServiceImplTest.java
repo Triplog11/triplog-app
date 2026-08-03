@@ -22,6 +22,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * {@link AttractionServiceImpl}의 콘텐츠 타입 검증과 저장 흐름을 검증합니다.
+ */
 @ExtendWith(MockitoExtension.class)
 class AttractionServiceImplTest {
 
@@ -38,6 +41,7 @@ class AttractionServiceImplTest {
         attractionService = new AttractionServiceImpl(attractionRepository);
     }
 
+    /** 허용한 콘텐츠 타입을 일반 관광지로 저장하는지 검증합니다. */
     @ParameterizedTest
     @ValueSource(strings = {"12", "14", "28"})
     @DisplayName("허용한 contentTypeId의 관광 콘텐츠를 일반 관광지로 저장한다")
@@ -58,6 +62,7 @@ class AttractionServiceImplTest {
         verify(attractionRepository).save(any(Attraction.class));
     }
 
+    /** 허용하지 않은 콘텐츠 타입의 저장을 거부하는지 검증합니다. */
     @Test
     @DisplayName("허용하지 않은 contentTypeId는 일반 관광지로 저장하지 않는다")
     void 허용하지_않은_콘텐츠는_저장하지_않는다() {

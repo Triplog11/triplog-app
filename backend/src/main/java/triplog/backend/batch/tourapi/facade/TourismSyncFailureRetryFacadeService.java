@@ -1,5 +1,6 @@
 package triplog.backend.batch.tourapi.facade;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import triplog.backend.batch.tourapi.client.TourApiClient;
 import triplog.backend.batch.tourapi.entity.TourismSyncFailure;
@@ -21,6 +22,7 @@ import java.util.List;
  * 미해결 동기화 실패를 작업 유형에 맞는 유스케이스로 다시 전달합니다.
  */
 @Service
+@RequiredArgsConstructor
 public class TourismSyncFailureRetryFacadeService {
 
     private static final int IMAGE_PAGE_SIZE = 100;
@@ -31,35 +33,6 @@ public class TourismSyncFailureRetryFacadeService {
     private final TourismContentService tourismContentService;
     private final TourismContentImageService imageService;
     private final Clock clock;
-
-    /**
-     * 실패 이력과 유형별 재처리에 필요한 서비스를 주입받습니다.
-     *
-     * @param failureService 동기화 실패 이력 서비스
-     * @param selectedContentSyncFacadeService 선정 랜드마크·일반 관광지 재처리 Facade
-     * @param festivalSyncFacadeService 축제 재처리 Facade
-     * @param tourApiClient 이미지 재조회용 TourAPI 클라이언트
-     * @param tourismContentService 공통 관광 콘텐츠 조회 서비스
-     * @param imageService TourAPI 이미지 동기화 서비스
-     * @param clock 재처리 시각 계산용 Clock
-     */
-    public TourismSyncFailureRetryFacadeService(
-            TourismSyncFailureService failureService,
-            SelectedContentSyncFacadeService selectedContentSyncFacadeService,
-            FestivalSyncFacadeService festivalSyncFacadeService,
-            TourApiClient tourApiClient,
-            TourismContentService tourismContentService,
-            TourismContentImageService imageService,
-            Clock clock
-    ) {
-        this.failureService = failureService;
-        this.selectedContentSyncFacadeService = selectedContentSyncFacadeService;
-        this.festivalSyncFacadeService = festivalSyncFacadeService;
-        this.tourApiClient = tourApiClient;
-        this.tourismContentService = tourismContentService;
-        this.imageService = imageService;
-        this.clock = clock;
-    }
 
     /**
      * 현재 PENDING 상태인 실패를 한 번씩 재처리하고 결과 상태를 반영합니다.
