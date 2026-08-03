@@ -11,6 +11,9 @@ public enum TourismSyncType {
     /** CSV 관리 대상을 기준으로 한 랜드마크 동기화입니다. */
     LANDMARK,
 
+    /** CSV 관리 대상을 기준으로 한 일반 관광지 동기화입니다. */
+    ATTRACTION,
+
     /** 지정된 조회 기간에 포함되는 축제 동기화입니다. */
     FESTIVAL,
 

@@ -25,7 +25,7 @@ public class TourismSyncFailureRetryFacadeService {
 
     private static final int IMAGE_PAGE_SIZE = 100;
     private final TourismSyncFailureService failureService;
-    private final LandmarkSyncFacadeService landmarkSyncFacadeService;
+    private final SelectedContentSyncFacadeService selectedContentSyncFacadeService;
     private final FestivalSyncFacadeService festivalSyncFacadeService;
     private final TourApiClient tourApiClient;
     private final TourismContentService tourismContentService;
@@ -34,10 +34,18 @@ public class TourismSyncFailureRetryFacadeService {
 
     /**
      * 실패 이력과 유형별 재처리에 필요한 서비스를 주입받습니다.
+     *
+     * @param failureService 동기화 실패 이력 서비스
+     * @param selectedContentSyncFacadeService 선정 랜드마크·일반 관광지 재처리 Facade
+     * @param festivalSyncFacadeService 축제 재처리 Facade
+     * @param tourApiClient 이미지 재조회용 TourAPI 클라이언트
+     * @param tourismContentService 공통 관광 콘텐츠 조회 서비스
+     * @param imageService TourAPI 이미지 동기화 서비스
+     * @param clock 재처리 시각 계산용 Clock
      */
     public TourismSyncFailureRetryFacadeService(
             TourismSyncFailureService failureService,
-            LandmarkSyncFacadeService landmarkSyncFacadeService,
+            SelectedContentSyncFacadeService selectedContentSyncFacadeService,
             FestivalSyncFacadeService festivalSyncFacadeService,
             TourApiClient tourApiClient,
             TourismContentService tourismContentService,
@@ -45,7 +53,7 @@ public class TourismSyncFailureRetryFacadeService {
             Clock clock
     ) {
         this.failureService = failureService;
-        this.landmarkSyncFacadeService = landmarkSyncFacadeService;
+        this.selectedContentSyncFacadeService = selectedContentSyncFacadeService;
         this.festivalSyncFacadeService = festivalSyncFacadeService;
         this.tourApiClient = tourApiClient;
         this.tourismContentService = tourismContentService;
@@ -98,7 +106,10 @@ public class TourismSyncFailureRetryFacadeService {
      */
     private void retryOne(TourismSyncFailure failure) {
         switch (failure.getSyncType()) {
-            case LANDMARK -> landmarkSyncFacadeService.retryOne(failure.getExternalContentId());
+            case LANDMARK, ATTRACTION -> selectedContentSyncFacadeService.retryOne(
+                    failure.getSyncType(),
+                    failure.getExternalContentId()
+            );
             case FESTIVAL -> festivalSyncFacadeService.retryOne(failure.getExternalContentId());
             case IMAGE -> retryImages(failure.getExternalContentId());
             case REGION -> throw new IllegalStateException("Region 실패는 전체 Region Job으로 재처리해야 합니다.");

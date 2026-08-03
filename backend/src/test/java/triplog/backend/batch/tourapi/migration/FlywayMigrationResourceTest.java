@@ -25,6 +25,7 @@ class FlywayMigrationResourceTest {
                 .contains("CREATE TABLE region")
                 .contains("CREATE TABLE tourism_content")
                 .contains("CREATE TABLE landmark")
+                .contains("CREATE TABLE attraction")
                 .contains("CREATE TABLE event")
                 .contains("CREATE TABLE tourism_content_image")
                 .contains("CREATE TABLE tourism_sync_failure")
@@ -33,19 +34,22 @@ class FlywayMigrationResourceTest {
     }
 
     @Test
-    @DisplayName("랜드마크 CSV와 Flyway V1은 UTF-8 BOM 없이 패키징된다")
-    void 랜드마크_CSV와_Flyway_V1은_UTF8_BOM_없이_패키징된다() throws IOException {
+    @DisplayName("선정 CSV와 Flyway V1은 UTF-8 BOM 없이 패키징된다")
+    void 선정_CSV와_Flyway_V1은_UTF8_BOM_없이_패키징된다() throws IOException {
         // Given
         String migrationPath = "db/migration/V1__create_initial_schema.sql";
         String landmarkPath = "seed/landmarks.csv";
+        String attractionPath = "seed/attractions.csv";
 
         // When
         byte[] migrationBytes = readClasspathResourceBytes(migrationPath);
         byte[] landmarkBytes = readClasspathResourceBytes(landmarkPath);
+        byte[] attractionBytes = readClasspathResourceBytes(attractionPath);
 
         // Then
         assertThat(hasUtf8Bom(migrationBytes)).isFalse();
         assertThat(hasUtf8Bom(landmarkBytes)).isFalse();
+        assertThat(hasUtf8Bom(attractionBytes)).isFalse();
     }
 
     private String readClasspathResource(String path) throws IOException {

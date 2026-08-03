@@ -39,7 +39,7 @@ public class MissionServiceImpl implements MissionService {
     /**
      * 로그인 사용자의 미션 진행 현황을 조회합니다.
      * <p>
-     * 현재 진행 중인 미션(시작일 <= 현재 <= 종료일)만 조회한 후,
+     * 현재 진행 중인 미션(시작일 &lt;= 현재 &lt;= 종료일)만 조회한 후,
      * 사용자의 완료 여부를 매핑하여 반환합니다.
      * missionType이 null이면 전체 타입을 조회합니다.
      * 결과가 없으면 빈 목록을 반환합니다.
@@ -85,7 +85,7 @@ public class MissionServiceImpl implements MissionService {
     /**
      * 미션 타입별 현재 진행 중인 미션 목록을 조회합니다.
      * <p>
-     * 현재 시간 기준으로 시작일 <= 현재 <= 종료일인 미션만 반환합니다.
+     * 현재 시간 기준으로 시작일 &lt;= 현재 &lt;= 종료일인 미션만 반환합니다.
      * missionType이 null이면 전체 타입을 조회합니다.
      * 결과가 없으면 빈 목록을 반환합니다.
      *

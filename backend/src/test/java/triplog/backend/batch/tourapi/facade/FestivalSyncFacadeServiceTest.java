@@ -54,6 +54,7 @@ class FestivalSyncFacadeServiceTest {
                 new TourismSyncProperties.Festival(30, 12),
                 3,
                 "classpath:seed/landmarks.csv",
+                "classpath:seed/attractions.csv",
                 new TourismSyncProperties.Scheduling(false, "", "", "", "", "Asia/Seoul")
         );
         facadeService = new FestivalSyncFacadeService(

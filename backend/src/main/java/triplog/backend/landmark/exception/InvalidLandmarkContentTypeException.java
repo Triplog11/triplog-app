@@ -11,6 +11,6 @@ public class InvalidLandmarkContentTypeException extends RuntimeException {
      * @param contentTypeId TourAPI 콘텐츠 타입
      */
     public InvalidLandmarkContentTypeException(String contentTypeId) {
-        super("Landmark는 contentTypeId=12만 허용합니다: " + contentTypeId);
+        super("Landmark는 contentTypeId 12, 14, 28만 허용합니다: " + contentTypeId);
     }
 }

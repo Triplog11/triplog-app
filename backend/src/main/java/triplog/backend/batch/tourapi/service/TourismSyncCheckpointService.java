@@ -1,6 +1,5 @@
 package triplog.backend.batch.tourapi.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.batch.tourapi.entity.TourismSyncCheckpoint;
@@ -14,10 +13,20 @@ import java.util.Optional;
  * 동기화 작업의 마지막 성공시각 조회와 갱신을 담당합니다.
  */
 @Service
-@RequiredArgsConstructor
 public class TourismSyncCheckpointService {
 
     private final TourismSyncCheckpointRepository checkpointRepository;
+
+    /**
+     * 동기화 체크포인트 저장소를 주입받습니다.
+     *
+     * @param checkpointRepository 동기화 체크포인트 저장소
+     */
+    public TourismSyncCheckpointService(
+            TourismSyncCheckpointRepository checkpointRepository
+    ) {
+        this.checkpointRepository = checkpointRepository;
+    }
 
     /**
      * 동기화 유형의 마지막 성공시각을 조회합니다.

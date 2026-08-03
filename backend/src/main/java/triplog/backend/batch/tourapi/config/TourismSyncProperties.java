@@ -7,7 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @param festival 축제 검색 기간 설정
  * @param missingThreshold 콘텐츠를 비활성 후보로 판단할 연속 누락 횟수
- * @param landmarkSeedPath 랜드마크 CSV 시드 리소스 경로
+ * @param landmarkSeedPath 랜드마크 선정 CSV 리소스 경로
+ * @param attractionSeedPath 일반 관광지 선정 CSV 리소스 경로
  * @param scheduling 자동 실행 설정
  */
 @ConfigurationProperties(prefix = "tourism-sync")
@@ -15,6 +16,7 @@ public record TourismSyncProperties(
         Festival festival,
         int missingThreshold,
         String landmarkSeedPath,
+        String attractionSeedPath,
         Scheduling scheduling
 ) {
 
@@ -32,7 +34,7 @@ public record TourismSyncProperties(
      *
      * @param enabled 자동 실행 활성화 여부
      * @param regionCron Region 동기화 cron
-     * @param landmarkCron Landmark 동기화 cron
+     * @param selectedContentCron 선정 Landmark·Attraction 동기화 cron
      * @param festivalCron Festival 동기화 cron
      * @param failureRetryCron 실패 이력 재처리 cron
      * @param zone cron 계산에 사용할 시간대
@@ -40,7 +42,7 @@ public record TourismSyncProperties(
     public record Scheduling(
             boolean enabled,
             String regionCron,
-            String landmarkCron,
+            String selectedContentCron,
             String festivalCron,
             String failureRetryCron,
             String zone

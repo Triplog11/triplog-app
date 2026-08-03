@@ -1,10 +1,7 @@
 package triplog.backend.landmark.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.entity.UsersCardLandmark;
 import triplog.backend.region.entity.Region;
@@ -13,14 +10,18 @@ import triplog.backend.region.entity.Region;
  * 랜드마크(Landmark) 관련 응답 데이터를 전달하기 위한 DTO입니다.
  */
 @Schema(description = "랜드마크 관련 응답 DTO 그룹")
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class LandmarkResponse {
+
+    /**
+     * DTO 그룹 클래스의 인스턴스 생성을 제한합니다.
+     */
+    private LandmarkResponse() {
+    }
 
     /**
      * 랜드마크 상세 조회 응답 DTO입니다.
      */
     @Getter
-    @AllArgsConstructor
     @Schema(description = "랜드마크 상세 조회 응답")
     public static class LandmarkDetailResponse {
 
@@ -53,6 +54,44 @@ public class LandmarkResponse {
 
         @Schema(description = "방문 횟수", example = "2", nullable = true)
         private final Integer visitCount;
+
+        /**
+         * 랜드마크 상세 조회 응답을 생성합니다.
+         *
+         * @param landmarkId 랜드마크 식별자
+         * @param landmarkName 랜드마크명
+         * @param regionId 지역 식별자
+         * @param regionName 지역명
+         * @param contentId TourAPI 콘텐츠 식별자
+         * @param legalRegionCode 법정동 시도 코드
+         * @param legalDistrictCode 법정동 시군구 코드
+         * @param acquired 카드 획득 여부
+         * @param acquiredAt 카드 획득 일시
+         * @param visitCount 방문 횟수
+         */
+        public LandmarkDetailResponse(
+                Long landmarkId,
+                String landmarkName,
+                Long regionId,
+                String regionName,
+                String contentId,
+                String legalRegionCode,
+                String legalDistrictCode,
+                Boolean acquired,
+                String acquiredAt,
+                Integer visitCount
+        ) {
+            this.landmarkId = landmarkId;
+            this.landmarkName = landmarkName;
+            this.regionId = regionId;
+            this.regionName = regionName;
+            this.contentId = contentId;
+            this.legalRegionCode = legalRegionCode;
+            this.legalDistrictCode = legalDistrictCode;
+            this.acquired = acquired;
+            this.acquiredAt = acquiredAt;
+            this.visitCount = visitCount;
+        }
 
         /**
          * Landmark 엔티티와 사용자 획득 정보를 기반으로 랜드마크 상세 응답을 생성합니다.

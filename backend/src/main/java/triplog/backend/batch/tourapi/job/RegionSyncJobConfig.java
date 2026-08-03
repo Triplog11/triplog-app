@@ -17,6 +17,12 @@ import triplog.backend.batch.tourapi.facade.RegionSyncFacadeService;
 public class RegionSyncJobConfig {
 
     /**
+     * Region 동기화 Job 설정 객체를 생성합니다.
+     */
+    public RegionSyncJobConfig() {
+    }
+
+    /**
      * Region 동기화 Step을 실행하는 Job을 등록합니다.
      *
      * @param jobRepository Batch 실행 이력 저장소

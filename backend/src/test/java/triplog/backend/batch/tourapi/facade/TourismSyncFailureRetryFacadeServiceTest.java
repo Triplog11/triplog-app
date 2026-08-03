@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class TourismSyncFailureRetryFacadeServiceTest {
 
     @Mock private TourismSyncFailureService failureService;
-    @Mock private LandmarkSyncFacadeService landmarkSyncFacadeService;
+    @Mock private SelectedContentSyncFacadeService selectedContentSyncFacadeService;
     @Mock private FestivalSyncFacadeService festivalSyncFacadeService;
     @Mock private TourApiClient tourApiClient;
     @Mock private TourismContentService tourismContentService;
@@ -52,7 +52,7 @@ class TourismSyncFailureRetryFacadeServiceTest {
         );
         TourismSyncFailureRetryFacadeService facadeService = new TourismSyncFailureRetryFacadeService(
                 failureService,
-                landmarkSyncFacadeService,
+                selectedContentSyncFacadeService,
                 festivalSyncFacadeService,
                 tourApiClient,
                 tourismContentService,
@@ -64,7 +64,7 @@ class TourismSyncFailureRetryFacadeServiceTest {
         TourismSyncFailureRetryFacadeService.RetryResult result = facadeService.retryPending();
 
         // Then
-        verify(landmarkSyncFacadeService).retryOne("126508");
+        verify(selectedContentSyncFacadeService).retryOne(TourismSyncType.LANDMARK, "126508");
         verify(failureService).markRetrying(
                 TourismSyncType.LANDMARK,
                 "126508",

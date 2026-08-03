@@ -21,6 +21,12 @@ import java.net.http.HttpClient;
 public class TourApiClientConfig {
 
     /**
+     * TourAPI HTTP Client 설정 객체를 생성합니다.
+     */
+    public TourApiClientConfig() {
+    }
+
+    /**
      * TourAPI 기본 URL과 JSON 응답 헤더가 적용된 RestClient를 생성합니다.
      *
      * @param properties TourAPI 설정

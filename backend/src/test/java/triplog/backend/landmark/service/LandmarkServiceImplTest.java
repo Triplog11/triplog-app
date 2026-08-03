@@ -4,11 +4,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResponse;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.entity.UsersCardLandmark;
+import triplog.backend.landmark.exception.InvalidLandmarkContentTypeException;
 import triplog.backend.landmark.exception.LandmarkException;
 import triplog.backend.landmark.repository.LandmarkRepository;
 import triplog.backend.landmark.repository.UsersCardLandmarkRepository;
@@ -22,6 +25,9 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static triplog.backend.landmark.exception.LandmarkErrorCode.LANDMARK_DETAIL_NOT_FOUND;
@@ -48,6 +54,41 @@ class LandmarkServiceImplTest {
     @BeforeEach
     void setUp() {
         landmarkService = new LandmarkServiceImpl(landmarkRepository, usersCardLandmarkRepository, landmarkVisitLogService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"12", "14", "28"})
+    @DisplayName("허용한 contentTypeId의 관광 콘텐츠를 랜드마크로 저장한다")
+    void 허용한_관광_콘텐츠를_랜드마크로_저장한다(String contentTypeId) {
+        // Given
+        TourismContent tourismContent = mock(TourismContent.class);
+        when(tourismContent.getContentTypeId()).thenReturn(contentTypeId);
+        when(tourismContent.getTourismContentId()).thenReturn(1L);
+        given(landmarkRepository.findByTourismContentTourismContentId(1L))
+                .willReturn(Optional.empty());
+        given(landmarkRepository.save(any(Landmark.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Landmark landmark = landmarkService.upsert(tourismContent, "선정 랜드마크");
+
+        // Then
+        assertThat(landmark.getTourismContent()).isSameAs(tourismContent);
+        verify(landmarkRepository).save(any(Landmark.class));
+    }
+
+    @Test
+    @DisplayName("허용하지 않은 contentTypeId는 랜드마크로 저장하지 않는다")
+    void 허용하지_않은_콘텐츠는_랜드마크로_저장하지_않는다() {
+        // Given
+        TourismContent tourismContent = mock(TourismContent.class);
+        when(tourismContent.getContentTypeId()).thenReturn("15");
+
+        // When
+        // Then
+        assertThatThrownBy(() -> landmarkService.upsert(tourismContent, "축제"))
+                .isInstanceOf(InvalidLandmarkContentTypeException.class);
+        verify(landmarkRepository, never()).save(any());
     }
 
     /**

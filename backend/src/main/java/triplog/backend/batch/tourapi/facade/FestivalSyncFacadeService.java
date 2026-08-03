@@ -53,6 +53,16 @@ public class FestivalSyncFacadeService {
 
     /**
      * 축제 동기화에 필요한 외부 Client, 도메인 서비스 및 설정을 주입받습니다.
+     *
+     * @param tourApiClient TourAPI 호출 클라이언트
+     * @param regionService 법정동 코드 기반 Region 조회 서비스
+     * @param tourismContentService 공통 관광 콘텐츠 저장 서비스
+     * @param eventService 축제 상세정보 저장 서비스
+     * @param imageService TourAPI 이미지 동기화 서비스
+     * @param failureService 동기화 실패 이력 서비스
+     * @param checkpointService 축제 성공 체크포인트 서비스
+     * @param properties 축제 검색 기간과 동기화 정책 설정
+     * @param clock 동기화 시각 계산용 Clock
      */
     public FestivalSyncFacadeService(
             TourApiClient tourApiClient,
