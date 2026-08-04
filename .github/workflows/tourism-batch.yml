@@ -52,7 +52,6 @@ jobs:
           key: ${{ secrets.BACKEND_SERVER_SSH_KEY }}
           envs: BATCH_JOB,SELECTED_CONTENT_MODE,FESTIVAL_BASE_DATE
           command_timeout: 60m
-          script_stop: true
           script: |
             set -euo pipefail
             cd /home/g100dndudvkr/triplog
