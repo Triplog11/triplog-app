@@ -3,33 +3,57 @@ import { StyleSheet, View, ScrollView, TouchableOpacity, SafeAreaView, Alert } f
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { fetchBadges } from '../../api/badges';
+import { fetchMyStats } from '../../api/stats';
+import { fetchMyRanking } from '../../api/stats';
+import { fetchNationwideMap } from '../../api/regions';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import ProfileCard from './components/ProfileCard';
 import TravelLogSection from './components/TravelLogSection';
-import { MOCK_RANK, MOCK_STATS, MOCK_XP_MAX, MOCK_RECENT_CARDS, MOCK_TRAVEL_LOG } from './mockMyPage';
+import { MOCK_RECENT_CARDS, MOCK_TRAVEL_LOG } from './mockMyPage';
 
 const APP_VERSION = `v${require('../../../app.json').expo.version}`;
 
 export default function MyPageScreen({ navigation }) {
   const { user, logout } = useAuth();
   const [badgeCount, setBadgeCount] = useState(null);
+  const [myStats, setMyStats] = useState(null);
+  const [myRank, setMyRank] = useState(null);
+  const [mapSummary, setMapSummary] = useState(null);
 
-  // 획득 뱃지 수만 실데이터 — 나머지 통계는 백엔드 API 대기 중(목데이터)
+  // 실데이터: 뱃지 수 / 내 스탯(레벨·XP·티어) / 내 랭킹 / 전국 지도 요약(방문·완성 지역 수)
+  // 각 요청은 독립적으로 실패해도 화면 전체를 막지 않고 해당 값만 '--'로 남긴다.
   useEffect(() => {
     let mounted = true;
     fetchBadges({ isAcquired: true, size: 1 })
-      .then((result) => {
-        if (mounted) setBadgeCount(result?.totalElements ?? null);
-      })
+      .then((result) => mounted && setBadgeCount(result?.totalElements ?? null))
       .catch((error) => console.warn('뱃지 수 조회 실패:', error?.status, error?.message));
+    fetchMyStats()
+      .then((result) => mounted && setMyStats(result ?? null))
+      .catch((error) => console.warn('내 스탯 조회 실패:', error?.status, error?.message));
+    fetchMyRanking()
+      .then((result) => mounted && setMyRank(result ?? null))
+      .catch((error) => console.warn('내 랭킹 조회 실패:', error?.status, error?.message));
+    fetchNationwideMap()
+      .then((result) => mounted && setMapSummary(result ?? null))
+      .catch((error) => console.warn('전국 지도 요약 조회 실패:', error?.status, error?.message));
     return () => {
       mounted = false;
     };
   }, []);
 
-  const xp = user?.xp ?? 0;
-  const xpRatio = Math.min(xp / MOCK_XP_MAX, 1);
+  const xp = myStats?.xp ?? user?.xp ?? 0;
+  const xpMax = myStats?.requiredXp ?? null;
+  const xpRatio = xpMax ? Math.min(xp / xpMax, 1) : 0;
+
+  // ProfileCard가 기대하는 rank shape로 변환 (미도착 시 안전 기본값)
+  const rankForCard = myRank
+    ? {
+        tierLabel: myRank.tier ? `${myRank.tier} Rank` : '—',
+        monthlyRank: myRank.monthlyRank ?? '—',
+        totalScore: myRank.overallScore ?? 0,
+      }
+    : { tierLabel: '—', monthlyRank: '—', totalScore: 0 };
 
   const notifyComingSoon = () => {
     Alert.alert('준비 중', '곧 만나실 수 있어요.');
@@ -42,11 +66,24 @@ export default function MyPageScreen({ navigation }) {
     ]);
   };
 
+  // 스탯 그리드 — 전부 실데이터. 카운트 엔드포인트가 없는 값은 '--'로 남긴다.
   const stats = [
-    { key: 'regions', label: '방문 지역', value: `${MOCK_STATS.visitedRegions}개` },
-    { key: 'landmarks', label: '랜드마크 인증', value: `${MOCK_STATS.certifiedLandmarks}회` },
+    {
+      key: 'regions',
+      label: '방문 지역',
+      value: mapSummary?.visitedRegionCount != null ? `${mapSummary.visitedRegionCount}개` : '--',
+    },
+    {
+      key: 'completed',
+      label: '완성 지역',
+      value: mapSummary?.completedRegionCount != null ? `${mapSummary.completedRegionCount}개` : '--',
+    },
     { key: 'badges', label: '획득한 뱃지', value: badgeCount != null ? `${badgeCount}개` : '--' },
-    { key: 'cards', label: '수집 카드', value: `${MOCK_STATS.collectedCards}개` },
+    {
+      key: 'score',
+      label: '누적 점수',
+      value: myStats?.overallScore != null ? `${myStats.overallScore.toLocaleString()}점` : '--',
+    },
   ];
 
   return (
@@ -54,7 +91,7 @@ export default function MyPageScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <ProfileCard
           user={user}
-          rank={MOCK_RANK}
+          rank={rankForCard}
           onEditPress={() => navigation.navigate('ProfileEdit')}
         />
 
@@ -68,7 +105,7 @@ export default function MyPageScreen({ navigation }) {
               <CustomText variant="Body/Small" color={theme.colors.primary} style={styles.xpValue}>
                 {xp}
               </CustomText>
-              {' '}/ {MOCK_XP_MAX} XP
+              {' '}/ {xpMax ?? '—'} XP
             </CustomText>
           </View>
           <View style={styles.xpTrack}>
@@ -150,7 +187,7 @@ export default function MyPageScreen({ navigation }) {
           설정
         </CustomText>
         <View style={styles.menuContainer}>
-          <MenuRow icon="notifications-outline" label="알림 설정" onPress={notifyComingSoon} />
+          <MenuRow icon="notifications-outline" label="알림 설정" onPress={() => navigation.navigate('NotificationSettings')} />
           <MenuRow icon="help-circle-outline" label="도움말 / 문의" onPress={notifyComingSoon} />
           <MenuRow icon="shield-checkmark-outline" label="이용약관 및 개인정보 처리방침" onPress={notifyComingSoon} />
           {/* 버전 정보 — 우측 표시, 클릭 인터랙션 없음 (피그마 디스크립션 #4) */}

@@ -6,6 +6,7 @@ import theme from '../theme/theme';
 import TripLogTabBar from '../components/navigation/TripLogTabBar';
 
 // Screens
+import HomeDashboardScreen from '../screens/home/HomeDashboardScreen';
 import HomeScreen from '../screens/home/HomeScreen';
 import HistoryScreen from '../screens/home/HistoryScreen';
 import RegionDetailScreen from '../screens/home/RegionDetailScreen';
@@ -18,6 +19,7 @@ import MyPageScreen from '../screens/mypage/MyPageScreen';
 import BadgeListScreen from '../screens/mypage/BadgeListScreen';
 import ProfileEditScreen from '../screens/mypage/ProfileEditScreen';
 import NotificationScreen from '../screens/mypage/NotificationScreen';
+import NotificationSettingsScreen from '../screens/mypage/NotificationSettingsScreen';
 import TravelLogScreen from '../screens/mypage/TravelLogScreen';
 import VerifyHistoryScreen from '../screens/mypage/VerifyHistoryScreen';
 import WishlistScreen from '../screens/mypage/WishlistScreen';
@@ -29,7 +31,8 @@ const Stack = createNativeStackNavigator();
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
-      <Stack.Screen name="HomeMain" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="HomeMain" component={HomeDashboardScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="NationwideMap" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="RegionDetail" component={RegionDetailScreen} options={{ headerShown: false }} />
       <Stack.Screen name="History" component={HistoryScreen} options={{ title: '인증 히스토리' }} />
     </Stack.Navigator>
@@ -69,6 +72,7 @@ function MyPageStack() {
       <Stack.Screen name="BadgeList" component={BadgeListScreen} options={{ title: '뱃지 보관함' }} />
       <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} options={{ title: '프로필 수정' }} />
       <Stack.Screen name="Notification" component={NotificationScreen} options={{ title: '알림' }} />
+      <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} options={{ title: '알림 설정' }} />
       <Stack.Screen name="TravelLog" component={TravelLogScreen} options={{ title: '여행 기록' }} />
       <Stack.Screen name="VerifyHistory" component={VerifyHistoryScreen} options={{ title: '인증 내역' }} />
       <Stack.Screen name="Wishlist" component={WishlistScreen} options={{ title: '찜한 랜드마크' }} />

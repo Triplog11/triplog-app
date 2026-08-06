@@ -11,28 +11,31 @@ import PhotoPlaceholder from './PhotoPlaceholder';
  * 획득: 사진 + 등급 보더/뱃지 + 획득일 / 미획득: ??? + 자물쇠 (DESIGN.md §14 잠금 카드)
  */
 export default function LandmarkCardItem({ card, wishlisted, onPress }) {
-  const grade = GRADE_CONFIG[card.grade];
+  // 백엔드 랜드마크에는 등급이 없다 → grade는 있을 때만 사용(목 카드 하위호환)
+  const grade = card.grade ? GRADE_CONFIG[card.grade] : null;
   const { obtained } = card;
 
   return (
     <TouchableOpacity
-      style={[styles.card, { borderColor: obtained ? grade.border : theme.colors.border }]}
+      style={[styles.card, { borderColor: obtained ? grade?.border ?? theme.colors.primary : theme.colors.border }]}
       onPress={onPress}
       activeOpacity={0.85}
     >
       <View style={styles.thumbWrap}>
         {obtained ? (
-          <PhotoPlaceholder tint={grade.soft} icon="camera-outline" />
+          <PhotoPlaceholder tint={grade?.soft ?? theme.colors.primarySoft} icon="camera-outline" />
         ) : (
           <View style={styles.lockedThumb}>
             <Ionicons name="lock-closed" size={24} color={theme.colors.textMuted} />
           </View>
         )}
-        <View style={[styles.gradeBadge, { backgroundColor: grade.soft }]}>
-          <CustomText variant="Caption" color={grade.color} style={styles.gradeText}>
-            {card.grade}
-          </CustomText>
-        </View>
+        {grade && (
+          <View style={[styles.gradeBadge, { backgroundColor: grade.soft }]}>
+            <CustomText variant="Caption" color={grade.color} style={styles.gradeText}>
+              {card.grade}
+            </CustomText>
+          </View>
+        )}
         {wishlisted && (
           <View style={styles.heart}>
             <Ionicons name="heart" size={14} color={theme.colors.error} />
@@ -59,7 +62,7 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
             color={obtained ? theme.colors.success : theme.colors.textMuted}
           />
           <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.metaText}>
-            {obtained ? card.date : '방문 후 획득'}
+            {obtained ? card.date ?? '획득 완료' : '방문 후 획득'}
           </CustomText>
         </View>
       </View>
