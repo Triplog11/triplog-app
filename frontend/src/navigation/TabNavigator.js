@@ -8,7 +8,7 @@ import TripLogTabBar from '../components/navigation/TripLogTabBar';
 // Screens
 import HomeScreen from '../screens/home/HomeScreen';
 import HistoryScreen from '../screens/home/HistoryScreen';
-import RegionDetailScreen from '../screens/home/RegionDetailScreen';
+import ProvinceRegionListScreen from '../screens/home/ProvinceRegionListScreen';
 import CollectionScreen from '../screens/collection/CollectionScreen';
 import RegionCollectionScreen from '../screens/collection/RegionCollectionScreen';
 import VisitCertScreen from '../screens/record/VisitCertScreen';
@@ -31,7 +31,7 @@ function HomeStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="HomeMain" component={HomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="RegionDetail" component={RegionDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="RegionDetail" component={ProvinceRegionListScreen} options={{ headerShown: false }} />
       <Stack.Screen name="History" component={HistoryScreen} options={{ title: '인증 히스토리' }} />
     </Stack.Navigator>
   );

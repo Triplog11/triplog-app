@@ -47,6 +47,8 @@ export default function HomeScreen({ navigation }) {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [compassOn, setCompassOn] = useState(false);
+  // 광역 드릴다운 중에는 나침반 FAB가 하단 지역 카드와 겹치므로 숨긴다
+  const [inProvinceView, setInProvinceView] = useState(false);
 
   const stopCompass = useCallback(() => {
     headingSub.current?.remove();
@@ -177,15 +179,16 @@ export default function HomeScreen({ navigation }) {
         userCoords={userCoords}
         compassActive={compassOn}
         onUserGesture={handleMapGesture}
+        onProvinceChange={(name) => setInProvinceView(!!name)}
       />
 
-      <Fab
+      {!inProvinceView && <Fab
         icon={compassOn ? 'navigation' : 'compass'}
         accessibilityLabel={compassOn ? '나침반 모드 끄기' : '내 방향으로 지도 회전'}
         onPress={handleCompassPress}
         style={styles.fab}
         active={compassOn}
-      />
+      />}
 
       <LocationPermissionModal
         visible={showPermissionModal}

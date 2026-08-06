@@ -330,7 +330,7 @@ function MapToolbar({ onBack }) {
  * - ref: showProvince / showNational / setHeading / resetHeading
  */
 const KoreaMap = forwardRef(function KoreaMap(
-  { regions, onExplore, userRegion, userCoords, compassActive, onUserGesture },
+  { regions, onExplore, userRegion, userCoords, compassActive, onUserGesture, onProvinceChange },
   ref
 ) {
   const [province, setProvince] = useState(null);
@@ -425,6 +425,7 @@ const KoreaMap = forwardRef(function KoreaMap(
   const changeView = (nextProvince) => {
     resetTransform(false);
     setProvince(nextProvince);
+    onProvinceChange?.(nextProvince);
   };
 
   // 지역 탭 → 하이라이트 + 이동 중 오버레이 → 드릴다운
