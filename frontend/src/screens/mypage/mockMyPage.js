@@ -3,20 +3,6 @@
  * 임시로 사용한다. API가 열리면 각 섹션별로 실데이터로 교체할 것.
  */
 
-export const MOCK_RANK = {
-  tierLabel: 'Gold Rank',
-  monthlyRank: 23,
-  totalScore: 8450,
-};
-
-export const MOCK_STATS = {
-  visitedRegions: 7,
-  certifiedLandmarks: 24,
-  collectedCards: 7,
-};
-
-export const MOCK_XP_MAX = 900;
-
 export const MOCK_RECENT_CARDS = [
   { id: 1, name: '경복궁', region: '종로구', grade: 'Epic' },
   { id: 2, name: '남산타워', region: '용산구', grade: 'Rare' },
