@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import KoreaMap from '../../components/map/KoreaMap';
 import Fab from '../../components/common/Fab';
 import LocationPermissionModal from './components/LocationPermissionModal';
+import MissionStrip from './components/MissionStrip';
 import theme from '../../theme/theme';
 import { REGIONS, getNationalStats } from '../../data/regions';
 import { fetchNationwideMap } from '../../api/regions';
@@ -165,6 +166,8 @@ export default function HomeScreen({ navigation }) {
           )}
         </View>
       </View>
+
+      <MissionStrip />
 
       <KoreaMap
         ref={mapRef}
