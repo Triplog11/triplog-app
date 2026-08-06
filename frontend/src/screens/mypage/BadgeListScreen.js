@@ -20,7 +20,7 @@ const FILTERS = [
 ];
 
 /** 뱃지 보관함 — GET /badges 실연동 (페이징 + 획득 여부 필터) */
-export default function BadgeListScreen() {
+export default function BadgeListScreen({ navigation }) {
   const [filterKey, setFilterKey] = useState('all');
   const [badges, setBadges] = useState([]);
   const [page, setPage] = useState(0);
@@ -153,6 +153,15 @@ export default function BadgeListScreen() {
           <CustomText variant="Body/Medium" color={theme.colors.textSecondary} style={styles.emptyText}>
             아직 획득한 뱃지가 없어요. 첫 번째 모험을 시작해 보세요!
           </CustomText>
+          <TouchableOpacity
+            style={styles.exploreBtn}
+            onPress={() => navigation.navigate('Home')}
+            activeOpacity={0.85}
+          >
+            <CustomText variant="UI/Button/Small" color="#FFFFFF" style={styles.exploreText}>
+              탐험하러 가기
+            </CustomText>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -220,6 +229,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     height: 40,
     justifyContent: 'center',
+  },
+  exploreBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.rounded.pill,
+    paddingHorizontal: 24,
+    height: 40,
+    justifyContent: 'center',
+    marginTop: theme.spacing.base,
+  },
+  exploreText: {
+    fontWeight: 'bold',
   },
   retryText: {
     fontWeight: 'bold',

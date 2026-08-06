@@ -16,9 +16,14 @@ export default function TravelLogSection({ log, onMorePress }) {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.title}>
-          나의 여행 기록
-        </CustomText>
+        <View style={styles.titleRow}>
+          <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.title}>
+            나의 여행 기록
+          </CustomText>
+          <View style={styles.samplePill}>
+            <CustomText variant="Caption" color={theme.colors.textSecondary}>예시</CustomText>
+          </View>
+        </View>
         <TouchableOpacity style={styles.moreRow} onPress={onMorePress} activeOpacity={0.7}>
           <CustomText variant="Body/Small" color={theme.colors.textSecondary}>더보기</CustomText>
           <Ionicons name="chevron-forward" size={14} color={theme.colors.textSecondary} />
@@ -114,6 +119,17 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: 'bold',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  samplePill: {
+    backgroundColor: theme.colors.surfaceDim,
+    borderRadius: theme.rounded.pill ?? 9999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   moreRow: {
     flexDirection: 'row',

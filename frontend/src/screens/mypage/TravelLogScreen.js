@@ -15,6 +15,11 @@ export default function TravelLogScreen() {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.sampleNote}>
+            지금은 예시 데이터예요. 곧 실제 기록으로 채워져요!
+          </CustomText>
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <CustomText variant="Body/Medium" color={theme.colors.textSecondary} style={styles.emptyText}>
@@ -68,6 +73,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,
+  },
+  sampleNote: {
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
   },
   list: {
     padding: theme.spacing.lg,

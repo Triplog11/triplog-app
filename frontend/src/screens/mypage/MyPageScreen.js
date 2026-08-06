@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { fetchBadges } from '../../api/badges';
@@ -87,7 +88,7 @@ export default function MyPageScreen({ navigation }) {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <ProfileCard
           user={user}
@@ -135,9 +136,14 @@ export default function MyPageScreen({ navigation }) {
         {/* 최근 획득 카드 (목데이터 — 카드 API 대기) */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.sectionTitle}>
-              최근 획득 카드
-            </CustomText>
+            <View style={styles.titleRow}>
+              <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.sectionTitle}>
+                최근 획득 카드
+              </CustomText>
+              <View style={styles.samplePill}>
+                <CustomText variant="Caption" color={theme.colors.textSecondary}>예시</CustomText>
+              </View>
+            </View>
             <TouchableOpacity
               style={styles.moreRow}
               onPress={() => navigation.navigate('Collection')}
@@ -325,6 +331,17 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontWeight: 'bold',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  samplePill: {
+    backgroundColor: theme.colors.surfaceDim,
+    borderRadius: theme.rounded.pill ?? 9999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   moreRow: {
     flexDirection: 'row',

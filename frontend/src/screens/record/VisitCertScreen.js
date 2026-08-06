@@ -372,6 +372,8 @@ const styles = StyleSheet.create({
   },
   detailFooter: {
     padding: theme.spacing.lg,
+    // 탭바의 가운데 인증 플로팅 버튼과 겹치지 않도록 하단 여백 확보
+    paddingBottom: 104,
     gap: theme.spacing.sm,
   },
   disabledHint: {
