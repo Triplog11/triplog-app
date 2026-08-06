@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, Text, StatusBar, Platform } from 'react-native';
+import { StyleSheet, View, Text, StatusBar, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -8,6 +8,7 @@ import Fab from '../../components/common/Fab';
 import LocationPermissionModal from './components/LocationPermissionModal';
 import theme from '../../theme/theme';
 import { REGIONS, getNationalStats } from '../../data/regions';
+import { fetchNationwideMap } from '../../api/regions';
 import { resolveRegionName, formatPlaceLabel } from '../../utils/geo';
 
 /**
@@ -16,9 +17,28 @@ import { resolveRegionName, formatPlaceLabel } from '../../utils/geo';
  * - 나침반 버튼: 탭하면 기기 방향(폰 y축 위쪽)에 맞춰 지도 회전, 다시 탭하면 북쪽 복귀
  */
 export default function HomeScreen({ navigation }) {
-  const stats = getNationalStats();
+  const fallbackStats = getNationalStats();
+  const [mapStats, setMapStats] = useState(null);
   const mapRef = useRef(null);
   const headingSub = useRef(null);
+
+  // 헤더 통계(전국 달성률/방문 지역 수)를 실 API로 채운다. 실패 시 목데이터로 폴백.
+  useEffect(() => {
+    let mounted = true;
+    fetchNationwideMap()
+      .then((result) => mounted && setMapStats(result ?? null))
+      .catch((error) => console.warn('전국 지도 요약 조회 실패:', error?.status, error?.message));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // overallCompletionRate가 0~1 비율인지 0~100 퍼센트인지 불확실 → 방어적으로 정규화
+  const rawRate = mapStats?.overallCompletionRate;
+  const percent =
+    rawRate != null ? Math.round(rawRate <= 1 ? rawRate * 100 : rawRate) : fallbackStats.percent;
+  const collected =
+    mapStats?.visitedRegionCount != null ? mapStats.visitedRegionCount : fallbackStats.collected;
 
   const [userRegion, setUserRegion] = useState(null);
   const [userCoords, setUserCoords] = useState(null);
@@ -130,10 +150,10 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.title}>어디로 떠나볼까요</Text>
         <View style={styles.statsRow}>
           <Text style={styles.statText}>
-            전국 <Text style={styles.statStrong}>{stats.percent}%</Text>
+            전국 <Text style={styles.statStrong}>{percent}%</Text>
           </Text>
           <Text style={styles.statText}>
-            방문 <Text style={styles.statStrong}>{stats.collected}</Text>곳
+            방문 <Text style={styles.statStrong}>{collected}</Text>곳
           </Text>
           {placeLabel && (
             <View style={styles.locationChip}>
@@ -145,6 +165,17 @@ export default function HomeScreen({ navigation }) {
           )}
         </View>
       </View>
+
+      {navigation.canGoBack() && (
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+          accessibilityLabel="뒤로 가기"
+        >
+          <Feather name="arrow-left" size={22} color={theme.colors.text} />
+        </TouchableOpacity>
+      )}
 
       <KoreaMap
         ref={mapRef}
@@ -235,5 +266,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 20,
+  },
+  backBtn: {
+    position: 'absolute',
+    left: 16,
+    top: Platform.OS === 'ios' ? 60 : 44,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.white,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
 });

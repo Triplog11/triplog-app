@@ -187,7 +187,7 @@ export default function MyPageScreen({ navigation }) {
           설정
         </CustomText>
         <View style={styles.menuContainer}>
-          <MenuRow icon="notifications-outline" label="알림 설정" onPress={notifyComingSoon} />
+          <MenuRow icon="notifications-outline" label="알림 설정" onPress={() => navigation.navigate('NotificationSettings')} />
           <MenuRow icon="help-circle-outline" label="도움말 / 문의" onPress={notifyComingSoon} />
           <MenuRow icon="shield-checkmark-outline" label="이용약관 및 개인정보 처리방침" onPress={notifyComingSoon} />
           {/* 버전 정보 — 우측 표시, 클릭 인터랙션 없음 (피그마 디스크립션 #4) */}
