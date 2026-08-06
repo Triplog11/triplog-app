@@ -75,7 +75,7 @@ export default function CollectionScreen({ navigation }) {
       )}
       {subTab === 'card' && <CardGridTab onSelectCard={setSelectedCard} />}
       {subTab === 'map' && (
-        <DaejeonMapTab onRegionPress={() => navigation.navigate('Home', { screen: 'NationwideMap' })} />
+        <DaejeonMapTab onRegionPress={() => navigation.navigate('Home')} />
       )}
 
       <CardDetailModal card={selectedCard} onClose={() => setSelectedCard(null)} onVerifyPress={openVerify} />

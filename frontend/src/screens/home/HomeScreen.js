@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, Text, StatusBar, Platform, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -166,17 +166,6 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      {navigation.canGoBack() && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-          accessibilityLabel="뒤로 가기"
-        >
-          <Feather name="arrow-left" size={22} color={theme.colors.text} />
-        </TouchableOpacity>
-      )}
-
       <KoreaMap
         ref={mapRef}
         regions={REGIONS}
@@ -266,19 +255,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 20,
-  },
-  backBtn: {
-    position: 'absolute',
-    left: 16,
-    top: Platform.OS === 'ios' ? 60 : 44,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.white,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
   },
 });
