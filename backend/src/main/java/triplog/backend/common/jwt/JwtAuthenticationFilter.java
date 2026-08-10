@@ -1,6 +1,7 @@
 package triplog.backend.common.jwt;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 import static triplog.backend.common.auth.exception.AuthErrorCode.ACCESS_TOKEN_EXPIRED;
+import static triplog.backend.common.auth.exception.AuthErrorCode.ACCESS_TOKEN_INVALID;
 
 /**
  * 요청의 Authorization 헤더에서 JWT를 추출해 인증 정보를 설정하는 필터입니다.
@@ -80,6 +82,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
             handlerExceptionResolver.resolveException(
                     request, response, null, new AuthException(ACCESS_TOKEN_EXPIRED));
+        } catch (JwtException | IllegalArgumentException e) {
+            SecurityContextHolder.clearContext();
+            handlerExceptionResolver.resolveException(
+                    request, response, null, new AuthException(ACCESS_TOKEN_INVALID));
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
             handlerExceptionResolver.resolveException(request, response, null, e);

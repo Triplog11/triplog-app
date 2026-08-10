@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static triplog.backend.common.auth.exception.AuthErrorCode.ACCESS_TOKEN_EXPIRED;
+import static triplog.backend.common.auth.exception.AuthErrorCode.ACCESS_TOKEN_INVALID;
 
 /**
  * JwtAuthenticationFilter의 JWT 인증 처리 흐름을 검증하는 테스트입니다.
@@ -92,10 +93,10 @@ class JwtAuthenticationFilterTest {
     }
 
     /**
-     * 유효하지 않은 JWT 토큰이면 예외를 HandlerExceptionResolver로 전달하는지 검증합니다.
+     * 유효하지 않은 JWT 토큰이면 401 에러 코드의 인증 예외로 변환하는지 검증합니다.
      */
     @Test
-    @DisplayName("유효하지 않은 토큰이면 예외를 HandlerExceptionResolver로 전달한다")
+    @DisplayName("유효하지 않은 Access Token이면 401 인증 예외로 변환한다")
     void 유효하지_않은_토큰이면_예외를_HandlerExceptionResolver로_전달한다() throws Exception {
         // given
         JwtTokenProvider jwtTokenProvider = createJwtTokenProvider();
@@ -119,7 +120,9 @@ class JwtAuthenticationFilterTest {
         // then
         assertThat(chainCalled).isFalse();
         assertThat(exceptionResolved).isTrue();
-        assertThat(resolvedException.get()).isNotNull();
+        assertThat(resolvedException.get())
+                .isInstanceOfSatisfying(AuthException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ACCESS_TOKEN_INVALID));
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         log.info("JWT 예외 전달 성공 - 이유: 유효하지 않은 토큰이 HandlerExceptionResolver로 전달되었습니다.");
     }
