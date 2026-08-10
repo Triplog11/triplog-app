@@ -46,6 +46,11 @@ public enum AuthErrorCode implements BaseErrorCode {
     ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "액세스 토큰이 만료되었습니다."),
 
     /**
+     * Access Token의 형식, 서명 또는 내용이 유효하지 않은 경우 사용합니다.
+     */
+    ACCESS_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 액세스 토큰입니다."),
+
+    /**
      * Refresh Token이 만료된 경우 사용합니다.
      */
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 만료되었습니다."),

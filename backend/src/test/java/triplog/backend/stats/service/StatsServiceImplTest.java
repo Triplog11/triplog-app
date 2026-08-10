@@ -403,21 +403,26 @@ class StatsServiceImplTest {
     }
 
     /**
-     * 랭킹 조회 결과가 비어있으면 예외가 발생하는지 검증합니다.
+     * 랭킹 조회 결과가 비어있으면 빈 목록과 페이지 정보를 반환하는지 검증합니다.
      */
     @Test
-    @DisplayName("랭킹 조회 결과가 비어있으면 예외가 발생한다")
+    @DisplayName("랭킹 조회 결과가 비어있으면 빈 목록을 반환한다")
     void getRankings_Empty() {
         // given
         Page<Stats> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
         given(statsRepository.findAllByOrderByOverallScoreDesc(any(Pageable.class))).willReturn(emptyPage);
 
         // when
+        RankingListResponse response = statsService.getRankings("TOTAL", 0, 10);
+
         // then
-        assertThatThrownBy(() -> statsService.getRankings("TOTAL", 0, 10))
-                .isInstanceOf(StatsException.class)
-                .extracting("errorCode")
-                .isEqualTo(RANKING_NOT_FOUND);
+        assertThat(response.getRankingType()).isEqualTo("TOTAL");
+        assertThat(response.getPage()).isEqualTo(0);
+        assertThat(response.getSize()).isEqualTo(10);
+        assertThat(response.getTotalElements()).isZero();
+        assertThat(response.getTotalPages()).isZero();
+        assertThat(response.getRankings()).isEmpty();
+        verify(usersRankingService, never()).getRankingInfo(any(String.class));
     }
 
     /**

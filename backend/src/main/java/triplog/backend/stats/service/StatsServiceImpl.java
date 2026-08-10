@@ -176,7 +176,7 @@ public class StatsServiceImpl implements StatsService {
      * @param page 페이지 번호 (0부터 시작)
      * @param size 페이지 크기
      * @return 랭킹 목록 응답
-     * @throws StatsException 랭킹 정보를 찾을 수 없는 경우
+     * @throws StatsException 유효하지 않은 랭킹 타입인 경우
      */
     @Override
     public RankingListResponse getRankings(String rankingType, int page, int size) {
@@ -188,10 +188,6 @@ public class StatsServiceImpl implements StatsService {
             case "QUARTER" -> statsRepository.findAllByOrderByQuarterScoreDesc(pageable);
             default -> throw new StatsException(RANKING_NOT_FOUND);
         };
-
-        if (statsPage.isEmpty()) {
-            throw new StatsException(RANKING_NOT_FOUND);
-        }
 
         List<RankingEntry> rankings = new ArrayList<>();
         List<Stats> statsList = statsPage.getContent();
