@@ -7,9 +7,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
+import triplog.backend.attraction.repository.AttractionRepository;
+import triplog.backend.attractionvisitlog.service.AttractionVisitLogService;
 import triplog.backend.image.service.ImageService;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.service.LandmarkService;
+import triplog.backend.mission.service.MissionAchievementService;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.service.RegionService;
 import triplog.backend.review.dto.request.ReviewRequest.CreateReviewRequest;
@@ -20,7 +23,9 @@ import triplog.backend.review.repository.ReviewRepository;
 import triplog.backend.reviewlog.service.ReviewLogService;
 import triplog.backend.stats.service.StatsService;
 import triplog.backend.tourismcontent.entity.TourismContent;
+import triplog.backend.tourismcontent.repository.TourismContentRepository;
 import java.util.List;
+import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,7 +37,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static triplog.backend.review.exception.ReviewErrorCode.ALREADY_VERIFIED_LANDMARK;
 import static triplog.backend.review.exception.ReviewErrorCode.REGION_CODE_MISMATCH;
 
 /**
@@ -61,13 +65,27 @@ class ReviewServiceImplTest {
     @Mock
     private RegionService regionService;
 
+    @Mock
+    private TourismContentRepository tourismContentRepository;
+
+    @Mock
+    private AttractionRepository attractionRepository;
+
+    @Mock
+    private AttractionVisitLogService attractionVisitLogService;
+
+    @Mock
+    private MissionAchievementService missionAchievementService;
+
     private ReviewServiceImpl reviewService;
 
     @BeforeEach
     void setUp() {
         reviewService = new ReviewServiceImpl(
                 reviewRepository, landmarkService, imageService,
-                statsService, reviewLogService, regionService
+                statsService, reviewLogService, regionService,
+                tourismContentRepository, attractionRepository, attractionVisitLogService,
+                missionAchievementService
         );
     }
 
@@ -90,15 +108,12 @@ class ReviewServiceImplTest {
         TourismContent tourismContent = mock(TourismContent.class);
         when(tourismContent.getTourismContentId()).thenReturn(101L);
         when(tourismContent.getRegion()).thenReturn(region);
+        when(tourismContent.getTitle()).thenReturn("수원 화성");
 
         Landmark landmark = mock(Landmark.class);
         when(landmark.getLandmarkId()).thenReturn(1L);
-        when(landmark.getLandmarkName()).thenReturn("수원 화성");
-        when(landmark.getTourismContent()).thenReturn(tourismContent);
-
-        given(landmarkService.findByIdWithContent(1L)).willReturn(landmark);
-        given(reviewRepository.existsByUsersIdAndTourismContentTourismContentId(USERS_ID, 101L))
-                .willReturn(false);
+        given(tourismContentRepository.findById(1L)).willReturn(Optional.of(tourismContent));
+        given(landmarkService.findByTourismContentId(101L)).willReturn(Optional.of(landmark));
         given(reviewRepository.save(any(Review.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -112,6 +127,9 @@ class ReviewServiceImplTest {
         verify(landmarkService).saveVisitLog(USERS_ID, 1L);
         verify(landmarkService).acquireCard(USERS_ID, 1L);
         verify(regionService).recordRegionVisit(USERS_ID, 1L);
+        verify(missionAchievementService).evaluateVisit(USERS_ID, "LANDMARK", true);
+        verify(missionAchievementService).evaluateRegion(USERS_ID);
+        verify(missionAchievementService).evaluateReview(USERS_ID);
     }
 
     /**
@@ -133,17 +151,15 @@ class ReviewServiceImplTest {
         TourismContent tourismContent = mock(TourismContent.class);
         when(tourismContent.getTourismContentId()).thenReturn(101L);
         when(tourismContent.getRegion()).thenReturn(region);
+        when(tourismContent.getTitle()).thenReturn("수원 화성");
 
         Landmark landmark = mock(Landmark.class);
         when(landmark.getLandmarkId()).thenReturn(1L);
-        when(landmark.getLandmarkName()).thenReturn("수원 화성");
-        when(landmark.getTourismContent()).thenReturn(tourismContent);
 
         MultipartFile file = mock(MultipartFile.class);
 
-        given(landmarkService.findByIdWithContent(1L)).willReturn(landmark);
-        given(reviewRepository.existsByUsersIdAndTourismContentTourismContentId(USERS_ID, 101L))
-                .willReturn(false);
+        given(tourismContentRepository.findById(1L)).willReturn(Optional.of(tourismContent));
+        given(landmarkService.findByTourismContentId(101L)).willReturn(Optional.of(landmark));
         given(reviewRepository.save(any(Review.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -172,15 +188,12 @@ class ReviewServiceImplTest {
         TourismContent tourismContent = mock(TourismContent.class);
         when(tourismContent.getTourismContentId()).thenReturn(101L);
         when(tourismContent.getRegion()).thenReturn(region);
+        when(tourismContent.getTitle()).thenReturn("수원 화성");
 
         Landmark landmark = mock(Landmark.class);
         when(landmark.getLandmarkId()).thenReturn(1L);
-        when(landmark.getLandmarkName()).thenReturn("수원 화성");
-        when(landmark.getTourismContent()).thenReturn(tourismContent);
-
-        given(landmarkService.findByIdWithContent(1L)).willReturn(landmark);
-        given(reviewRepository.existsByUsersIdAndTourismContentTourismContentId(USERS_ID, 101L))
-                .willReturn(false);
+        given(tourismContentRepository.findById(1L)).willReturn(Optional.of(tourismContent));
+        given(landmarkService.findByTourismContentId(101L)).willReturn(Optional.of(landmark));
         given(reviewRepository.save(any(Review.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -188,6 +201,46 @@ class ReviewServiceImplTest {
 
         // then
         verify(imageService, never()).uploadAndSave(anyLong(), any(List.class));
+        verify(missionAchievementService, never()).evaluateReview(anyString());
+    }
+
+    /**
+     * 재방문 인증 시 기본 경험치와 점수를 지급하지 않는지 검증합니다.
+     */
+    @Test
+    @DisplayName("재방문 인증이면 기본 경험치와 점수를 지급하지 않는다")
+    void createReview_RevisitDoesNotReward() {
+        // given
+        CreateReviewRequest request = new CreateReviewRequest(
+                1L, "41", "110", "다시 찾은 수원화성", "재방문 기록", 5, 150
+        );
+
+        Region region = mock(Region.class);
+        when(region.getRegionId()).thenReturn(1L);
+        when(region.getLegalRegionCode()).thenReturn("41");
+        when(region.getLegalDistrictCode()).thenReturn("110");
+
+        TourismContent tourismContent = mock(TourismContent.class);
+        when(tourismContent.getTourismContentId()).thenReturn(101L);
+        when(tourismContent.getRegion()).thenReturn(region);
+        when(tourismContent.getTitle()).thenReturn("수원 화성");
+
+        Landmark landmark = mock(Landmark.class);
+        when(landmark.getLandmarkId()).thenReturn(1L);
+
+        given(tourismContentRepository.findById(1L)).willReturn(Optional.of(tourismContent));
+        given(landmarkService.findByTourismContentId(101L)).willReturn(Optional.of(landmark));
+        given(landmarkService.hasVisited(USERS_ID, 1L)).willReturn(true);
+        given(reviewRepository.save(any(Review.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        reviewService.createReview(USERS_ID, request, null);
+
+        // then
+        verify(statsService, never()).addXpAndScore(anyString(), anyInt(), anyInt());
+        verify(landmarkService).saveVisitLog(USERS_ID, 1L);
+        verify(missionAchievementService).evaluateVisit(USERS_ID, "LANDMARK", false);
+        verify(missionAchievementService).evaluateReview(USERS_ID);
     }
 
     /**
@@ -205,54 +258,18 @@ class ReviewServiceImplTest {
         when(region.getLegalRegionCode()).thenReturn("41");
 
         TourismContent tourismContent = mock(TourismContent.class);
+        when(tourismContent.getTourismContentId()).thenReturn(101L);
         when(tourismContent.getRegion()).thenReturn(region);
 
         Landmark landmark = mock(Landmark.class);
-        when(landmark.getTourismContent()).thenReturn(tourismContent);
-
-        given(landmarkService.findByIdWithContent(1L)).willReturn(landmark);
+        given(tourismContentRepository.findById(1L)).willReturn(Optional.of(tourismContent));
+        given(landmarkService.findByTourismContentId(101L)).willReturn(Optional.of(landmark));
 
         // when & then
         assertThatThrownBy(() -> reviewService.createReview(USERS_ID, request, null))
                 .isInstanceOf(ReviewException.class)
                 .extracting("errorCode")
                 .isEqualTo(REGION_CODE_MISMATCH);
-
-        verify(reviewRepository, never()).save(any());
-        verify(statsService, never()).addXpAndScore(anyString(), anyInt(), anyInt());
-    }
-
-    /**
-     * 이미 인증된 랜드마크이면 예외가 발생하는지 검증합니다.
-     */
-    @Test
-    @DisplayName("이미 인증된 랜드마크이면 예외가 발생한다")
-    void createReview_AlreadyVerified() {
-        // given
-        CreateReviewRequest request = new CreateReviewRequest(
-                1L, "41", "110", "", "", 5, 50
-        );
-
-        Region region = mock(Region.class);
-        when(region.getLegalRegionCode()).thenReturn("41");
-        when(region.getLegalDistrictCode()).thenReturn("110");
-
-        TourismContent tourismContent = mock(TourismContent.class);
-        when(tourismContent.getTourismContentId()).thenReturn(101L);
-        when(tourismContent.getRegion()).thenReturn(region);
-
-        Landmark landmark = mock(Landmark.class);
-        when(landmark.getTourismContent()).thenReturn(tourismContent);
-
-        given(landmarkService.findByIdWithContent(1L)).willReturn(landmark);
-        given(reviewRepository.existsByUsersIdAndTourismContentTourismContentId(USERS_ID, 101L))
-                .willReturn(true);
-
-        // when & then
-        assertThatThrownBy(() -> reviewService.createReview(USERS_ID, request, null))
-                .isInstanceOf(ReviewException.class)
-                .extracting("errorCode")
-                .isEqualTo(ALREADY_VERIFIED_LANDMARK);
 
         verify(reviewRepository, never()).save(any());
         verify(statsService, never()).addXpAndScore(anyString(), anyInt(), anyInt());

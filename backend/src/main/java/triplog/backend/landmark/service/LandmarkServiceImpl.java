@@ -15,6 +15,7 @@ import triplog.backend.landmarkvisitlog.service.LandmarkVisitLogService;
 import triplog.backend.tourismcontent.entity.TourismContent;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -157,6 +158,31 @@ public class LandmarkServiceImpl implements LandmarkService {
     public Landmark findByIdWithContent(Long landmarkId) {
         return landmarkRepository.findByIdWithTourismContentAndRegion(landmarkId)
                 .orElseThrow(() -> new LandmarkException(LandmarkErrorCode.LANDMARK_DETAIL_NOT_FOUND));
+    }
+
+    /**
+     * 관광 콘텐츠 식별자로 랜드마크를 조회합니다.
+     *
+     * @param tourismContentId 관광 콘텐츠 식별자
+     * @return 연결된 랜드마크, 존재하지 않으면 빈 값
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Landmark> findByTourismContentId(Long tourismContentId) {
+        return landmarkRepository.findByTourismContentTourismContentId(tourismContentId);
+    }
+
+    /**
+     * 사용자의 랜드마크 방문 기록 존재 여부를 확인합니다.
+     *
+     * @param usersId   사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     * @return 방문 기록이 존재하면 true
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasVisited(String usersId, Long landmarkId) {
+        return landmarkVisitLogService.hasVisited(usersId, landmarkId);
     }
 
     /**

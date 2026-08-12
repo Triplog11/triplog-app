@@ -15,7 +15,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,7 +45,7 @@ public class ReviewController {
      * @return 방문 인증 등록 응답
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "방문 인증 등록 (리뷰)", description = "랜드마크 방문 인증을 등록합니다.")
+    @Operation(summary = "방문 인증 등록 (리뷰)", description = "관광 콘텐츠 방문 인증과 선택적인 여행 기록을 등록합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "방문 인증 등록에 성공했습니다.",
                     content = @Content(mediaType = "application/json",
@@ -66,16 +65,11 @@ public class ReviewController {
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
                                     value = "{\"status\":401,\"message\":\"로그인이 필요한 기능입니다.\"}"))),
-            @ApiResponse(responseCode = "404", description = "랜드마크 정보를 찾을 수 없습니다.",
+            @ApiResponse(responseCode = "404", description = "관광 콘텐츠 정보를 찾을 수 없습니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
-                                    value = "{\"status\":404,\"message\":\"랜드마크 정보를 찾을 수 없습니다.\"}"))),
-            @ApiResponse(responseCode = "409", description = "이미 인증된 랜드마크입니다.",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class),
-                            examples = @ExampleObject(
-                                    value = "{\"status\":409,\"message\":\"이미 인증된 랜드마크입니다.\"}"))),
+                                    value = "{\"status\":404,\"message\":\"관광 콘텐츠 정보를 찾을 수 없습니다.\"}"))),
             @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),

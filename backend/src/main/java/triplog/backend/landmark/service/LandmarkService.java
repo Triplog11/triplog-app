@@ -6,6 +6,7 @@ import triplog.backend.landmark.exception.InvalidLandmarkContentTypeException;
 import triplog.backend.tourismcontent.entity.TourismContent;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -78,6 +79,23 @@ public interface LandmarkService {
      * @return 랜드마크 엔티티
      */
     Landmark findByIdWithContent(Long landmarkId);
+
+    /**
+     * 관광 콘텐츠 식별자로 랜드마크를 조회합니다.
+     *
+     * @param tourismContentId 관광 콘텐츠 식별자
+     * @return 연결된 랜드마크, 존재하지 않으면 빈 값
+     */
+    Optional<Landmark> findByTourismContentId(Long tourismContentId);
+
+    /**
+     * 사용자의 랜드마크 방문 기록 존재 여부를 확인합니다.
+     *
+     * @param usersId   사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     * @return 방문 기록이 존재하면 true
+     */
+    boolean hasVisited(String usersId, Long landmarkId);
 
     /**
      * 랜드마크 방문 로그를 저장합니다.

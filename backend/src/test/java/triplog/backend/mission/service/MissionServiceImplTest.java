@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,11 +45,18 @@ class MissionServiceImplTest {
     @Mock
     private UsersMissionRepository usersMissionRepository;
 
+    @Mock
+    private MissionAchievementService missionAchievementService;
+
     private MissionServiceImpl missionService;
 
     @BeforeEach
     void setUp() {
-        missionService = new MissionServiceImpl(missionRepository, usersMissionRepository);
+        missionService = new MissionServiceImpl(
+                missionRepository,
+                usersMissionRepository,
+                missionAchievementService
+        );
     }
 
     /**
@@ -70,6 +78,8 @@ class MissionServiceImplTest {
                 .willReturn(List.of(mission1, mission2));
         given(usersMissionRepository.findByUsersUsersIdAndMissionMissionIdIn(eq(USERS_ID), any()))
                 .willReturn(List.of(usersMission));
+        given(missionAchievementService.getProgress(USERS_ID, mission1)).willReturn(3L);
+        given(missionAchievementService.getProgress(USERS_ID, mission2)).willReturn(0L);
 
         // when
         MyMissionListResponse response = missionService.getMyMissions(USERS_ID, "WEEKLY");
@@ -83,6 +93,8 @@ class MissionServiceImplTest {
         assertThat(entry1.getMissionCondition()).isEqualTo("주간 내 지역 3곳 방문");
         assertThat(entry1.getCompleted()).isTrue();
         assertThat(entry1.getCompletedAt()).isEqualTo("2026-06-25T14:30");
+        assertThat(entry1.getCurrentValue()).isEqualTo(3L);
+        assertThat(entry1.getTargetValue()).isEqualTo(3);
 
         MissionEntry entry2 = response.getMissions().get(1);
         assertThat(entry2.getMissionId()).isEqualTo(11L);
@@ -235,6 +247,7 @@ class MissionServiceImplTest {
         when(mission.getMissionWeekEnd()).thenReturn(LocalDateTime.of(2026, 8, 2, 23, 59, 59));
         when(mission.getMissionScore()).thenReturn(100);
         when(mission.getMissionXp()).thenReturn(150);
+        lenient().when(mission.getMissionValue()).thenReturn(3);
         return mission;
     }
 }

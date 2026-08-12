@@ -238,6 +238,17 @@ CREATE TABLE landmark_visit_log (
                                     CONSTRAINT fk_landmark_visit_log_landmark FOREIGN KEY (landmark_id) REFERENCES landmark (landmark_id)
 );
 
+CREATE TABLE attraction_visit_log (
+                                      attraction_visit_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '일반 관광지 방문 로그 식별자',
+                                      users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',
+                                      attraction_id BIGINT NOT NULL COMMENT '일반 관광지 식별자',
+                                      visited_at DATETIME(6) NOT NULL COMMENT '방문 시각',
+                                      PRIMARY KEY (attraction_visit_log_id),
+                                      KEY idx_attraction_visit_log_users_attraction (users_id, attraction_id, visited_at),
+                                      CONSTRAINT fk_attraction_visit_log_users FOREIGN KEY (users_id) REFERENCES users (users_id),
+                                      CONSTRAINT fk_attraction_visit_log_attraction FOREIGN KEY (attraction_id) REFERENCES attraction (attraction_id)
+) COMMENT='일반 관광지 방문 로그';
+
 CREATE TABLE users_level_log (
                                  level_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '레벨 로그 식별자',
                                  users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',
@@ -464,7 +475,8 @@ CREATE TABLE mission (
                          mission_week_end DATETIME NOT NULL COMMENT '주간 미션 종료 날짜',
                          mission_score INT NOT NULL COMMENT '미션 점수',
                          mission_xp INT NOT NULL COMMENT '미션 경험치',
-                         PRIMARY KEY (mission_id)
+                         PRIMARY KEY (mission_id),
+                         UNIQUE KEY uk_mission_week_name (mission_week_start, mission_name)
 ) COMMENT='미션 정보';
 
 CREATE TABLE users_mission (
@@ -473,6 +485,7 @@ CREATE TABLE users_mission (
                                mission_id BIGINT NOT NULL COMMENT '미션 식별자',
                                users_mission_created_at DATETIME NOT NULL COMMENT '유저 미션 생성 날짜',
                                PRIMARY KEY (users_mission_id),
+                               UNIQUE KEY uk_users_mission_users_mission (users_id, mission_id),
                                KEY idx_users_mission_users (users_id),
                                KEY idx_users_mission_mission (mission_id),
                                CONSTRAINT fk_users_mission_users FOREIGN KEY (users_id) REFERENCES users (users_id) ON DELETE CASCADE,
