@@ -7,7 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
         "spring.batch.job.enabled=false",
         "spring.batch.job.name=regionSyncJob",
         "spring.flyway.enabled=false",
-        "spring.jpa.hibernate.ddl-auto=none"
+        "spring.jpa.hibernate.ddl-auto=none",
+        "mission.scheduling.enabled=false"
 })
 class BackendApplicationTests {
 

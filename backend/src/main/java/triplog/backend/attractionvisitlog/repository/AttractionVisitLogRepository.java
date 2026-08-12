@@ -1,28 +1,28 @@
-package triplog.backend.landmarkvisitlog.repository;
+package triplog.backend.attractionvisitlog.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import triplog.backend.landmarkvisitlog.entity.LandmarkVisitLog;
+import triplog.backend.attractionvisitlog.entity.AttractionVisitLog;
 
 import java.time.LocalDateTime;
 
 /**
- * LandmarkVisitLog 영속성 처리를 담당하는 Repository입니다.
+ * AttractionVisitLog 영속성 처리를 담당하는 Repository입니다.
  */
-public interface LandmarkVisitLogRepository extends JpaRepository<LandmarkVisitLog, Long> {
+public interface AttractionVisitLogRepository extends JpaRepository<AttractionVisitLog, Long> {
 
     /**
-     * 사용자의 랜드마크 방문 기록 존재 여부를 확인합니다.
+     * 사용자의 일반 관광지 방문 기록 존재 여부를 확인합니다.
      *
-     * @param usersId   사용자 식별자
-     * @param landmarkId 랜드마크 식별자
+     * @param usersId      사용자 식별자
+     * @param attractionId 일반 관광지 식별자
      * @return 방문 기록이 존재하면 true
      */
-    boolean existsByUsersIdAndLandmarkId(String usersId, Long landmarkId);
+    boolean existsByUsersIdAndAttractionId(String usersId, Long attractionId);
 
     /**
-     * 지정 기간의 랜드마크 방문 횟수를 방문 유형에 따라 집계합니다.
+     * 지정 기간의 일반 관광지 방문 횟수를 방문 유형에 따라 집계합니다.
      *
      * @param usersId  사용자 식별자
      * @param start    집계 시작 시각
@@ -32,26 +32,26 @@ public interface LandmarkVisitLogRepository extends JpaRepository<LandmarkVisitL
      */
     @Query(value = """
             SELECT COUNT(*)
-            FROM landmark_visit_log current_log
+            FROM attraction_visit_log current_log
             WHERE current_log.users_id = :usersId
               AND current_log.visited_at BETWEEN :start AND :end
               AND (
                   :visitType = 'ANY'
                   OR (:visitType = 'FIRST' AND NOT EXISTS (
-                      SELECT 1 FROM landmark_visit_log previous_log
+                      SELECT 1 FROM attraction_visit_log previous_log
                       WHERE previous_log.users_id = current_log.users_id
-                        AND previous_log.landmark_id = current_log.landmark_id
+                        AND previous_log.attraction_id = current_log.attraction_id
                         AND (previous_log.visited_at < current_log.visited_at
                           OR (previous_log.visited_at = current_log.visited_at
-                            AND previous_log.landmark_visit_log_id < current_log.landmark_visit_log_id))
+                            AND previous_log.attraction_visit_log_id < current_log.attraction_visit_log_id))
                   ))
                   OR (:visitType = 'REVISIT' AND EXISTS (
-                      SELECT 1 FROM landmark_visit_log previous_log
+                      SELECT 1 FROM attraction_visit_log previous_log
                       WHERE previous_log.users_id = current_log.users_id
-                        AND previous_log.landmark_id = current_log.landmark_id
+                        AND previous_log.attraction_id = current_log.attraction_id
                         AND (previous_log.visited_at < current_log.visited_at
                           OR (previous_log.visited_at = current_log.visited_at
-                            AND previous_log.landmark_visit_log_id < current_log.landmark_visit_log_id))
+                            AND previous_log.attraction_visit_log_id < current_log.attraction_visit_log_id))
                   ))
               )
             """, nativeQuery = true)

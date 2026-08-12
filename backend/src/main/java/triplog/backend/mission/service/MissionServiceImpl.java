@@ -35,6 +35,7 @@ public class MissionServiceImpl implements MissionService {
 
     private final MissionRepository missionRepository;
     private final UsersMissionRepository usersMissionRepository;
+    private final MissionAchievementService missionAchievementService;
 
     /**
      * 로그인 사용자의 미션 진행 현황을 조회합니다.
@@ -76,7 +77,11 @@ public class MissionServiceImpl implements MissionService {
                 ));
 
         List<MissionEntry> entries = missions.stream()
-                .map(mission -> MissionEntry.toDto(mission, completedMap.get(mission.getMissionId())))
+                .map(mission -> MissionEntry.toDto(
+                        mission,
+                        completedMap.get(mission.getMissionId()),
+                        missionAchievementService.getProgress(usersId, mission)
+                ))
                 .toList();
 
         return new MyMissionListResponse(entries);

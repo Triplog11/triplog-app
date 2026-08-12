@@ -41,4 +41,30 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
     List<Mission> findByMissionWeekStartLessThanEqualAndMissionWeekEndGreaterThanEqual(
             LocalDateTime now, LocalDateTime now2
     );
+
+    /**
+     * 특정 주간에 같은 이름의 미션이 존재하는지 확인합니다.
+     *
+     * @param missionWeekStart 주간 시작 시각
+     * @param missionName      미션 이름
+     * @return 미션이 존재하면 true
+     */
+    boolean existsByMissionWeekStartAndMissionName(
+            LocalDateTime missionWeekStart,
+            String missionName
+    );
+
+    /**
+     * 특정 시각에 활성화된 판정 대상별 미션을 조회합니다.
+     *
+     * @param missionTarget 미션 판정 대상
+     * @param now           기준 시각
+     * @param now2          기준 시각
+     * @return 활성화된 미션 목록
+     */
+    List<Mission> findByMissionTargetAndMissionWeekStartLessThanEqualAndMissionWeekEndGreaterThanEqual(
+            String missionTarget,
+            LocalDateTime now,
+            LocalDateTime now2
+    );
 }

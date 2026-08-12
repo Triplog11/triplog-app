@@ -22,8 +22,8 @@ public class ReviewRequest {
     @Schema(description = "방문 인증 등록 요청")
     public static class CreateReviewRequest {
 
-        @Schema(description = "랜드마크 ID", example = "301")
-        private Long landmarkId;
+        @Schema(description = "관광 콘텐츠 ID", example = "301")
+        private Long tourismContentId;
 
         @Schema(description = "법정동 시도 코드", example = "41")
         private String legalRegionCode;

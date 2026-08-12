@@ -70,14 +70,25 @@ public class MissionResponse {
         @Schema(description = "완료 일시", example = "2026-06-22T00:00:00", nullable = true)
         private String completedAt;
 
+        @Schema(description = "현재 미션 진행 값", example = "1")
+        private Long currentValue;
+
+        @Schema(description = "미션 목표 값", example = "3")
+        private Integer targetValue;
+
         /**
          * Mission 엔티티와 사용자 완료 정보로부터 응답 DTO를 생성합니다.
          *
          * @param mission 미션 엔티티
          * @param usersMission 사용자 완료 정보 (null이면 미완료)
+         * @param currentValue 현재 미션 진행 값
          * @return 미션 진행 현황 DTO
          */
-        public static MissionEntry toDto(Mission mission, UsersMission usersMission) {
+        public static MissionEntry toDto(
+                Mission mission,
+                UsersMission usersMission,
+                long currentValue
+        ) {
             boolean completed = usersMission != null;
             String completedAt = completed
                     ? usersMission.getUsersMissionCreatedAt().toString()
@@ -96,7 +107,9 @@ public class MissionResponse {
                     mission.getMissionScore(),
                     mission.getMissionXp(),
                     completed,
-                    completedAt
+                    completedAt,
+                    currentValue,
+                    mission.getMissionValue()
             );
         }
     }
