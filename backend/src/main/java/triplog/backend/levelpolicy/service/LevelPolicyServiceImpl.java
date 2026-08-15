@@ -32,4 +32,31 @@ public class LevelPolicyServiceImpl implements LevelPolicyService {
                         levelPolicy.getLevelPolicyCondition()
                 ));
     }
+
+    /**
+     * 누적 XP를 레벨별 필요 XP와 비교하여 현재 레벨을 계산합니다.
+     *
+     * @param cumulativeXp 누적 XP
+     * @return 계산된 현재 레벨
+     */
+    @Override
+    public int calculateLevel(int cumulativeXp) {
+        int level = 1;
+        int accumulatedRequirement = 0;
+        var policies = levelPolicyRepository.findAllByOrderByLevelPolicyNumberAsc();
+
+        while (true) {
+            int currentLevel = level;
+            int requiredXp = policies.stream()
+                    .filter(policy -> policy.getLevelPolicyNumber() == currentLevel)
+                    .findFirst()
+                    .map(policy -> policy.getLevelPolicyCondition())
+                    .orElse(700);
+            if (cumulativeXp < accumulatedRequirement + requiredXp) {
+                return level;
+            }
+            accumulatedRequirement += requiredXp;
+            level++;
+        }
+    }
 }

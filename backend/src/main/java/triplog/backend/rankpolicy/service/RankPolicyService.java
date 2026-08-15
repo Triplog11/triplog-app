@@ -14,4 +14,12 @@ public interface RankPolicyService {
      * @return 다음 랭크 정책 요약 정보, 최고 티어이면 빈 값
      */
     Optional<RankPolicyInfo> findNextRankPolicy(int overallScore);
+
+    /**
+     * 누적 Score에 해당하는 현재 랭크 정책을 조회합니다.
+     *
+     * @param overallScore 누적 Score
+     * @return 현재 랭크 정책
+     */
+    RankPolicyInfo findCurrentRankPolicy(int overallScore);
 }

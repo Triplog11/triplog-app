@@ -14,4 +14,12 @@ public interface LevelPolicyService {
      * @return 다음 레벨 정책 요약 정보, 최고 레벨이면 빈 값
      */
     Optional<LevelPolicyInfo> findNextLevelPolicy(int currentLevel);
+
+    /**
+     * 누적 XP에 해당하는 현재 레벨을 계산합니다.
+     *
+     * @param cumulativeXp 누적 XP
+     * @return 현재 레벨
+     */
+    int calculateLevel(int cumulativeXp);
 }

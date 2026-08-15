@@ -20,4 +20,14 @@ public interface RankPolicyRepository extends JpaRepository<RankPolicy, Long> {
     Optional<RankPolicy> findFirstByRankPolicyConditionGreaterThanOrderByRankPolicyConditionAsc(
             int overallScore
     );
+
+    /**
+     * 기준 Score 이하에서 조건이 가장 높은 랭크 정책을 조회합니다.
+     *
+     * @param overallScore 누적 Score
+     * @return 현재 랭크 정책
+     */
+    Optional<RankPolicy> findFirstByRankPolicyConditionLessThanEqualOrderByRankPolicyConditionDesc(
+            int overallScore
+    );
 }

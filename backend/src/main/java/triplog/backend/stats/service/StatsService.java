@@ -3,6 +3,7 @@ package triplog.backend.stats.service;
 import triplog.backend.stats.dto.response.StatsResponse.MyRankingResponse;
 import triplog.backend.stats.dto.response.StatsResponse.MyStatsResponse;
 import triplog.backend.stats.dto.response.StatsResponse.RankingListResponse;
+import triplog.backend.users.entity.Users;
 
 /**
  * 사용자 통계(Stats)와 관련된 비즈니스 로직을 정의하는 Service 인터페이스입니다.
@@ -37,7 +38,16 @@ public interface StatsService {
      * @param addressGu 구
      * @return 생성된 사용자의 초기 레벨, 경험치, 티어 정보
      */
-    StatsLoginInfo createInitialStats(String usersId, String addressSi, String addressDoGun, String addressGu);
+    /**
+     * 신규 사용자의 초기 통계와 회원가입 보상을 생성합니다.
+     *
+     * @param users 생성 대상 사용자
+     * @param addressSi 시 주소
+     * @param addressDoGun 도·군 주소
+     * @param addressGu 구 주소
+     * @return 생성된 초기 통계 정보
+     */
+    StatsLoginInfo createInitialStats(Users users, String addressSi, String addressDoGun, String addressGu);
 
     /**
      * 사용자 주소 프로필 정보를 수정하고 수정 후 주소 요약 정보를 조회합니다.
@@ -76,4 +86,13 @@ public interface StatsService {
      * @param score   추가할 점수
      */
     void addXpAndScore(String usersId, int xp, int score);
+
+    /**
+     * 지정한 활동 정책을 조회하여 XP와 Score를 지급하고 성장 정보를 갱신합니다.
+     *
+     * @param usersId  사용자 식별자
+     * @param policyIds 적용할 활동 정책 식별자 목록
+     * @return 정책별 보상과 지급 후 성장 정보
+     */
+    ActivityRewardResult applyActivityPolicies(String usersId, String... policyIds);
 }

@@ -81,4 +81,13 @@ public interface RegionService {
      * @param regionId 지역 식별자
      */
     void recordRegionVisit(String usersId, Long regionId);
+
+    /**
+     * 사용자가 해당 지역을 방문한 적 있는지 확인합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param regionId 지역 식별자
+     * @return 방문 이력이 있으면 {@code true}
+     */
+    boolean hasVisited(String usersId, Long regionId);
 }

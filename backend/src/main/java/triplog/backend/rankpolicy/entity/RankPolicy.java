@@ -27,7 +27,7 @@ public class RankPolicy {
     @Column(name = "rank_policy_id", nullable = false, unique = true)
     private Long rankPolicyId;
 
-    @Column(name = "rank_policy_tier", nullable = false, length = 10)
+    @Column(name = "rank_policy_tier", nullable = false, length = 20)
     private String rankPolicyTier;
 
     @Column(name = "rank_policy_condition", nullable = false)

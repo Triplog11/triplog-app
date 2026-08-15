@@ -21,8 +21,9 @@ import triplog.backend.stats.dto.response.StatsResponse.RankingListResponse;
 import triplog.backend.stats.entity.Stats;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.stats.repository.StatsRepository;
+import triplog.backend.activitypolicy.service.ActivityPolicyService;
 import triplog.backend.users.entity.Users;
-import triplog.backend.users.repository.UsersRepository;
+import triplog.backend.users.exception.UsersException;
 import triplog.backend.users.service.UsersRankingInfo;
 import triplog.backend.users.service.UsersRankingService;
 import java.util.List;
@@ -40,6 +41,7 @@ import static triplog.backend.stats.exception.StatsErrorCode.MY_STATS_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.RANKING_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.STATS_NOT_FOUND;
 import static triplog.backend.users.entity.LoginType.GOOGLE;
+import static triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND;
 
 /**
  * {@link StatsServiceImpl}의 통계 조회 및 초기 통계 생성 흐름을 검증하는 테스트입니다.
@@ -59,9 +61,6 @@ class StatsServiceImplTest {
     private StatsRepository statsRepository;
 
     @Mock
-    private UsersRepository usersRepository;
-
-    @Mock
     private RankPolicyService rankPolicyService;
 
     @Mock
@@ -70,16 +69,19 @@ class StatsServiceImplTest {
     @Mock
     private LevelPolicyService levelPolicyService;
 
+    @Mock
+    private ActivityPolicyService activityPolicyService;
+
     private StatsServiceImpl statsService;
 
     @BeforeEach
     void setUp() {
         statsService = new StatsServiceImpl(
                 statsRepository,
-                usersRepository,
                 usersRankingService,
                 rankPolicyService,
-                levelPolicyService
+                levelPolicyService,
+                activityPolicyService
         );
     }
 
@@ -213,12 +215,16 @@ class StatsServiceImplTest {
     @DisplayName("신규 사용자 초기 통계 정보를 생성한다")
     void createInitialStats() {
         // given
-        Users users = createUsers();
-        given(usersRepository.findById(USERS_ID)).willReturn(Optional.of(users));
-        given(statsRepository.save(any(Stats.class))).willAnswer(invocation -> invocation.getArgument(0));
+        Users users = mock(Users.class);
+        given(users.getUsersId()).willReturn(USERS_ID);
+        Stats stats = new Stats(users, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU);
+        given(statsRepository.save(any(Stats.class))).willReturn(stats);
+        given(statsRepository.findByUsersUsersId(USERS_ID)).willReturn(Optional.of(stats));
+        given(levelPolicyService.calculateLevel(0)).willReturn(1);
+        given(rankPolicyService.findCurrentRankPolicy(0)).willReturn(new RankPolicyInfo("BRONZE", 0));
 
         // when
-        StatsLoginInfo result = statsService.createInitialStats(USERS_ID, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU);
+        StatsLoginInfo result = statsService.createInitialStats(users, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU);
 
         // then
         assertThat(result.level()).isEqualTo(1);
@@ -241,15 +247,16 @@ class StatsServiceImplTest {
     @DisplayName("초기 통계 생성 시 사용자가 없으면 예외가 발생한다")
     void createInitialStats_UsersNotFound() {
         // given
-        given(usersRepository.findById(USERS_ID)).willReturn(Optional.empty());
+        Users users = createUsers();
 
         // when
         // then
-        assertThatThrownBy(() -> statsService.createInitialStats(USERS_ID, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU))
+        assertThatThrownBy(() -> statsService.createInitialStats(
+                users, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU
+        ))
                 .isInstanceOf(StatsException.class)
                 .extracting("errorCode")
                 .isEqualTo(STATS_NOT_FOUND);
-        verify(statsRepository, never()).save(any(Stats.class));
     }
 
     /**

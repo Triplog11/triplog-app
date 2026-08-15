@@ -111,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
         );
 
         statsService.createInitialStats(
-                users.usersId(),
+                usersService.findById(users.usersId()),
                 request.getAddressSi(),
                 request.getAddressDoGun(),
                 request.getAddressGu()
@@ -196,7 +196,7 @@ public class AuthServiceImpl implements AuthService {
                 request.getProfileUrl()
         );
         StatsLoginInfo stats = statsService.createInitialStats(
-                users.usersId(),
+                usersService.findById(users.usersId()),
                 request.getAddressSi(),
                 request.getAddressDoGun(),
                 request.getAddressGu()

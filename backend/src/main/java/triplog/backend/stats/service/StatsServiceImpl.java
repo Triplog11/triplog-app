@@ -19,9 +19,12 @@ import triplog.backend.levelpolicy.service.LevelPolicyInfo;
 import triplog.backend.rankpolicy.service.RankPolicyService;
 import triplog.backend.rankpolicy.service.RankPolicyInfo;
 import triplog.backend.users.entity.Users;
-import triplog.backend.users.repository.UsersRepository;
 import triplog.backend.users.service.UsersRankingInfo;
 import triplog.backend.users.service.UsersRankingService;
+import triplog.backend.activitypolicy.entity.ActivityPolicy;
+import triplog.backend.activitypolicy.service.ActivityPolicyService;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -44,13 +47,13 @@ import static triplog.backend.stats.exception.StatsErrorCode.STATS_NOT_FOUND;
 public class StatsServiceImpl implements StatsService {
 
     private final StatsRepository statsRepository;
-    private final UsersRepository usersRepository;
-
     private final UsersRankingService usersRankingService;
 
     private final RankPolicyService rankPolicyService;
 
     private final LevelPolicyService levelPolicyService;
+
+    private final ActivityPolicyService activityPolicyService;
 
     /**
      * 로그인 사용자의 통계와 점수 순위 및 다음 티어 정보를 조회합니다.
@@ -123,18 +126,34 @@ public class StatsServiceImpl implements StatsService {
      * @param addressGu 구
      * @return 생성된 사용자의 초기 레벨, 경험치, 티어 정보
     */
+    /**
+     * 사용자 엔티티를 기반으로 초기 통계와 회원가입 보상을 생성합니다.
+     *
+     * @param users 생성 대상 사용자
+     * @param addressSi 시 주소
+     * @param addressDoGun 도·군 주소
+     * @param addressGu 구 주소
+     * @return 생성된 초기 통계 정보
+     */
     @Override
     @Transactional
-    public StatsLoginInfo createInitialStats(String usersId, String addressSi, String addressDoGun, String addressGu) {
+    public StatsLoginInfo createInitialStats(Users users, String addressSi, String addressDoGun, String addressGu) {
+        String usersId = users.getUsersId();
         log.info("신규 사용자 초기 통계 생성 시작: usersId={}", usersId);
-        Users users = usersRepository.findById(usersId)
+        statsRepository.save(new Stats(users, addressSi, addressDoGun, addressGu));
+        activityPolicyService.findById("SIGNUP_COMPLETE").ifPresent(policy ->
+                statsRepository.addXpAndScore(usersId, policy.getPolicyXp(), policy.getPolicyScore())
+        );
+        Stats stats = statsRepository.findByUsersUsersId(usersId)
                 .orElseThrow(() -> new StatsException(STATS_NOT_FOUND));
-        Stats stats = statsRepository.save(new Stats(users, addressSi, addressDoGun, addressGu));
+        int level = levelPolicyService.calculateLevel(stats.getStatsXp());
+        String tier = rankPolicyService.findCurrentRankPolicy(stats.getOverallScore()).tier();
+        statsRepository.updateGrowth(usersId, level, tier);
 
         return new StatsLoginInfo(
-                stats.getStatsLevel(),
+                level,
                 stats.getStatsXp(),
-                stats.getCurrentTier()
+                tier
         );
     }
     /**
@@ -276,5 +295,64 @@ public class StatsServiceImpl implements StatsService {
     @Transactional
     public void addXpAndScore(String usersId, int xp, int score) {
         statsRepository.addXpAndScore(usersId, xp, score);
+        Stats stats = statsRepository.findByUsersUsersId(usersId)
+                .orElseThrow(() -> new StatsException(STATS_NOT_FOUND));
+        int level = levelPolicyService.calculateLevel(stats.getStatsXp());
+        String tier = rankPolicyService.findCurrentRankPolicy(stats.getOverallScore()).tier();
+        statsRepository.updateGrowth(usersId, level, tier);
     }
+
+    /**
+     * 활동 정책을 조회하여 보상을 합산하고 사용자의 성장 정보를 갱신합니다.
+     *
+     * @param usersId  사용자 식별자
+     * @param policyIds 적용할 활동 정책 식별자 목록
+     * @return 정책별 보상과 지급 후 성장 정보
+     */
+    @Override
+    @Transactional
+    public ActivityRewardResult applyActivityPolicies(String usersId, String... policyIds) {
+        Stats stats = statsRepository.findByUsersUsersId(usersId)
+                .orElseThrow(() -> new StatsException(STATS_NOT_FOUND));
+
+        Map<String, ActivityPolicy> policiesById = new LinkedHashMap<>();
+        activityPolicyService.findAllByIds(List.of(policyIds))
+                .forEach(policy -> policiesById.put(policy.getActivityPolicyId(), policy));
+
+        List<ActivityRewardInfo> rewards = new ArrayList<>();
+        int totalXp = 0;
+        int totalScore = 0;
+        for (String policyId : policyIds) {
+            ActivityPolicy policy = Optional.ofNullable(policiesById.get(policyId))
+                    .orElseThrow(() -> new IllegalStateException("Activity policy not found: " + policyId));
+            rewards.add(new ActivityRewardInfo(
+                    policy.getActivityPolicyId(),
+                    policy.getPolicyDescription(),
+                    policy.getPolicyXp(),
+                    policy.getPolicyScore()
+            ));
+            totalXp += policy.getPolicyXp();
+            totalScore += policy.getPolicyScore();
+        }
+
+        int previousLevel = stats.getStatsLevel();
+        String previousTier = stats.getCurrentTier();
+        statsRepository.addXpAndScore(usersId, totalXp, totalScore);
+        Stats updatedStats = statsRepository.findByUsersUsersId(usersId)
+                .orElseThrow(() -> new StatsException(STATS_NOT_FOUND));
+        int currentLevel = levelPolicyService.calculateLevel(updatedStats.getStatsXp());
+        String currentTier = rankPolicyService.findCurrentRankPolicy(updatedStats.getOverallScore()).tier();
+        statsRepository.updateGrowth(usersId, currentLevel, currentTier);
+
+        return new ActivityRewardResult(
+                List.copyOf(rewards),
+                totalXp,
+                totalScore,
+                currentLevel,
+                currentTier,
+                currentLevel > previousLevel,
+                !currentTier.equalsIgnoreCase(previousTier)
+        );
+    }
+
 }

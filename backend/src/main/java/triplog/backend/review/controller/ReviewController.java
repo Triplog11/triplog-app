@@ -16,10 +16,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import triplog.backend.common.exception.ErrorResponse;
-import triplog.backend.review.dto.request.ReviewRequest.CreateReviewRequest;
+import triplog.backend.review.dto.request.ReviewRequest.CreateRequest;
 import triplog.backend.review.dto.response.ReviewResponse.CreateReviewResponse;
 import triplog.backend.review.service.ReviewService;
 
@@ -79,7 +80,7 @@ public class ReviewController {
     public ResponseEntity<CreateReviewResponse> createReview(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "방문 인증 요청 데이터", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
-            @RequestPart("request") CreateReviewRequest request,
+            @Valid @RequestPart("request") CreateRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
         return ResponseEntity.ok(reviewService.createReview(userDetails.getUsername(), request, files));

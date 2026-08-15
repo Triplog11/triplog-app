@@ -124,4 +124,25 @@ public interface StatsRepository extends JpaRepository<Stats, Long> {
             @Param("xp") int xp,
             @Param("score") int score
     );
+
+    /**
+     * 사용자의 현재 레벨과 티어를 갱신합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param level   재계산된 레벨
+     * @param tier    재계산된 티어
+     * @return 수정된 행 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Stats s
+            set s.statsLevel = :level,
+                s.currentTier = :tier
+            where s.users.usersId = :usersId
+            """)
+    int updateGrowth(
+            @Param("usersId") String usersId,
+            @Param("level") int level,
+            @Param("tier") String tier
+    );
 }

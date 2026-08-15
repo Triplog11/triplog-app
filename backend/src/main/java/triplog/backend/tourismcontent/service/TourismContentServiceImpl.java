@@ -22,6 +22,18 @@ public class TourismContentServiceImpl implements TourismContentService {
     private final TourismContentRepository tourismContentRepository;
 
     /**
+     * 관광 콘텐츠 식별자로 콘텐츠를 선택 조회합니다.
+     *
+     * @param tourismContentId 관광 콘텐츠 식별자
+     * @return 관광 콘텐츠 또는 빈 Optional
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<TourismContent> findOptionalById(Long tourismContentId) {
+        return tourismContentRepository.findById(tourismContentId);
+    }
+
+    /**
      * TourAPI contentId로 관광 콘텐츠를 조회합니다.
      *
      * @param externalContentId TourAPI contentId
