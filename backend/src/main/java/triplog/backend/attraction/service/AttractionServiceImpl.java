@@ -9,6 +9,7 @@ import triplog.backend.attraction.repository.AttractionRepository;
 import triplog.backend.tourismcontent.entity.TourismContent;
 
 import java.util.Set;
+import java.util.Optional;
 
 /**
  * 일반 관광지 선정 정보를 생성하는 기본 구현체입니다.
@@ -20,6 +21,18 @@ public class AttractionServiceImpl implements AttractionService {
     private static final Set<String> ATTRACTION_CONTENT_TYPE_IDS = Set.of("12", "14", "28");
 
     private final AttractionRepository attractionRepository;
+
+    /**
+     * 관광 콘텐츠 식별자로 일반 관광지를 선택 조회합니다.
+     *
+     * @param tourismContentId 관광 콘텐츠 식별자
+     * @return 일반 관광지 또는 빈 Optional
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Attraction> findByTourismContentId(Long tourismContentId) {
+        return attractionRepository.findByTourismContentTourismContentId(tourismContentId);
+    }
 
     /**
      * 관광 콘텐츠를 일반 관광지로 생성하거나 기존 관광지를 반환합니다.

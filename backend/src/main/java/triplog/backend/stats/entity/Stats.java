@@ -48,7 +48,7 @@ public class Stats {
     @Column(name = "quarter_score", nullable = false)
     private int quarterScore;
 
-    @Column(name = "current_tier", nullable = false, length = 10)
+    @Column(name = "current_tier", nullable = false, length = 20)
     private String currentTier;
 
     @Column(name = "stats_level", nullable = false)
@@ -69,4 +69,5 @@ public class Stats {
         this.statsLevel = 1;
         this.statsXp = 0;
     }
+
 }

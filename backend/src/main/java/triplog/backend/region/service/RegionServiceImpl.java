@@ -217,4 +217,17 @@ public class RegionServiceImpl implements RegionService {
 
         regionVisitLogService.createLog(usersId, regionId);
     }
+
+    /**
+     * 사용자의 특정 지역 방문 이력 존재 여부를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param regionId 지역 식별자
+     * @return 방문 이력이 있으면 {@code true}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasVisited(String usersId, Long regionId) {
+        return usersRegionRepository.findByUsersIdAndRegionRegionId(usersId, regionId).isPresent();
+    }
 }

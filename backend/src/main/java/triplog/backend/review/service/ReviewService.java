@@ -1,7 +1,7 @@
 package triplog.backend.review.service;
 
 import org.springframework.web.multipart.MultipartFile;
-import triplog.backend.review.dto.request.ReviewRequest.CreateReviewRequest;
+import triplog.backend.review.dto.request.ReviewRequest.CreateRequest;
 import triplog.backend.review.dto.response.ReviewResponse.CreateReviewResponse;
 
 import java.util.List;
@@ -19,5 +19,5 @@ public interface ReviewService {
      * @param files   인증 이미지 파일 목록
      * @return 방문 인증 등록 응답
      */
-    CreateReviewResponse createReview(String usersId, CreateReviewRequest request, List<MultipartFile> files);
+    CreateReviewResponse createReview(String usersId, CreateRequest request, List<MultipartFile> files);
 }

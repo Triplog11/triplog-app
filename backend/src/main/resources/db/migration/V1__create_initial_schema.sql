@@ -19,7 +19,7 @@ CREATE TABLE stats (
                        overall_score INT NOT NULL,
                        month_score INT NOT NULL,
                        quarter_score INT NOT NULL,
-                       current_tier VARCHAR(10) NOT NULL,
+                       current_tier VARCHAR(20) NOT NULL,
                        stats_level INT NOT NULL,
                        stats_xp INT NOT NULL,
                        PRIMARY KEY (stats_id),
@@ -300,7 +300,7 @@ CREATE TABLE level_policy_role (
 
 CREATE TABLE rank_policy (
                              rank_policy_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '랭크 정책 식별자',
-                             rank_policy_tier VARCHAR(10) NOT NULL COMMENT '랭크 정책 티어',
+                             rank_policy_tier VARCHAR(20) NOT NULL COMMENT '랭크 정책 티어',
                              rank_policy_condition INT NOT NULL COMMENT '랭크 정책 조건',
                              PRIMARY KEY (rank_policy_id)
 ) COMMENT='랭크 및 티어 정책';

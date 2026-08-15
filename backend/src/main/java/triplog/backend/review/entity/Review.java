@@ -55,15 +55,15 @@ public class Review {
      * @param reviewTitle    리뷰 제목
      * @param reviewContent  리뷰 내용
      * @param reviewScore    만족도
-     * @param reviewPoint    리뷰 점수
      */
     public Review(String usersId, TourismContent tourismContent, String reviewTitle,
-                  String reviewContent, Float reviewScore, Integer reviewPoint) {
+                  String reviewContent, Float reviewScore) {
         this.usersId = usersId;
         this.tourismContent = tourismContent;
         this.reviewTitle = reviewTitle;
         this.reviewContent = reviewContent;
         this.reviewScore = reviewScore;
-        this.reviewPoint = reviewPoint;
+        this.reviewPoint = 0;
     }
+
 }

@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOGOUT_TOKEN_NOT_FOUND;
 import static triplog.backend.common.auth.exception.AuthErrorCode.LOCAL_EMAIL_REQUIRED;
@@ -109,6 +110,8 @@ class AuthServiceImplTest {
                 true
         );
         given(passwordEncoder.encode(RAW_PASSWORD)).willReturn(ENCODED_PASSWORD);
+        Users createdUsers = mock(Users.class);
+        given(usersService.findById(usersId)).willReturn(createdUsers);
         given(usersService.createLocalUser(EMAIL, "여행자", "profile-default.png", ENCODED_PASSWORD))
                 .willReturn(new UsersSignupInfo(usersId, "여행자"));
 
@@ -118,7 +121,7 @@ class AuthServiceImplTest {
         // then
         assertThat(response.getIsRegister()).isTrue();
         verify(usersService).createLocalUser(EMAIL, "여행자", "profile-default.png", ENCODED_PASSWORD);
-        verify(statsService).createInitialStats(usersId, "수원시", "경기도", "팔달구");
+        verify(statsService).createInitialStats(createdUsers, "수원시", "경기도", "팔달구");
     }
 
     /**

@@ -31,4 +31,21 @@ public class RankPolicyServiceImpl implements RankPolicyService {
                         rankPolicy.getRankPolicyCondition()
                 ));
     }
+
+    /**
+     * 누적 Score 이하에서 가장 높은 랭크 정책을 조회합니다.
+     *
+     * @param overallScore 누적 Score
+     * @return 현재 랭크 정책
+     */
+    @Override
+    public RankPolicyInfo findCurrentRankPolicy(int overallScore) {
+        return rankPolicyRepository
+                .findFirstByRankPolicyConditionLessThanEqualOrderByRankPolicyConditionDesc(overallScore)
+                .map(rankPolicy -> new RankPolicyInfo(
+                        rankPolicy.getRankPolicyTier(),
+                        rankPolicy.getRankPolicyCondition()
+                ))
+                .orElse(new RankPolicyInfo("BRONZE", 0));
+    }
 }
