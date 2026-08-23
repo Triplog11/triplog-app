@@ -4,9 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.event.entity.Event;
+import triplog.backend.event.dto.response.EventResponse.EventDetailResponse;
+import triplog.backend.event.dto.response.EventResponse.EventListResponse;
+import triplog.backend.event.exception.EventErrorCode;
+import triplog.backend.event.exception.EventException;
 import triplog.backend.event.exception.InvalidEventContentTypeException;
 import triplog.backend.event.repository.EventRepository;
 import triplog.backend.tourismcontent.entity.TourismContent;
+import org.springframework.data.domain.Pageable;
 
 /**
  * {@link EventService}의 기본 구현체입니다.
@@ -55,5 +60,31 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     public boolean existsById(Long eventId) {
         return eventRepository.existsById(eventId);
+    }
+
+    /**
+     * 이벤트 상세 정보를 조회합니다.
+     *
+     * @param eventId Event 식별자
+     * @return 이벤트 상세 응답
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public EventDetailResponse getEventDetail(Long eventId) {
+        Event event = eventRepository.findByEventId(eventId)
+                .orElseThrow(() -> new EventException(EventErrorCode.EVENT_DETAIL_NOT_FOUND));
+        return EventDetailResponse.toDto(event);
+    }
+
+    /**
+     * 이벤트 목록을 페이지 단위로 조회합니다.
+     *
+     * @param pageable 페이지 및 정렬 정보
+     * @return 이벤트 목록 응답
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public EventListResponse getEvents(Pageable pageable) {
+        return EventListResponse.toDto(eventRepository.findAll(pageable));
     }
 }

@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,7 +26,9 @@ import triplog.backend.users.dto.request.UsersRequest.NicknameCheckRequest;
 import triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest;
 import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
+import triplog.backend.users.dto.response.UsersResponse.MyPageInfoResponse;
 import triplog.backend.users.dto.response.UsersResponse.ProfileUpdateResponse;
+import triplog.backend.users.service.MyPageFacadeService;
 import triplog.backend.users.service.UsersService;
 
 /**
@@ -41,6 +44,50 @@ import triplog.backend.users.service.UsersService;
 public class UsersController {
 
     private final UsersService usersService;
+    private final MyPageFacadeService myPageFacadeService;
+
+    /**
+     * 로그인 사용자의 마이페이지 정보를 조회합니다.
+     *
+     * @param userDetails JWT 인증 사용자 정보
+     * @return 기본 프로필 및 활동 요약 정보
+     */
+    @GetMapping("/mypage")
+    @Operation(summary = "마이페이지 정보 조회", description = "내 기본 프로필 및 활동 요약 정보를 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "마이페이지 정보 조회 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = MyPageInfoResponse.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "nickname": "여행자",
+                                      "profileUrl": "https://example.com/profile.png",
+                                      "level": 3,
+                                      "xp": 340,
+                                      "tier": "BRONZE",
+                                      "overallScore": 1250,
+                                      "monthScore": 220,
+                                      "totalCertificationCount": 12,
+                                      "visitedRegionCount": 5,
+                                      "acquiredBadgeCount": 4,
+                                      "collectedCardCount": 8
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "사용자 또는 통계 정보를 찾을 수 없음",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<MyPageInfoResponse> getMyPageInfo(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return ResponseEntity.ok(myPageFacadeService.getMyPageInfo(userDetails.getUsername()));
+    }
 
     /**
      * 닉네임 중복 확인 요청을 처리합니다.

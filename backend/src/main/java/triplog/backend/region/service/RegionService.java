@@ -7,10 +7,29 @@ import triplog.backend.region.dto.response.RegionResponse.RegionListResponse;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.exception.RegionNotFoundException;
 
+import java.util.List;
+
 /**
  * Region 조회와 법정동 코드 동기화 기능을 정의하는 도메인 서비스입니다.
  */
 public interface RegionService {
+
+    /**
+     * 홈 화면에 노출할 최근 방문 지역 정보를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param limit 최대 조회 수
+     * @return 최근 방문 지역 목록
+     */
+    List<RegionHomeInfo> getRecentVisitedRegionInfo(String usersId, int limit);
+
+    /**
+     * 사용자가 방문한 서로 다른 지역 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 방문 지역 수
+     */
+    int countVisitedRegions(String usersId);
 
     /**
      * 법정동 시도·시군구 코드 조합으로 Region을 조회합니다.

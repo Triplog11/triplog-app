@@ -1,6 +1,9 @@
 package triplog.backend.event.service;
 
+import org.springframework.data.domain.Pageable;
 import triplog.backend.event.entity.Event;
+import triplog.backend.event.dto.response.EventResponse.EventDetailResponse;
+import triplog.backend.event.dto.response.EventResponse.EventListResponse;
 import triplog.backend.event.exception.InvalidEventContentTypeException;
 import triplog.backend.tourismcontent.entity.TourismContent;
 
@@ -26,4 +29,20 @@ public interface EventService {
      * @return 존재하면 true
      */
     boolean existsById(Long eventId);
+
+    /**
+     * 이벤트 상세 정보를 조회합니다.
+     *
+     * @param eventId Event 식별자
+     * @return 이벤트 상세 응답
+     */
+    EventDetailResponse getEventDetail(Long eventId);
+
+    /**
+     * 이벤트 목록을 페이지 단위로 조회합니다.
+     *
+     * @param pageable 페이지 및 정렬 정보
+     * @return 이벤트 목록 응답
+     */
+    EventListResponse getEvents(Pageable pageable);
 }

@@ -194,10 +194,14 @@ CREATE TABLE users_region (
 
 CREATE TABLE card (
                       card_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '카드 식별자',
-                      card_name VARCHAR(100) NOT NULL COMMENT '카드 이름',
+                      landmark_id BIGINT NULL COMMENT '카드가 속한 랜드마크 식별자',
+                      card_name VARCHAR(255) NOT NULL COMMENT 'TourAPI 공식 장소명',
                       card_tier VARCHAR(10) NOT NULL COMMENT '카드 등급',
                       card_url VARCHAR(2048) NOT NULL COMMENT '카드 이미지',
-                      PRIMARY KEY (card_id)
+                      PRIMARY KEY (card_id),
+                      UNIQUE KEY uk_card_landmark (landmark_id),
+                      CONSTRAINT fk_card_landmark FOREIGN KEY (landmark_id)
+                          REFERENCES landmark (landmark_id) ON DELETE CASCADE
 ) COMMENT='카드 정보';
 
 CREATE TABLE users_card_landmark (
@@ -211,6 +215,7 @@ CREATE TABLE users_card_landmark (
                                      KEY idx_ucl_landmark (landmark_id),
                                      KEY idx_ucl_card (card_id),
                                      KEY idx_ucl_users (users_id),
+                                     UNIQUE KEY uk_ucl_users_landmark (users_id, landmark_id),
                                      CONSTRAINT fk_ucl_landmark FOREIGN KEY (landmark_id) REFERENCES landmark (landmark_id) ON DELETE CASCADE,
                                      CONSTRAINT fk_ucl_card FOREIGN KEY (card_id) REFERENCES card (card_id) ON DELETE CASCADE,
                                      CONSTRAINT fk_ucl_users FOREIGN KEY (users_id) REFERENCES users (users_id) ON DELETE CASCADE
@@ -254,6 +259,7 @@ CREATE TABLE users_level_log (
                                  users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',
                                  level_log_created_at DATETIME NOT NULL COMMENT '레벨 로그 생성일자',
                                  users_level_log_gain_xp INT NOT NULL COMMENT '레벨 로그 받은 경험치',
+                                 users_level_log_gain_score INT NOT NULL DEFAULT 0 COMMENT '레벨 로그 받은 점수',
                                  users_level_content VARCHAR(500) NOT NULL COMMENT '레벨 로그 내용',
                                  PRIMARY KEY (level_log_id),
                                  KEY idx_users_level_log_users (users_id),
@@ -311,6 +317,7 @@ CREATE TABLE users_badge_log (
                                  users_badge_log_created_at DATETIME NOT NULL COMMENT '유저 뱃지 로그 생성일자',
                                  users_badge_content VARCHAR(500) NOT NULL COMMENT '유저 뱃지 로그 내용',
                                  users_badge_gain_xp INT NOT NULL COMMENT '받은 경험치',
+                                 users_badge_gain_score INT NOT NULL DEFAULT 0 COMMENT '받은 점수',
                                  PRIMARY KEY (users_badge_log_id),
                                  KEY idx_ubl_users_badge (users_badge_id),
                                  CONSTRAINT fk_ubl_users_badge FOREIGN KEY (users_badge_id)
@@ -393,6 +400,7 @@ CREATE TABLE users_region_log (
                                   users_region_log_created_at DATETIME NOT NULL COMMENT '유저 지역 로그 생성일자',
                                   users_region_log_content VARCHAR(500) NOT NULL COMMENT '유저 지역 로그 내용',
                                   users_region_log_xp INT NOT NULL COMMENT '유저 지역 로그 받은 경험치',
+                                  users_region_log_gain_score INT NOT NULL DEFAULT 0 COMMENT '유저 지역 로그 받은 점수',
                                   PRIMARY KEY (users_region_log_id),
                                   KEY idx_users_region_log_users_region (users_region_id),
                                   CONSTRAINT fk_users_region_log_users_region FOREIGN KEY (users_region_id)
@@ -405,11 +413,36 @@ CREATE TABLE users_card_landmark_log (
                                          users_card_landmark_log_created_at DATETIME NOT NULL COMMENT '유저 카드 랜드마크 로그 생성일자',
                                          users_card_landmark_log_content VARCHAR(500) NOT NULL COMMENT '유저 카드 랜드마크 로그 내용',
                                          users_card_landmark_log_gain_xp INT NOT NULL COMMENT '유저 카드 랜드마크 받은 경험치',
+                                         users_card_landmark_log_gain_score INT NOT NULL DEFAULT 0 COMMENT '유저 카드 랜드마크 받은 점수',
                                          PRIMARY KEY (users_card_landmark_log_id),
                                          KEY idx_ucl_log_ucl (users_card_landmark_id),
                                          CONSTRAINT fk_ucl_log_ucl FOREIGN KEY (users_card_landmark_id)
                                              REFERENCES users_card_landmark (users_card_landmark_id) ON DELETE CASCADE
 ) COMMENT='사용자 랜드마크 카드 획득 로그';
+
+-- 통합 활동 히스토리 조회·기록용 테이블입니다.
+-- 기존 도메인 로그 4종은 전환 안정화와 보상 원본 추적을 위해 당분간 함께 유지합니다.
+CREATE TABLE users_activity_log (
+                                    users_activity_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '통합 활동 로그 식별자',
+                                    users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',
+                                    activity_type VARCHAR(50) NOT NULL COMMENT '활동 유형',
+                                    source_type VARCHAR(50) COMMENT '활동을 발생시킨 원본 유형',
+                                    source_id VARCHAR(100) COMMENT '활동을 발생시킨 원본 식별자',
+                                    event_key VARCHAR(255) NOT NULL COMMENT '활동 로그 중복 방지 키',
+                                    activity_title VARCHAR(255) NOT NULL COMMENT '활동 제목',
+                                    activity_content VARCHAR(500) COMMENT '활동 내용',
+                                    activity_gain_xp INT NOT NULL DEFAULT 0 COMMENT '활동으로 획득한 경험치',
+                                    activity_gain_score INT NOT NULL DEFAULT 0 COMMENT '활동으로 획득한 점수',
+                                    display_order INT NOT NULL DEFAULT 0 COMMENT '동일 이벤트 내 표시 순서',
+                                    activity_created_at DATETIME NOT NULL COMMENT '활동 발생 일시',
+                                    PRIMARY KEY (users_activity_log_id),
+                                    UNIQUE KEY uk_users_activity_log_event (users_id, event_key),
+                                    KEY idx_users_activity_log_history (
+                                        users_id, activity_created_at, display_order, users_activity_log_id
+                                    ),
+                                    CONSTRAINT fk_users_activity_log_users
+                                        FOREIGN KEY (users_id) REFERENCES users (users_id) ON DELETE CASCADE
+) COMMENT='사용자 통합 활동 히스토리';
 
 CREATE TABLE bookmark (
                           bookmark_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '북마크 식별자',

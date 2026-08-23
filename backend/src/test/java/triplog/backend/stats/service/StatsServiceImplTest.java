@@ -22,6 +22,7 @@ import triplog.backend.stats.entity.Stats;
 import triplog.backend.stats.exception.StatsException;
 import triplog.backend.stats.repository.StatsRepository;
 import triplog.backend.activitypolicy.service.ActivityPolicyService;
+import triplog.backend.activitypolicy.entity.ActivityPolicy;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.exception.UsersException;
 import triplog.backend.users.service.UsersRankingInfo;
@@ -31,6 +32,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
@@ -40,6 +42,7 @@ import static triplog.backend.stats.exception.StatsErrorCode.MY_RANKING_NOT_FOUN
 import static triplog.backend.stats.exception.StatsErrorCode.MY_STATS_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.RANKING_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.STATS_NOT_FOUND;
+import static triplog.backend.stats.exception.StatsErrorCode.ACTIVITY_POLICY_NOT_FOUND;
 import static triplog.backend.users.entity.LoginType.GOOGLE;
 import static triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND;
 
@@ -212,15 +215,23 @@ class StatsServiceImplTest {
      * 신규 사용자의 초기 통계를 생성하고 기본 레벨, 경험치, 티어 정보를 반환하는지 검증합니다.
      */
     @Test
-    @DisplayName("신규 사용자 초기 통계 정보를 생성한다")
+    @DisplayName("신규 사용자 초기 통계를 생성하고 회원가입 30 XP를 지급한다")
     void createInitialStats() {
         // given
         Users users = mock(Users.class);
         given(users.getUsersId()).willReturn(USERS_ID);
-        Stats stats = new Stats(users, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU);
-        given(statsRepository.save(any(Stats.class))).willReturn(stats);
-        given(statsRepository.findByUsersUsersId(USERS_ID)).willReturn(Optional.of(stats));
-        given(levelPolicyService.calculateLevel(0)).willReturn(1);
+        Stats initialStats = new Stats(users, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU);
+        Stats rewardedStats = mock(Stats.class);
+        ActivityPolicy signupPolicy = mock(ActivityPolicy.class);
+        given(signupPolicy.getPolicyXp()).willReturn(30);
+        given(signupPolicy.getPolicyScore()).willReturn(0);
+        given(statsRepository.save(any(Stats.class))).willReturn(initialStats);
+        given(activityPolicyService.findById("SIGNUP_COMPLETE"))
+                .willReturn(Optional.of(signupPolicy));
+        given(statsRepository.findByUsersUsersId(USERS_ID)).willReturn(Optional.of(rewardedStats));
+        given(rewardedStats.getStatsXp()).willReturn(30);
+        given(rewardedStats.getOverallScore()).willReturn(0);
+        given(levelPolicyService.calculateLevel(30)).willReturn(1);
         given(rankPolicyService.findCurrentRankPolicy(0)).willReturn(new RankPolicyInfo("BRONZE", 0));
 
         // when
@@ -228,8 +239,9 @@ class StatsServiceImplTest {
 
         // then
         assertThat(result.level()).isEqualTo(1);
-        assertThat(result.xp()).isEqualTo(0);
+        assertThat(result.xp()).isEqualTo(30);
         assertThat(result.tier()).isEqualTo("BRONZE");
+        verify(statsRepository).addXpAndScore(USERS_ID, 30, 0);
 
         ArgumentCaptor<Stats> statsCaptor = ArgumentCaptor.forClass(Stats.class);
         verify(statsRepository).save(statsCaptor.capture());
@@ -241,6 +253,28 @@ class StatsServiceImplTest {
     }
 
     /**
+     * 필수 회원가입 보상 정책이 없으면 가입 통계 생성을 실패시키는지 검증합니다.
+     */
+    @Test
+    @DisplayName("회원가입 보상 정책이 없으면 초기 통계 생성을 실패한다")
+    void createInitialStats_ActivityPolicyNotFound() {
+        // given
+        Users users = mock(Users.class);
+        given(users.getUsersId()).willReturn(USERS_ID);
+        given(activityPolicyService.findById("SIGNUP_COMPLETE")).willReturn(Optional.empty());
+
+        // when
+        // then
+        assertThatThrownBy(() -> statsService.createInitialStats(
+                users, ADDRESS_SI, ADDRESS_DO_GUN, ADDRESS_GU
+        ))
+                .isInstanceOf(StatsException.class)
+                .extracting("errorCode")
+                .isEqualTo(ACTIVITY_POLICY_NOT_FOUND);
+        verify(statsRepository, never()).addXpAndScore(any(String.class), anyInt(), anyInt());
+    }
+
+    /**
      * 초기 통계를 생성할 사용자를 찾을 수 없으면 통계를 저장하지 않고 {@link StatsException}이 발생하는지 검증합니다.
      */
     @Test
@@ -248,6 +282,11 @@ class StatsServiceImplTest {
     void createInitialStats_UsersNotFound() {
         // given
         Users users = createUsers();
+        ActivityPolicy signupPolicy = mock(ActivityPolicy.class);
+        given(signupPolicy.getPolicyXp()).willReturn(30);
+        given(signupPolicy.getPolicyScore()).willReturn(0);
+        given(activityPolicyService.findById("SIGNUP_COMPLETE"))
+                .willReturn(Optional.of(signupPolicy));
 
         // when
         // then

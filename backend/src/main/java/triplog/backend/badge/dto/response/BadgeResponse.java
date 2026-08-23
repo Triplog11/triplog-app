@@ -25,6 +25,20 @@ public final class BadgeResponse {
         return value != null && value == 1;
     }
 
+    /**
+     * 배지 조건과 로그인 사용자의 획득 상태를 포함한 상세 응답입니다.
+     *
+     * @param badgeId 배지 식별자
+     * @param badgeName 배지 이름
+     * @param badgeUrl 배지 이미지 URL
+     * @param badgeGroup 배지 그룹
+     * @param badgeType 배지 조건 유형
+     * @param badgeTarget 배지 조건 대상
+     * @param badgeOperator 배지 조건 연산자
+     * @param badgeValue 배지 조건 기준값
+     * @param acquired 사용자 획득 여부
+     * @param representative 대표 배지 여부
+     */
     @Schema(name = "BadgeDetailResponse", description = "배지 상세 조회 응답")
     public record BadgeDetailResponse(
             @Schema(description = "배지 ID", example = "1") Long badgeId,
@@ -52,6 +66,15 @@ public final class BadgeResponse {
         }
     }
 
+    /**
+     * 전체 또는 미획득 배지의 페이지 응답입니다.
+     *
+     * @param page 현재 페이지 번호
+     * @param size 페이지 크기
+     * @param totalElements 전체 배지 수
+     * @param totalPages 전체 페이지 수
+     * @param items 배지 목록
+     */
     @Schema(name = "BadgeListResponse", description = "전체 또는 미획득 배지 목록 응답")
     public record BadgeListResponse(
             @Schema(description = "현재 페이지 번호", example = "0") int page,
@@ -73,6 +96,18 @@ public final class BadgeResponse {
         }
     }
 
+    /**
+     * 전체 또는 미획득 배지 목록의 개별 항목입니다.
+     *
+     * @param badgeId 배지 식별자
+     * @param badgeName 배지 이름
+     * @param badgeUrl 배지 이미지 URL
+     * @param badgeType 배지 조건 유형
+     * @param badgeTarget 배지 조건 대상
+     * @param badgeValue 배지 조건 기준값
+     * @param acquired 사용자 획득 여부
+     * @param representative 대표 배지 여부
+     */
     @Schema(name = "BadgeItem", description = "전체 또는 미획득 배지 목록 항목")
     public record BadgeItem(
             @Schema(description = "배지 ID", example = "1") Long badgeId,
@@ -94,6 +129,15 @@ public final class BadgeResponse {
         }
     }
 
+    /**
+     * 로그인 사용자가 획득한 배지의 페이지 응답입니다.
+     *
+     * @param page 현재 페이지 번호
+     * @param size 페이지 크기
+     * @param totalElements 전체 획득 배지 수
+     * @param totalPages 전체 페이지 수
+     * @param items 획득 배지 목록
+     */
     @Schema(name = "BadgeListAcquiredResponse", description = "획득 배지 목록 응답")
     public record BadgeListAcquiredResponse(
             @Schema(description = "현재 페이지 번호", example = "0") int page,
@@ -115,6 +159,14 @@ public final class BadgeResponse {
         }
     }
 
+    /**
+     * 획득 배지 목록의 개별 항목입니다.
+     *
+     * @param badgeId 배지 식별자
+     * @param badgeName 배지 이름
+     * @param badgeUrl 배지 이미지 URL
+     * @param representative 대표 배지 여부
+     */
     @Schema(name = "AcquiredBadgeItem", description = "획득 배지 목록 항목")
     public record AcquiredBadgeItem(
             @Schema(description = "배지 ID", example = "1") Long badgeId,

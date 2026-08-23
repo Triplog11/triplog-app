@@ -38,6 +38,19 @@ public class MissionServiceImpl implements MissionService {
     private final MissionAchievementService missionAchievementService;
 
     /**
+     * 홈 화면에 노출할 현재 활성 미션 정보를 조회합니다.
+     *
+     * @return 활성 미션 목록
+     */
+    @Override
+    public List<MissionHomeInfo> getHomeMissions() {
+        LocalDateTime now = LocalDateTime.now();
+        return findActiveMissions(null, now).stream()
+                .map(MissionHomeInfo::from)
+                .toList();
+    }
+
+    /**
      * 로그인 사용자의 미션 진행 현황을 조회합니다.
      * <p>
      * 현재 진행 중인 미션(시작일 &lt;= 현재 &lt;= 종료일)만 조회한 후,

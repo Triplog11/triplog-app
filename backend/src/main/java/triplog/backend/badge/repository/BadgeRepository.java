@@ -69,4 +69,13 @@ public interface BadgeRepository extends JpaRepository<Badge, Long> {
                                       @Param("badgeType") String badgeType,
                                       @Param("isAcquired") Boolean isAcquired,
                                       Pageable pageable);
+
+    /**
+     * 사용자가 획득한 배지 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 획득 배지 수
+     */
+    @Query("select count(ub) from UsersBadge ub where ub.users.usersId = :usersId")
+    long countAcquiredBadgesByUsersId(@Param("usersId") String usersId);
 }

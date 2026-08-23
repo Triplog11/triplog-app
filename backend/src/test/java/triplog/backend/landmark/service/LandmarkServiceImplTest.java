@@ -7,8 +7,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import triplog.backend.landmark.entity.Card;
+import triplog.backend.landmark.entity.CardTier;
 import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResponse;
+import triplog.backend.landmark.dto.response.LandmarkResponse.ObtainedCardListResponse;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.entity.UsersCardLandmark;
 import triplog.backend.landmark.exception.InvalidLandmarkContentTypeException;
@@ -44,6 +50,9 @@ class LandmarkServiceImplTest {
     private LandmarkRepository landmarkRepository;
 
     @Mock
+    private CardService cardService;
+
+    @Mock
     private UsersCardLandmarkRepository usersCardLandmarkRepository;
 
     @Mock
@@ -53,7 +62,25 @@ class LandmarkServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        landmarkService = new LandmarkServiceImpl(landmarkRepository, usersCardLandmarkRepository, landmarkVisitLogService);
+        landmarkService = new LandmarkServiceImpl(
+                landmarkRepository,
+                cardService,
+                usersCardLandmarkRepository,
+                landmarkVisitLogService
+        );
+    }
+
+    @Test
+    @DisplayName("사용자가 수집한 서로 다른 랜드마크 카드 수를 조회한다")
+    void countCollectedCards() {
+        // given
+        given(usersCardLandmarkRepository.countByUsersId(USERS_ID)).willReturn(8L);
+
+        // when
+        int result = landmarkService.countCollectedCards(USERS_ID);
+
+        // then
+        assertThat(result).isEqualTo(8);
     }
 
     /** 허용한 콘텐츠 타입을 랜드마크로 저장하는지 검증합니다. */
@@ -65,17 +92,24 @@ class LandmarkServiceImplTest {
         TourismContent tourismContent = mock(TourismContent.class);
         when(tourismContent.getContentTypeId()).thenReturn(contentTypeId);
         when(tourismContent.getTourismContentId()).thenReturn(1L);
+        when(tourismContent.getTitle()).thenReturn("TourAPI 공식명");
         given(landmarkRepository.findByTourismContentTourismContentId(1L))
                 .willReturn(Optional.empty());
         given(landmarkRepository.save(any(Landmark.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        Landmark landmark = landmarkService.upsert(tourismContent, "선정 랜드마크");
+        Landmark landmark = landmarkService.upsert(
+                tourismContent,
+                "선정 랜드마크",
+                CardTier.EPIC,
+                ""
+        );
 
         // Then
         assertThat(landmark.getTourismContent()).isSameAs(tourismContent);
         verify(landmarkRepository).save(any(Landmark.class));
+        verify(cardService).upsert(landmark, "TourAPI 공식명", CardTier.EPIC, "");
     }
 
     /** 허용하지 않은 콘텐츠 타입의 랜드마크 저장을 거부하는지 검증합니다. */
@@ -88,7 +122,12 @@ class LandmarkServiceImplTest {
 
         // When
         // Then
-        assertThatThrownBy(() -> landmarkService.upsert(tourismContent, "축제"))
+        assertThatThrownBy(() -> landmarkService.upsert(
+                tourismContent,
+                "축제",
+                CardTier.COMMON,
+                ""
+        ))
                 .isInstanceOf(InvalidLandmarkContentTypeException.class);
         verify(landmarkRepository, never()).save(any());
     }
@@ -116,14 +155,19 @@ class LandmarkServiceImplTest {
         when(landmark.getTourismContent()).thenReturn(tourismContent);
 
         UsersCardLandmark usersCardLandmark = mock(UsersCardLandmark.class);
+        Card card = mock(Card.class);
+        when(card.getCardName()).thenReturn("수원 화성");
+        when(card.getCardTier()).thenReturn(CardTier.RARE);
+        when(card.getCardUrl()).thenReturn("https://res.cloudinary.com/demo/image/upload/1.png");
         when(usersCardLandmark.getUsersCardLandmarkVisitedAt())
                 .thenReturn(LocalDateTime.of(2026, 6, 20, 14, 30, 0));
         when(usersCardLandmark.getUsersCardLandmarkCount()).thenReturn(2);
 
         given(landmarkRepository.findByIdWithTourismContentAndRegion(1L))
                 .willReturn(Optional.of(landmark));
-        given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(USERS_ID, 1L))
+        given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkIdWithCard(USERS_ID, 1L))
                 .willReturn(Optional.of(usersCardLandmark));
+        given(cardService.findOptionalByLandmarkId(1L)).willReturn(Optional.of(card));
 
         // when
         LandmarkDetailResponse response = landmarkService.getLandmarkDetail(USERS_ID, 1L);
@@ -136,6 +180,10 @@ class LandmarkServiceImplTest {
         assertThat(response.getContentId()).isEqualTo("EXT-101");
         assertThat(response.getLegalRegionCode()).isEqualTo("41");
         assertThat(response.getLegalDistrictCode()).isEqualTo("110");
+        assertThat(response.getCardName()).isEqualTo("수원 화성");
+        assertThat(response.getCardTier()).isEqualTo("RARE");
+        assertThat(response.getCardUrl())
+                .isEqualTo("https://res.cloudinary.com/demo/image/upload/1.png");
         assertThat(response.getAcquired()).isTrue();
         assertThat(response.getAcquiredAt()).isEqualTo("2026-06-20T14:30");
         assertThat(response.getVisitCount()).isEqualTo(2);
@@ -165,13 +213,19 @@ class LandmarkServiceImplTest {
 
         given(landmarkRepository.findByIdWithTourismContentAndRegion(1L))
                 .willReturn(Optional.of(landmark));
-        given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(USERS_ID, 1L))
+        given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkIdWithCard(USERS_ID, 1L))
                 .willReturn(Optional.empty());
+        Card card = mock(Card.class);
+        when(card.getCardName()).thenReturn("수원 화성");
+        when(card.getCardTier()).thenReturn(CardTier.RARE);
+        when(card.getCardUrl()).thenReturn("https://res.cloudinary.com/demo/image/upload/1.png");
+        given(cardService.findOptionalByLandmarkId(1L)).willReturn(Optional.of(card));
 
         // when
         LandmarkDetailResponse response = landmarkService.getLandmarkDetail(USERS_ID, 1L);
 
         // then
+        assertThat(response.getCardTier()).isEqualTo("RARE");
         assertThat(response.getAcquired()).isFalse();
         assertThat(response.getAcquiredAt()).isNull();
         assertThat(response.getVisitCount()).isNull();
@@ -246,5 +300,150 @@ class LandmarkServiceImplTest {
 
         // then
         assertThat(result).containsExactlyInAnyOrder(1L, 3L, 5L);
+    }
+
+    @Test
+    @DisplayName("사용자가 획득한 카드 목록을 페이지 단위로 조회한다")
+    void getObtainedCards() {
+        // Given
+        PageRequest pageable = PageRequest.of(0, 10);
+        Landmark landmark = mock(Landmark.class);
+        Card card = mock(Card.class);
+        UsersCardLandmark obtainedCard = mock(UsersCardLandmark.class);
+        when(landmark.getLandmarkId()).thenReturn(301L);
+        when(landmark.getLandmarkName()).thenReturn("수원화성");
+        when(card.getCardId()).thenReturn(501L);
+        when(card.getCardName()).thenReturn("수원 화성");
+        when(card.getCardTier()).thenReturn(CardTier.RARE);
+        when(card.getCardUrl()).thenReturn("https://cdn.triplog.com/cards/501.png");
+        when(obtainedCard.getLandmark()).thenReturn(landmark);
+        when(obtainedCard.getCard()).thenReturn(card);
+        when(obtainedCard.getUsersCardLandmarkVisitedAt())
+                .thenReturn(LocalDateTime.of(2026, 6, 20, 14, 30));
+        given(usersCardLandmarkRepository
+                .findByUsersIdOrderByUsersCardLandmarkVisitedAtDescUsersCardLandmarkIdDesc(
+                        USERS_ID,
+                        pageable
+                ))
+                .willReturn(new PageImpl<>(List.of(obtainedCard), pageable, 1));
+
+        // When
+        ObtainedCardListResponse response = landmarkService.getObtainedCards(USERS_ID, pageable);
+
+        // Then
+        assertThat(response.getPage()).isZero();
+        assertThat(response.getSize()).isEqualTo(10);
+        assertThat(response.getTotalElements()).isEqualTo(1);
+        assertThat(response.getTotalPages()).isEqualTo(1);
+        assertThat(response.getItems()).singleElement().satisfies(item -> {
+            assertThat(item.getCardId()).isEqualTo(501L);
+            assertThat(item.getLandmarkId()).isEqualTo(301L);
+            assertThat(item.getLandmarkName()).isEqualTo("수원화성");
+            assertThat(item.getCardName()).isEqualTo("수원 화성");
+            assertThat(item.getCardTier()).isEqualTo("RARE");
+            assertThat(item.getCardUrl()).isEqualTo("https://cdn.triplog.com/cards/501.png");
+            assertThat(item.getAcquiredAt()).isEqualTo("2026-06-20T14:30");
+        });
+    }
+
+    @Test
+    @DisplayName("획득한 카드가 없으면 빈 목록을 반환한다")
+    void getObtainedCards_Empty() {
+        // Given
+        PageRequest pageable = PageRequest.of(0, 10);
+        given(usersCardLandmarkRepository
+                .findByUsersIdOrderByUsersCardLandmarkVisitedAtDescUsersCardLandmarkIdDesc(
+                        USERS_ID,
+                        pageable
+                ))
+                .willReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        // When
+        ObtainedCardListResponse response = landmarkService.getObtainedCards(USERS_ID, pageable);
+
+        // Then
+        assertThat(response.getTotalElements()).isZero();
+        assertThat(response.getTotalPages()).isZero();
+        assertThat(response.getItems()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("홈 화면용 최근 획득 카드 정보를 조회한다")
+    void getRecentObtainedCardInfo() {
+        // given
+        PageRequest pageable = PageRequest.of(0, 3);
+        Region region = mock(Region.class);
+        when(region.getLegalRegionCode()).thenReturn("41");
+        when(region.getLegalDistrictCode()).thenReturn("110");
+        TourismContent content = mock(TourismContent.class);
+        when(content.getRegion()).thenReturn(region);
+        Landmark landmark = mock(Landmark.class);
+        when(landmark.getLandmarkId()).thenReturn(301L);
+        when(landmark.getLandmarkName()).thenReturn("수원화성");
+        when(landmark.getTourismContent()).thenReturn(content);
+        Card card = mock(Card.class);
+        when(card.getCardTier()).thenReturn(CardTier.RARE);
+        when(card.getCardName()).thenReturn("수원 화성");
+        when(card.getCardUrl()).thenReturn("image.com");
+        UsersCardLandmark obtainedCard = mock(UsersCardLandmark.class);
+        when(obtainedCard.getLandmark()).thenReturn(landmark);
+        when(obtainedCard.getCard()).thenReturn(card);
+        given(usersCardLandmarkRepository
+                .findByUsersIdOrderByUsersCardLandmarkVisitedAtDescUsersCardLandmarkIdDesc(
+                        USERS_ID,
+                        pageable
+                ))
+                .willReturn(new PageImpl<>(List.of(obtainedCard), pageable, 1));
+
+        // when
+        List<LandmarkHomeCardInfo> result =
+                landmarkService.getRecentObtainedCardInfo(USERS_ID, 3);
+
+        // then
+        assertThat(result).singleElement().satisfies(item -> {
+            assertThat(item.landmarkId()).isEqualTo(301L);
+            assertThat(item.landmarkZipcode()).isEqualTo("41110");
+            assertThat(item.cardTier()).isEqualTo("RARE");
+        });
+    }
+
+    @Test
+    @DisplayName("랜드마크에 고정된 카드를 사용자에게 최초 한 번 저장한다")
+    void acquireCard_SavesLinkedCard() {
+        // Given
+        Landmark landmark = mock(Landmark.class);
+        Card card = mock(Card.class);
+        given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(USERS_ID, 1L))
+                .willReturn(Optional.empty());
+        given(landmarkRepository.findById(1L)).willReturn(Optional.of(landmark));
+        given(cardService.findByLandmarkId(1L)).willReturn(card);
+
+        // When
+        boolean acquired = landmarkService.acquireCard(USERS_ID, 1L);
+
+        // Then
+        ArgumentCaptor<UsersCardLandmark> acquisitionCaptor =
+                ArgumentCaptor.forClass(UsersCardLandmark.class);
+        verify(usersCardLandmarkRepository).save(acquisitionCaptor.capture());
+        assertThat(acquired).isTrue();
+        assertThat(acquisitionCaptor.getValue().getLandmark()).isSameAs(landmark);
+        assertThat(acquisitionCaptor.getValue().getCard()).isSameAs(card);
+        assertThat(acquisitionCaptor.getValue().getUsersId()).isEqualTo(USERS_ID);
+        assertThat(acquisitionCaptor.getValue().getUsersCardLandmarkCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("이미 획득한 랜드마크 카드는 다시 저장하지 않는다")
+    void acquireCard_AlreadyAcquired() {
+        // Given
+        given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(USERS_ID, 1L))
+                .willReturn(Optional.of(mock(UsersCardLandmark.class)));
+
+        // When
+        boolean acquired = landmarkService.acquireCard(USERS_ID, 1L);
+
+        // Then
+        assertThat(acquired).isFalse();
+        verify(usersCardLandmarkRepository, never()).save(any());
     }
 }

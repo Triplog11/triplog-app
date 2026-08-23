@@ -34,6 +34,19 @@ class BadgeServiceImplTest {
     private BadgeServiceImpl badgeService;
 
     @Test
+    @DisplayName("사용자가 획득한 배지 수를 조회한다")
+    void countAcquiredBadges() {
+        // Given
+        when(badgeRepository.countAcquiredBadgesByUsersId("user-id")).thenReturn(4L);
+
+        // When
+        int result = badgeService.countAcquiredBadges("user-id");
+
+        // Then
+        assertThat(result).isEqualTo(4);
+    }
+
+    @Test
     @DisplayName("배지 ID로 상세 정보와 사용자 획득 상태를 조회한다")
     void getBadgeDetail() {
         // Given

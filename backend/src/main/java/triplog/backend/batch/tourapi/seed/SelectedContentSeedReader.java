@@ -9,22 +9,28 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import triplog.backend.batch.tourapi.config.TourismSyncProperties;
+import triplog.backend.landmark.entity.CardTier;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * content_id 한 열로 구성된 랜드마크·일반 관광지 선정 CSV를 읽습니다.
+ * 랜드마크 카드 정보와 일반 관광지 contentId 선정 CSV를 읽습니다.
  */
 @Component
 @RequiredArgsConstructor
 public class SelectedContentSeedReader {
 
     private static final String CONTENT_ID_HEADER = "content_id";
+    private static final String RARITY_HEADER = "rarity";
+    private static final String CARD_URL_HEADER = "card_url";
 
     private final ResourceLoader resourceLoader;
     private final TourismSyncProperties properties;
@@ -36,23 +42,61 @@ public class SelectedContentSeedReader {
      * @throws InvalidSelectedContentSeedException CSV를 읽을 수 없거나 형식·중복 검증에 실패한 경우
      */
     public SelectedContentSeeds read() {
-        Set<String> landmarkContentIds = readContentIds(
-                properties.landmarkSeedPath(),
-                "랜드마크"
+        Map<String, LandmarkSeed> landmarkSeeds = readLandmarkSeeds(
+                properties.landmarkSeedPath()
         );
         Set<String> attractionContentIds = readContentIds(
                 properties.attractionSeedPath(),
                 "관광지"
         );
 
-        Set<String> duplicatedContentIds = new LinkedHashSet<>(landmarkContentIds);
+        Set<String> duplicatedContentIds = new LinkedHashSet<>(landmarkSeeds.keySet());
         duplicatedContentIds.retainAll(attractionContentIds);
         if (!duplicatedContentIds.isEmpty()) {
             throw new InvalidSelectedContentSeedException(
                     "랜드마크와 관광지 CSV에 중복 content_id가 있습니다: " + duplicatedContentIds
             );
         }
-        return new SelectedContentSeeds(landmarkContentIds, attractionContentIds);
+        return new SelectedContentSeeds(landmarkSeeds, attractionContentIds);
+    }
+
+    /**
+     * 랜드마크 CSV에서 카드 희귀도와 이미지 URL을 함께 읽습니다.
+     *
+     * @param path CSV 리소스 경로
+     * @return CSV 순서를 유지하는 contentId별 카드 정보
+     */
+    private Map<String, LandmarkSeed> readLandmarkSeeds(String path) {
+        Resource resource = resourceLoader.getResource(path);
+        Map<String, LandmarkSeed> landmarkSeeds = new LinkedHashMap<>();
+        try (Reader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8);
+             CSVParser parser = csvParser(reader)) {
+            validateHeader(
+                    parser,
+                    "랜드마크",
+                    List.of(CONTENT_ID_HEADER, RARITY_HEADER, CARD_URL_HEADER)
+            );
+            for (CSVRecord record : parser) {
+                String contentId = requiredContentId(record, "랜드마크");
+                CardTier cardTier = parseCardTier(record, contentId);
+                String cardUrl = record.get(CARD_URL_HEADER).trim();
+                if (StringUtils.hasText(cardUrl) && !cardUrl.startsWith("https://")) {
+                    throw new InvalidSelectedContentSeedException(
+                            "랜드마크 CSV card_url은 HTTPS URL이어야 합니다: " + contentId
+                    );
+                }
+                LandmarkSeed previous = landmarkSeeds.putIfAbsent(
+                        contentId,
+                        new LandmarkSeed(contentId, cardTier, cardUrl)
+                );
+                if (previous != null) {
+                    throw duplicateContentId("랜드마크", contentId);
+                }
+            }
+            return landmarkSeeds;
+        } catch (IOException | IllegalArgumentException exception) {
+            throw convertReadException("랜드마크", exception);
+        }
     }
 
     /**
@@ -67,49 +111,86 @@ public class SelectedContentSeedReader {
         Resource resource = resourceLoader.getResource(path);
         Set<String> contentIds = new LinkedHashSet<>();
         try (Reader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8);
-             CSVParser parser = CSVFormat.DEFAULT.builder()
-                     .setHeader()
-                     .setSkipHeaderRecord(true)
-                     .setTrim(true)
-                     .get()
-                     .parse(reader)) {
-            validateHeader(parser, label);
+             CSVParser parser = csvParser(reader)) {
+            validateHeader(parser, label, List.of(CONTENT_ID_HEADER));
             for (CSVRecord record : parser) {
-                String contentId = record.get(CONTENT_ID_HEADER);
-                if (!StringUtils.hasText(contentId)) {
-                    throw new InvalidSelectedContentSeedException(
-                            label + " CSV content_id가 비어 있습니다. record=" + record.getRecordNumber()
-                    );
-                }
+                String contentId = requiredContentId(record, label);
                 if (!contentIds.add(contentId)) {
-                    throw new InvalidSelectedContentSeedException(
-                            label + " CSV에 중복 content_id가 있습니다: " + contentId
-                    );
+                    throw duplicateContentId(label, contentId);
                 }
             }
             return contentIds;
         } catch (IOException | IllegalArgumentException exception) {
-            if (exception instanceof InvalidSelectedContentSeedException seedException) {
-                throw seedException;
-            }
+            throw convertReadException(label, exception);
+        }
+    }
+
+    private CSVParser csvParser(Reader reader) throws IOException {
+        return CSVFormat.DEFAULT.builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setTrim(true)
+                .get()
+                .parse(reader);
+    }
+
+    private String requiredContentId(CSVRecord record, String label) {
+        String contentId = record.get(CONTENT_ID_HEADER);
+        if (!StringUtils.hasText(contentId)) {
             throw new InvalidSelectedContentSeedException(
-                    label + " CSV를 읽거나 검증할 수 없습니다.",
-                    exception
+                    label + " CSV content_id가 비어 있습니다. record=" + record.getRecordNumber()
+            );
+        }
+        return contentId;
+    }
+
+    private CardTier parseCardTier(CSVRecord record, String contentId) {
+        String rarity = record.get(RARITY_HEADER);
+        if (!StringUtils.hasText(rarity)) {
+            throw new InvalidSelectedContentSeedException(
+                    "랜드마크 CSV rarity가 비어 있습니다: " + contentId
+            );
+        }
+        try {
+            return CardTier.valueOf(rarity.trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidSelectedContentSeedException(
+                    "지원하지 않는 랜드마크 카드 등급입니다: " + rarity
             );
         }
     }
 
+    private InvalidSelectedContentSeedException duplicateContentId(String label, String contentId) {
+        return new InvalidSelectedContentSeedException(
+                label + " CSV에 중복 content_id가 있습니다: " + contentId
+        );
+    }
+
+    private InvalidSelectedContentSeedException convertReadException(
+            String label,
+            Exception exception
+    ) {
+        if (exception instanceof InvalidSelectedContentSeedException seedException) {
+            return seedException;
+        }
+        return new InvalidSelectedContentSeedException(
+                label + " CSV를 읽거나 검증할 수 없습니다.",
+                exception
+        );
+    }
+
     /**
-     * CSV 헤더가 content_id 한 열로만 구성됐는지 검증합니다.
+     * CSV 헤더의 이름과 순서가 해당 선정 유형의 명세와 일치하는지 검증합니다.
      *
      * @param parser 헤더를 읽은 CSV 파서
      * @param label 오류 메시지에 사용할 선정 유형 이름
+     * @param expectedHeaders 허용하는 헤더 이름과 순서
      * @throws InvalidSelectedContentSeedException 허용하지 않는 헤더가 포함된 경우
      */
-    private void validateHeader(CSVParser parser, String label) {
-        if (!parser.getHeaderNames().equals(java.util.List.of(CONTENT_ID_HEADER))) {
+    private void validateHeader(CSVParser parser, String label, List<String> expectedHeaders) {
+        if (!parser.getHeaderNames().equals(expectedHeaders)) {
             throw new InvalidSelectedContentSeedException(
-                    label + " CSV 헤더는 content_id 한 열이어야 합니다."
+                    label + " CSV 헤더가 올바르지 않습니다. expected=" + expectedHeaders
             );
         }
     }

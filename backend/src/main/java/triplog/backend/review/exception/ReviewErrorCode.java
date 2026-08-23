@@ -12,6 +12,9 @@ import triplog.backend.common.exception.BaseErrorCode;
 @RequiredArgsConstructor
 public enum ReviewErrorCode implements BaseErrorCode {
 
+    /** 방문 인증 리뷰를 찾을 수 없거나 조회 권한이 없는 경우입니다. */
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "방문 인증 정보를 찾을 수 없습니다."),
+
     /** 랜드마크 정보를 찾을 수 없는 경우입니다. */
     LANDMARK_NOT_FOUND(HttpStatus.NOT_FOUND, "랜드마크 정보를 찾을 수 없습니다."),
 
@@ -22,7 +25,10 @@ public enum ReviewErrorCode implements BaseErrorCode {
     UNSUPPORTED_VISIT_CONTENT(HttpStatus.BAD_REQUEST, "방문 인증을 지원하지 않는 관광 콘텐츠입니다."),
 
     /** 인증 위치 코드가 관광 콘텐츠 지역과 일치하지 않는 경우입니다. */
-    REGION_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "인증 위치가 관광 콘텐츠 지역과 일치하지 않습니다.");
+    REGION_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "인증 위치가 관광 콘텐츠 지역과 일치하지 않습니다."),
+
+    /** 페이지 번호 또는 크기가 올바르지 않은 경우입니다. */
+    INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "페이지 번호와 크기를 확인해주세요.");
 
     private final HttpStatus httpStatus;
     private final String message;

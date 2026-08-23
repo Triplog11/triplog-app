@@ -1,9 +1,15 @@
 package triplog.backend.landmark.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResponse;
+import triplog.backend.landmark.dto.response.LandmarkResponse.ObtainedCardListResponse;
+import triplog.backend.landmark.entity.Card;
+import triplog.backend.landmark.entity.CardTier;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.entity.UsersCardLandmark;
 import triplog.backend.landmark.exception.InvalidLandmarkContentTypeException;
@@ -18,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 /**
  * {@link LandmarkService}의 기본 구현체입니다.
@@ -30,34 +37,77 @@ public class LandmarkServiceImpl implements LandmarkService {
     private static final Set<String> LANDMARK_CONTENT_TYPE_IDS = Set.of("12", "14", "28");
 
     private final LandmarkRepository landmarkRepository;
+    private final CardService cardService;
     private final UsersCardLandmarkRepository usersCardLandmarkRepository;
     private final LandmarkVisitLogService landmarkVisitLogService;
+
+    /**
+     * 홈 화면에 노출할 최근 획득 카드 정보를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param limit 최대 조회 수
+     * @return 최근 획득 카드 목록
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<LandmarkHomeCardInfo> getRecentObtainedCardInfo(String usersId, int limit) {
+        return usersCardLandmarkRepository
+                .findByUsersIdOrderByUsersCardLandmarkVisitedAtDescUsersCardLandmarkIdDesc(
+                        usersId,
+                        PageRequest.of(0, limit)
+                )
+                .getContent().stream()
+                .map(LandmarkHomeCardInfo::from)
+                .toList();
+    }
+
+    /**
+     * 사용자가 수집한 서로 다른 랜드마크 카드 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 수집 카드 수
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public int countCollectedCards(String usersId) {
+        return Math.toIntExact(usersCardLandmarkRepository.countByUsersId(usersId));
+    }
 
     /**
      * TourismContent 기준으로 Landmark를 생성하거나 표시명을 갱신합니다.
      *
      * @param tourismContent contentTypeId가 12, 14, 28 중 하나인 관광 콘텐츠
      * @param displayName CSV에서 관리하는 표시명 오버라이드
+     * @param cardTier CSV에서 관리하는 카드 희귀도
+     * @param cardUrl 카드 이미지 URL, 비어 있으면 설정된 기본 이미지 사용
      * @return 생성하거나 갱신한 Landmark
      * @throws InvalidLandmarkContentTypeException 콘텐츠 타입이 12, 14, 28 중 하나가 아닌 경우
      */
     @Override
     @Transactional
-    public Landmark upsert(TourismContent tourismContent, String displayName) {
+    public Landmark upsert(
+            TourismContent tourismContent,
+            String displayName,
+            CardTier cardTier,
+            String cardUrl
+    ) {
         if (!LANDMARK_CONTENT_TYPE_IDS.contains(tourismContent.getContentTypeId())) {
             throw new InvalidLandmarkContentTypeException(tourismContent.getContentTypeId());
         }
 
-        return landmarkRepository.findByTourismContentTourismContentId(
+        Landmark landmark = landmarkRepository.findByTourismContentTourismContentId(
                         tourismContent.getTourismContentId()
                 )
-                .map(landmark -> {
-                    landmark.updateName(displayName);
-                    return landmark;
+                .map(existingLandmark -> {
+                    existingLandmark.updateName(displayName);
+                    return existingLandmark;
                 })
                 .orElseGet(() -> landmarkRepository.save(
                         new Landmark(tourismContent, displayName)
                 ));
+
+        cardService.upsert(landmark, tourismContent.getTitle(), cardTier, cardUrl);
+        return landmark;
     }
 
     /**
@@ -86,10 +136,29 @@ public class LandmarkServiceImpl implements LandmarkService {
                 .orElseThrow(() -> new LandmarkException(LandmarkErrorCode.LANDMARK_DETAIL_NOT_FOUND));
 
         UsersCardLandmark usersCardLandmark = usersCardLandmarkRepository
-                .findByUsersIdAndLandmarkLandmarkId(usersId, landmarkId)
+                .findByUsersIdAndLandmarkLandmarkIdWithCard(usersId, landmarkId)
                 .orElse(null);
+        Card card = cardService.findOptionalByLandmarkId(landmarkId).orElse(null);
 
-        return LandmarkDetailResponse.toDto(landmark, usersCardLandmark);
+        return LandmarkDetailResponse.toDto(landmark, card, usersCardLandmark);
+    }
+
+    /**
+     * 로그인 사용자가 획득한 카드를 최신 획득순으로 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param pageable 페이지 정보
+     * @return 획득 카드 목록 응답
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public ObtainedCardListResponse getObtainedCards(String usersId, Pageable pageable) {
+        Page<UsersCardLandmark> obtainedCards = usersCardLandmarkRepository
+                .findByUsersIdOrderByUsersCardLandmarkVisitedAtDescUsersCardLandmarkIdDesc(
+                        usersId,
+                        pageable
+                );
+        return ObtainedCardListResponse.toDto(obtainedCards);
     }
 
     /**
@@ -203,13 +272,21 @@ public class LandmarkServiceImpl implements LandmarkService {
      *
      * @param usersId    사용자 식별자
      * @param landmarkId 랜드마크 식별자
+     * @return 최초 카드 획득이면 true, 이미 획득한 카드면 false
      */
     @Override
     @Transactional
-    public void acquireCard(String usersId, Long landmarkId) {
+    public boolean acquireCard(String usersId, Long landmarkId) {
         if (usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(usersId, landmarkId).isPresent()) {
-            return;
+            return false;
         }
-        usersCardLandmarkRepository.saveCard(usersId, landmarkId);
+        Landmark landmark = landmarkRepository.findById(landmarkId)
+                .orElseThrow(() -> new LandmarkException(LandmarkErrorCode.LANDMARK_DETAIL_NOT_FOUND));
+        Card card = cardService.findByLandmarkId(landmarkId);
+        usersCardLandmarkRepository.save(
+                new UsersCardLandmark(landmark, card, usersId, LocalDateTime.now())
+        );
+        return true;
     }
+
 }

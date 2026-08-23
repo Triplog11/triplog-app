@@ -13,9 +13,11 @@ import triplog.backend.batch.tourapi.dto.TourApiCommonItem;
 import triplog.backend.batch.tourapi.entity.TourismSyncType;
 import triplog.backend.batch.tourapi.seed.SelectedContentSeedReader;
 import triplog.backend.batch.tourapi.seed.SelectedContentSeeds;
+import triplog.backend.batch.tourapi.seed.LandmarkSeed;
 import triplog.backend.batch.tourapi.service.TourismSyncCheckpointService;
 import triplog.backend.batch.tourapi.service.TourismSyncFailureService;
 import triplog.backend.landmark.service.LandmarkService;
+import triplog.backend.landmark.entity.CardTier;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.service.RegionService;
 import triplog.backend.tourismcontent.entity.TourismContent;
@@ -26,6 +28,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Set;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -81,7 +84,11 @@ class SelectedContentSyncFacadeServiceTest {
     void 두_CSV의_contentId를_각_유형으로_저장한다() {
         // Given
         when(seedReader.read()).thenReturn(new SelectedContentSeeds(
-                Set.of("126508"),
+                Map.of("126508", new LandmarkSeed(
+                        "126508",
+                        CardTier.LEGENDARY,
+                        "https://res.cloudinary.com/demo/image/upload/126508.png"
+                )),
                 Set.of("126081")
         ));
         TourApiCommonItem landmarkItem = commonItem("126508", "14", "경복궁");
@@ -103,7 +110,12 @@ class SelectedContentSyncFacadeServiceTest {
                 facadeService.synchronizeInitial();
 
         // Then
-        verify(landmarkService).upsert(landmarkContent, "경복궁");
+        verify(landmarkService).upsert(
+                landmarkContent,
+                "경복궁",
+                CardTier.LEGENDARY,
+                "https://res.cloudinary.com/demo/image/upload/126508.png"
+        );
         verify(attractionService).upsert(attractionContent);
         verify(checkpointService).updateSucceededAt(
                 TourismSyncType.LANDMARK,

@@ -99,6 +99,9 @@ tourism-sync:
     failure-retry-cron: "${TOURISM_SYNC_FAILURE_RETRY_CRON:0 30 4 * * *}"
     zone: "${TOURISM_SYNC_SCHEDULING_ZONE:Asia/Seoul}"
 
+card:
+  default-image-url: ${CARD_DEFAULT_IMAGE_URL:https://res.cloudinary.com/demo/image/upload/default-card.png}
+
 # [이미지 업로드 - Cloudinary]: Cloudinary 키 정보
 cloudinary:
   cloud:

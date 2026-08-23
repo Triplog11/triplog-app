@@ -29,4 +29,12 @@ public interface BadgeService {
      * @throws triplog.backend.badge.exception.BadgeException 배지가 존재하지 않는 경우
      */
     BadgeResponse.BadgeDetailResponse getBadgeDetail(String usersId, Long badgeId);
+
+    /**
+     * 사용자가 획득한 배지 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 획득 배지 수
+     */
+    int countAcquiredBadges(String usersId);
 }

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import static triplog.backend.stats.exception.StatsErrorCode.PROFILE_UPDATE_TARGET_NOT_FOUND;
+import static triplog.backend.stats.exception.StatsErrorCode.ACTIVITY_POLICY_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.MY_RANKING_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.MY_STATS_NOT_FOUND;
 import static triplog.backend.stats.exception.StatsErrorCode.RANKING_NOT_FOUND;
@@ -141,8 +142,12 @@ public class StatsServiceImpl implements StatsService {
         String usersId = users.getUsersId();
         log.info("신규 사용자 초기 통계 생성 시작: usersId={}", usersId);
         statsRepository.save(new Stats(users, addressSi, addressDoGun, addressGu));
-        activityPolicyService.findById("SIGNUP_COMPLETE").ifPresent(policy ->
-                statsRepository.addXpAndScore(usersId, policy.getPolicyXp(), policy.getPolicyScore())
+        ActivityPolicy signupPolicy = activityPolicyService.findById("SIGNUP_COMPLETE")
+                .orElseThrow(() -> new StatsException(ACTIVITY_POLICY_NOT_FOUND));
+        statsRepository.addXpAndScore(
+                usersId,
+                signupPolicy.getPolicyXp(),
+                signupPolicy.getPolicyScore()
         );
         Stats stats = statsRepository.findByUsersUsersId(usersId)
                 .orElseThrow(() -> new StatsException(STATS_NOT_FOUND));
