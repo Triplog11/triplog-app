@@ -13,7 +13,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import triplog.backend.landmark.entity.Card;
 import triplog.backend.landmark.entity.CardTier;
-import triplog.backend.landmark.config.CardProperties;
 import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResponse;
 import triplog.backend.landmark.dto.response.LandmarkResponse.ObtainedCardListResponse;
 import triplog.backend.landmark.entity.Landmark;
@@ -21,7 +20,6 @@ import triplog.backend.landmark.entity.UsersCardLandmark;
 import triplog.backend.landmark.exception.InvalidLandmarkContentTypeException;
 import triplog.backend.landmark.exception.LandmarkException;
 import triplog.backend.landmark.repository.LandmarkRepository;
-import triplog.backend.landmark.repository.CardRepository;
 import triplog.backend.landmark.repository.UsersCardLandmarkRepository;
 import triplog.backend.region.entity.Region;
 import triplog.backend.tourismcontent.entity.TourismContent;
@@ -52,7 +50,7 @@ class LandmarkServiceImplTest {
     private LandmarkRepository landmarkRepository;
 
     @Mock
-    private CardRepository cardRepository;
+    private CardService cardService;
 
     @Mock
     private UsersCardLandmarkRepository usersCardLandmarkRepository;
@@ -66,10 +64,9 @@ class LandmarkServiceImplTest {
     void setUp() {
         landmarkService = new LandmarkServiceImpl(
                 landmarkRepository,
-                cardRepository,
+                cardService,
                 usersCardLandmarkRepository,
-                landmarkVisitLogService,
-                new CardProperties("https://res.cloudinary.com/demo/image/upload/default-card.png")
+                landmarkVisitLogService
         );
     }
 
@@ -112,12 +109,7 @@ class LandmarkServiceImplTest {
         // Then
         assertThat(landmark.getTourismContent()).isSameAs(tourismContent);
         verify(landmarkRepository).save(any(Landmark.class));
-        ArgumentCaptor<Card> cardCaptor = ArgumentCaptor.forClass(Card.class);
-        verify(cardRepository).save(cardCaptor.capture());
-        assertThat(cardCaptor.getValue().getCardName()).isEqualTo("TourAPI 공식명");
-        assertThat(cardCaptor.getValue().getCardTier()).isEqualTo(CardTier.EPIC);
-        assertThat(cardCaptor.getValue().getCardUrl())
-                .isEqualTo("https://res.cloudinary.com/demo/image/upload/default-card.png");
+        verify(cardService).upsert(landmark, "TourAPI 공식명", CardTier.EPIC, "");
     }
 
     /** 허용하지 않은 콘텐츠 타입의 랜드마크 저장을 거부하는지 검증합니다. */
@@ -175,7 +167,7 @@ class LandmarkServiceImplTest {
                 .willReturn(Optional.of(landmark));
         given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkIdWithCard(USERS_ID, 1L))
                 .willReturn(Optional.of(usersCardLandmark));
-        given(cardRepository.findByLandmarkLandmarkId(1L)).willReturn(Optional.of(card));
+        given(cardService.findOptionalByLandmarkId(1L)).willReturn(Optional.of(card));
 
         // when
         LandmarkDetailResponse response = landmarkService.getLandmarkDetail(USERS_ID, 1L);
@@ -227,7 +219,7 @@ class LandmarkServiceImplTest {
         when(card.getCardName()).thenReturn("수원 화성");
         when(card.getCardTier()).thenReturn(CardTier.RARE);
         when(card.getCardUrl()).thenReturn("https://res.cloudinary.com/demo/image/upload/1.png");
-        given(cardRepository.findByLandmarkLandmarkId(1L)).willReturn(Optional.of(card));
+        given(cardService.findOptionalByLandmarkId(1L)).willReturn(Optional.of(card));
 
         // when
         LandmarkDetailResponse response = landmarkService.getLandmarkDetail(USERS_ID, 1L);
@@ -424,7 +416,7 @@ class LandmarkServiceImplTest {
         given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(USERS_ID, 1L))
                 .willReturn(Optional.empty());
         given(landmarkRepository.findById(1L)).willReturn(Optional.of(landmark));
-        given(cardRepository.findByLandmarkLandmarkId(1L)).willReturn(Optional.of(card));
+        given(cardService.findByLandmarkId(1L)).willReturn(card);
 
         // When
         boolean acquired = landmarkService.acquireCard(USERS_ID, 1L);

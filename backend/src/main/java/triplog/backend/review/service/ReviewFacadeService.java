@@ -142,6 +142,13 @@ public class ReviewFacadeService {
         );
     }
 
+    /**
+     * 방문 인증 요청의 법정동 코드가 관광 콘텐츠에 연결된 지역 코드와 일치하는지 검증합니다.
+     *
+     * @param request 법정동 코드를 포함한 방문 인증 요청
+     * @param region 관광 콘텐츠에 연결된 지역
+     * @throws ReviewException 시도 코드 또는 시군구 코드가 일치하지 않는 경우
+     */
     private void validateRegionCodes(CreateRequest request, Region region) {
         if (!region.getLegalRegionCode().equals(request.getLegalRegionCode())
                 || !region.getLegalDistrictCode().equals(request.getLegalDistrictCode())) {

@@ -6,8 +6,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-import triplog.backend.landmark.config.CardProperties;
 import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResponse;
 import triplog.backend.landmark.dto.response.LandmarkResponse.ObtainedCardListResponse;
 import triplog.backend.landmark.entity.Card;
@@ -18,7 +16,6 @@ import triplog.backend.landmark.exception.InvalidLandmarkContentTypeException;
 import triplog.backend.landmark.exception.LandmarkErrorCode;
 import triplog.backend.landmark.exception.LandmarkException;
 import triplog.backend.landmark.repository.LandmarkRepository;
-import triplog.backend.landmark.repository.CardRepository;
 import triplog.backend.landmark.repository.UsersCardLandmarkRepository;
 import triplog.backend.landmarkvisitlog.service.LandmarkVisitLogService;
 import triplog.backend.tourismcontent.entity.TourismContent;
@@ -40,10 +37,9 @@ public class LandmarkServiceImpl implements LandmarkService {
     private static final Set<String> LANDMARK_CONTENT_TYPE_IDS = Set.of("12", "14", "28");
 
     private final LandmarkRepository landmarkRepository;
-    private final CardRepository cardRepository;
+    private final CardService cardService;
     private final UsersCardLandmarkRepository usersCardLandmarkRepository;
     private final LandmarkVisitLogService landmarkVisitLogService;
-    private final CardProperties cardProperties;
 
     /**
      * 홈 화면에 노출할 최근 획득 카드 정보를 조회합니다.
@@ -110,17 +106,7 @@ public class LandmarkServiceImpl implements LandmarkService {
                         new Landmark(tourismContent, displayName)
                 ));
 
-        String resolvedCardUrl = resolveCardUrl(cardUrl);
-        cardRepository.findByLandmarkLandmarkId(landmark.getLandmarkId())
-                .ifPresentOrElse(
-                        card -> card.update(tourismContent.getTitle(), cardTier, resolvedCardUrl),
-                        () -> cardRepository.save(new Card(
-                                landmark,
-                                tourismContent.getTitle(),
-                                cardTier,
-                                resolvedCardUrl
-                        ))
-                );
+        cardService.upsert(landmark, tourismContent.getTitle(), cardTier, cardUrl);
         return landmark;
     }
 
@@ -152,7 +138,7 @@ public class LandmarkServiceImpl implements LandmarkService {
         UsersCardLandmark usersCardLandmark = usersCardLandmarkRepository
                 .findByUsersIdAndLandmarkLandmarkIdWithCard(usersId, landmarkId)
                 .orElse(null);
-        Card card = cardRepository.findByLandmarkLandmarkId(landmarkId).orElse(null);
+        Card card = cardService.findOptionalByLandmarkId(landmarkId).orElse(null);
 
         return LandmarkDetailResponse.toDto(landmark, card, usersCardLandmark);
     }
@@ -296,28 +282,11 @@ public class LandmarkServiceImpl implements LandmarkService {
         }
         Landmark landmark = landmarkRepository.findById(landmarkId)
                 .orElseThrow(() -> new LandmarkException(LandmarkErrorCode.LANDMARK_DETAIL_NOT_FOUND));
-        Card card = cardRepository.findByLandmarkLandmarkId(landmarkId)
-                .orElseThrow(() -> new LandmarkException(LandmarkErrorCode.LANDMARK_CARD_NOT_FOUND));
+        Card card = cardService.findByLandmarkId(landmarkId);
         usersCardLandmarkRepository.save(
                 new UsersCardLandmark(landmark, card, usersId, LocalDateTime.now())
         );
         return true;
     }
 
-    /**
-     * 카드 이미지 URL을 결정합니다.
-     *
-     * @param cardUrl 선정 데이터에 지정된 카드 이미지 URL
-     * @return 지정된 URL 또는 설정된 기본 카드 이미지 URL
-     * @throws IllegalStateException 두 URL이 모두 비어 있는 경우
-     */
-    private String resolveCardUrl(String cardUrl) {
-        if (StringUtils.hasText(cardUrl)) {
-            return cardUrl;
-        }
-        if (!StringUtils.hasText(cardProperties.defaultImageUrl())) {
-            throw new IllegalStateException("기본 카드 이미지 URL이 설정되지 않았습니다.");
-        }
-        return cardProperties.defaultImageUrl();
-    }
 }

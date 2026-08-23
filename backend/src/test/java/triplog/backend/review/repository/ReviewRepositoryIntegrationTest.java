@@ -17,8 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(properties = {
         "spring.batch.job.enabled=false",
-        "spring.flyway.enabled=false",
-        "spring.jpa.hibernate.ddl-auto=none",
+        "spring.flyway.enabled=true",
+        "spring.flyway.validate-on-migrate=false",
+        "spring.jpa.hibernate.ddl-auto=validate",
         "mission.scheduling.enabled=false"
 })
 @Transactional(readOnly = true)

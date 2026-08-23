@@ -2,7 +2,6 @@ package triplog.backend.users.repository;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assumptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
@@ -11,8 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.users.service.ActivityHistoryRecord;
 
 import java.time.LocalDateTime;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -20,8 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(properties = {
         "spring.batch.job.enabled=false",
-        "spring.flyway.enabled=false",
-        "spring.jpa.hibernate.ddl-auto=none",
+        "spring.flyway.enabled=true",
+        "spring.flyway.validate-on-migrate=false",
+        "spring.jpa.hibernate.ddl-auto=validate",
         "mission.scheduling.enabled=false"
 })
 @Transactional
@@ -37,7 +35,6 @@ class ActivityHistoryRepositoryIntegrationTest {
     @DisplayName("통합 활동 로그 쿼리를 페이지 단위로 실행한다")
     void findByUsersId() {
         // Given
-        assumeActivityLogTableExists();
         String usersId = "00000000-0000-0000-0000-000000000000";
         PageRequest pageable = PageRequest.of(0, 10);
 
@@ -56,13 +53,19 @@ class ActivityHistoryRepositoryIntegrationTest {
     @DisplayName("동일 이벤트 키의 활동 로그를 한 번만 저장한다")
     void insertIfAbsent() {
         // Given
-        assumeActivityLogTableExists();
-        List<String> usersIds = jdbcTemplate.query(
-                "SELECT users_id FROM users ORDER BY users_id LIMIT 1",
-                (resultSet, rowNumber) -> resultSet.getString("users_id")
+        String usersId = "00000000-0000-0000-0000-000000000001";
+        jdbcTemplate.update(
+                """
+                        INSERT INTO users (
+                            users_id, login_type, nickname, profile_url, email, password
+                        ) VALUES (?, 'LOCAL', ?, ?, ?, ?)
+                        """,
+                usersId,
+                "활동로그테스트",
+                "https://example.com/profile.png",
+                "activity-history@example.com",
+                "test-password"
         );
-        Assumptions.assumeFalse(usersIds.isEmpty(), "활동 로그 FK 검증용 사용자가 필요합니다.");
-        String usersId = usersIds.getFirst();
         String eventKey = "TEST:ACTIVITY_HISTORY:1";
         ActivityHistoryRecord record = new ActivityHistoryRecord(
                 usersId,
@@ -95,16 +98,4 @@ class ActivityHistoryRepositoryIntegrationTest {
         assertThat(result.getContent().getFirst().score()).isEqualTo(30);
     }
 
-    private void assumeActivityLogTableExists() {
-        Integer count = jdbcTemplate.queryForObject(
-                """
-                        SELECT COUNT(*)
-                        FROM information_schema.tables
-                        WHERE table_schema = DATABASE()
-                          AND table_name = 'users_activity_log'
-                        """,
-                Integer.class
-        );
-        Assumptions.assumeTrue(count != null && count == 1, "통합 Flyway V1 스키마 적용이 필요합니다.");
-    }
 }
