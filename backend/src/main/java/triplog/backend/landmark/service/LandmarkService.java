@@ -39,6 +39,8 @@ public interface LandmarkService {
      *
      * @param tourismContent contentTypeId가 12, 14, 28 중 하나인 관광 콘텐츠
      * @param displayName CSV에서 관리하는 표시명 오버라이드
+     * @param cardTier CSV에서 관리하는 카드 희귀도
+     * @param cardUrl 카드 이미지 URL, 비어 있으면 설정된 기본 이미지 사용
      * @return 생성하거나 갱신한 Landmark
      * @throws InvalidLandmarkContentTypeException 콘텐츠 타입이 12, 14, 28 중 하나가 아닌 경우
      */

@@ -60,6 +60,12 @@ public class SelectedContentSeedReader {
         return new SelectedContentSeeds(landmarkSeeds, attractionContentIds);
     }
 
+    /**
+     * 랜드마크 CSV에서 카드 희귀도와 이미지 URL을 함께 읽습니다.
+     *
+     * @param path CSV 리소스 경로
+     * @return CSV 순서를 유지하는 contentId별 카드 정보
+     */
     private Map<String, LandmarkSeed> readLandmarkSeeds(String path) {
         Resource resource = resourceLoader.getResource(path);
         Map<String, LandmarkSeed> landmarkSeeds = new LinkedHashMap<>();
@@ -174,10 +180,11 @@ public class SelectedContentSeedReader {
     }
 
     /**
-     * CSV 헤더가 content_id 한 열로만 구성됐는지 검증합니다.
+     * CSV 헤더의 이름과 순서가 해당 선정 유형의 명세와 일치하는지 검증합니다.
      *
      * @param parser 헤더를 읽은 CSV 파서
      * @param label 오류 메시지에 사용할 선정 유형 이름
+     * @param expectedHeaders 허용하는 헤더 이름과 순서
      * @throws InvalidSelectedContentSeedException 허용하지 않는 헤더가 포함된 경우
      */
     private void validateHeader(CSVParser parser, String label, List<String> expectedHeaders) {

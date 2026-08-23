@@ -30,6 +30,12 @@ public class HomeController {
 
     private final HomeFacadeService homeFacadeService;
 
+    /**
+     * 로그인 사용자의 레벨·랭크·미션·카드·최근 지역 정보를 조회합니다.
+     *
+     * @param userDetails JWT 인증 사용자 정보
+     * @return 홈 화면 정보
+     */
     @GetMapping
     @Operation(summary = "홈 정보 조회", description = "로그인 사용자의 홈 화면 정보를 조회합니다.")
     @ApiResponses({

@@ -82,6 +82,8 @@ public class LandmarkServiceImpl implements LandmarkService {
      *
      * @param tourismContent contentTypeId가 12, 14, 28 중 하나인 관광 콘텐츠
      * @param displayName CSV에서 관리하는 표시명 오버라이드
+     * @param cardTier CSV에서 관리하는 카드 희귀도
+     * @param cardUrl 카드 이미지 URL, 비어 있으면 설정된 기본 이미지 사용
      * @return 생성하거나 갱신한 Landmark
      * @throws InvalidLandmarkContentTypeException 콘텐츠 타입이 12, 14, 28 중 하나가 아닌 경우
      */
@@ -93,24 +95,22 @@ public class LandmarkServiceImpl implements LandmarkService {
             CardTier cardTier,
             String cardUrl
     ) {
-        // content_type_id 가 없다면 error
         if (!LANDMARK_CONTENT_TYPE_IDS.contains(tourismContent.getContentTypeId())) {
             throw new InvalidLandmarkContentTypeException(tourismContent.getContentTypeId());
         }
 
-        // content_type_id 로 랜드마크 조회
         Landmark landmark = landmarkRepository.findByTourismContentTourismContentId(
                         tourismContent.getTourismContentId()
                 )
-                .map(existingLandmark -> {// 이미 있다면
+                .map(existingLandmark -> {
                     existingLandmark.updateName(displayName);
                     return existingLandmark;
                 })
-                .orElseGet(() -> landmarkRepository.save( // 없다면 저장
+                .orElseGet(() -> landmarkRepository.save(
                         new Landmark(tourismContent, displayName)
                 ));
 
-        String resolvedCardUrl = resolveCardUrl(cardUrl); // card 이미지 url
+        String resolvedCardUrl = resolveCardUrl(cardUrl);
         cardRepository.findByLandmarkLandmarkId(landmark.getLandmarkId())
                 .ifPresentOrElse(
                         card -> card.update(tourismContent.getTitle(), cardTier, resolvedCardUrl),
@@ -149,7 +149,7 @@ public class LandmarkServiceImpl implements LandmarkService {
         Landmark landmark = landmarkRepository.findByIdWithTourismContentAndRegion(landmarkId)
                 .orElseThrow(() -> new LandmarkException(LandmarkErrorCode.LANDMARK_DETAIL_NOT_FOUND));
 
-        UsersCardLandmark usersCardLandmark = usersCardLandmarkRepository // 카드 정보 갖고 오기
+        UsersCardLandmark usersCardLandmark = usersCardLandmarkRepository
                 .findByUsersIdAndLandmarkLandmarkIdWithCard(usersId, landmarkId)
                 .orElse(null);
         Card card = cardRepository.findByLandmarkLandmarkId(landmarkId).orElse(null);
@@ -286,6 +286,7 @@ public class LandmarkServiceImpl implements LandmarkService {
      *
      * @param usersId    사용자 식별자
      * @param landmarkId 랜드마크 식별자
+     * @return 최초 카드 획득이면 true, 이미 획득한 카드면 false
      */
     @Override
     @Transactional
@@ -304,9 +305,11 @@ public class LandmarkServiceImpl implements LandmarkService {
     }
 
     /**
-     * 카드 이미지를 갖고온다.
-     * @param cardUrl 카드 이미지 url
-     * @return 없으면 기본 이미지 url, 있다면 이미지 url
+     * 카드 이미지 URL을 결정합니다.
+     *
+     * @param cardUrl 선정 데이터에 지정된 카드 이미지 URL
+     * @return 지정된 URL 또는 설정된 기본 카드 이미지 URL
+     * @throws IllegalStateException 두 URL이 모두 비어 있는 경우
      */
     private String resolveCardUrl(String cardUrl) {
         if (StringUtils.hasText(cardUrl)) {

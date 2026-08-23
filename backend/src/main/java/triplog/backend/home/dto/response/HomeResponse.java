@@ -22,6 +22,9 @@ public class HomeResponse {
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
+    /**
+     * 홈 화면을 구성하는 사용자 통계와 콘텐츠 요약 응답입니다.
+     */
     @Getter
     @Schema(description = "홈 정보 조회 응답")
     public static class HomeInfoResponse {
@@ -55,6 +58,16 @@ public class HomeResponse {
             this.regionInformation = regionInformation;
         }
 
+        /**
+         * 각 도메인의 홈 조회 모델을 하나의 API 응답으로 변환합니다.
+         *
+         * @param nickname 사용자 닉네임
+         * @param stats 사용자 레벨·랭크 통계
+         * @param missions 활성 미션 목록
+         * @param cards 최근 획득 카드 목록
+         * @param regions 최근 방문 지역 목록
+         * @return 홈 화면 정보 응답
+         */
         public static HomeInfoResponse toDto(
                 String nickname,
                 MyStatsResponse stats,
@@ -72,6 +85,9 @@ public class HomeResponse {
         }
     }
 
+    /**
+     * 홈 화면에 표시할 사용자 레벨 요약입니다.
+     */
     @Getter
     @Schema(description = "홈 사용자 레벨 정보")
     public static class LevelInformation {
@@ -98,6 +114,9 @@ public class HomeResponse {
         }
     }
 
+    /**
+     * 홈 화면에 표시할 사용자 랭크와 점수 요약입니다.
+     */
     @Getter
     @Schema(description = "홈 사용자 랭크 정보")
     public static class RankInformation {
@@ -121,6 +140,9 @@ public class HomeResponse {
         }
     }
 
+    /**
+     * 홈 화면에 표시할 활성 미션 항목입니다.
+     */
     @Getter
     @Schema(description = "홈 미션 정보")
     public static class MissionInformation {
@@ -180,6 +202,9 @@ public class HomeResponse {
         }
     }
 
+    /**
+     * 홈 화면에 표시할 최근 획득 카드 항목입니다.
+     */
     @Getter
     @Schema(description = "홈 최근 획득 카드 정보")
     public static class CardInformation {
@@ -219,6 +244,9 @@ public class HomeResponse {
         }
     }
 
+    /**
+     * 홈 화면에 표시할 최근 방문 지역 항목입니다.
+     */
     @Getter
     @Schema(description = "홈 최근 방문 지역 정보")
     public static class RegionInformation {

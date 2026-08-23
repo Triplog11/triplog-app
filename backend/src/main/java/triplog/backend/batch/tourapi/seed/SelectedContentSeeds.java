@@ -18,7 +18,7 @@ public record SelectedContentSeeds(
 ) {
 
     /**
-     * 전달받은 두 선정 목록을 변경할 수 없는 Set으로 복사합니다.
+     * 전달받은 선정 정보를 입력 순서를 유지하는 불변 컬렉션으로 복사합니다.
      */
     public SelectedContentSeeds {
         landmarkSeeds = Collections.unmodifiableMap(new LinkedHashMap<>(landmarkSeeds));

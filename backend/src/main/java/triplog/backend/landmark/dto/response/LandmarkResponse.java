@@ -192,7 +192,9 @@ public class LandmarkResponse {
          * @param contentId         TourAPI 콘텐츠 식별자
          * @param legalRegionCode   법정동 시도 코드
          * @param legalDistrictCode 법정동 시군구 코드
-         * @param cardTier         카드 등급
+         * @param cardName          카드 이름
+         * @param cardTier          카드 등급
+         * @param cardUrl           카드 이미지 URL
          * @param acquired          카드 획득 여부
          * @param acquiredAt        카드 획득 일시
          * @param visitCount        방문 횟수
@@ -231,6 +233,7 @@ public class LandmarkResponse {
          * Landmark 엔티티와 사용자 획득 정보를 기반으로 랜드마크 상세 응답을 생성합니다.
          *
          * @param landmark          랜드마크 엔티티
+         * @param card              랜드마크 카드 정보 (없으면 null)
          * @param usersCardLandmark 사용자 카드 랜드마크 획득 정보 (없으면 null)
          * @return 랜드마크 상세 응답 DTO
          */

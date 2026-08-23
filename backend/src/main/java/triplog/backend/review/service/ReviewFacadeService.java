@@ -190,6 +190,7 @@ public class ReviewFacadeService {
         if (firstRegionVisit) {
             policyIds.add("REGION_FIRST_VISIT");
         }
+        // 여행 기록과 사진 보너스는 하루 세 번째 보상 대상 기록까지만 함께 지급합니다.
         if (travelRecord && reviewLogService.countRewardedTravelRecordsToday(usersId) < 3) {
             policyIds.add("REVIEW_CREATE");
             if (hasImages) {
@@ -210,6 +211,7 @@ public class ReviewFacadeService {
             boolean cardAcquired,
             ActivityRewardResult reward
     ) {
+        // 한 인증에서 발생한 활동은 같은 시각을 사용하고 displayOrder로 노출 순서를 고정합니다.
         LocalDateTime occurredAt = LocalDateTime.now();
         String sourceId = reviewId.toString();
 

@@ -36,6 +36,13 @@ public class BadgeController {
 
     private final BadgeService badgeService;
 
+    /**
+     * 배지 상세 정보와 로그인 사용자의 획득 상태를 조회합니다.
+     *
+     * @param userDetails JWT 인증 사용자 정보
+     * @param badgeId 배지 식별자
+     * @return 배지 상세 응답
+     */
     @GetMapping("/{badgeId}")
     @Operation(summary = "배지 상세 조회", description = "배지 ID로 상세 정보와 로그인 사용자의 획득 상태를 조회합니다.")
     @ApiResponses({
@@ -80,6 +87,16 @@ public class BadgeController {
         return ResponseEntity.ok(badgeService.getBadgeDetail(userDetails.getUsername(), badgeId));
     }
 
+    /**
+     * 전체 배지 또는 획득 배지 목록을 조건과 페이지에 맞춰 조회합니다.
+     *
+     * @param userDetails JWT 인증 사용자 정보
+     * @param badgeType 배지 유형 필터
+     * @param isAcquired 획득 여부 필터
+     * @param page 페이지 번호
+     * @param size 페이지 크기
+     * @return 조건에 따라 형태가 결정되는 배지 목록 응답
+     */
     @GetMapping
     @Operation(
             summary = "전체 배지 목록 및 획득 배지 목록 조회",

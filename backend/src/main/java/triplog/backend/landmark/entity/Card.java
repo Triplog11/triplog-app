@@ -43,6 +43,14 @@ public class Card {
     @Column(name = "card_url", nullable = false, length = 2048)
     private String cardUrl;
 
+    /**
+     * 랜드마크에 고정되는 카드 표시 정보를 생성합니다.
+     *
+     * @param landmark 카드가 속한 랜드마크
+     * @param cardName TourAPI 공식 장소명
+     * @param cardTier 카드 희귀도
+     * @param cardUrl 카드 이미지 URL
+     */
     public Card(Landmark landmark, String cardName, CardTier cardTier, String cardUrl) {
         this.landmark = landmark;
         this.cardName = cardName;

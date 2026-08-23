@@ -8,7 +8,7 @@ import triplog.backend.users.dto.response.MyPageResponse.ActivityHistoryResponse
 import triplog.backend.users.repository.ActivityHistoryRepository;
 
 /**
- * 여러 사용자 활동 로그를 하나의 활동 히스토리 흐름으로 조합합니다.
+ * 통합 활동 로그 조회와 API 응답 변환 흐름을 조합합니다.
  */
 @Service
 @RequiredArgsConstructor

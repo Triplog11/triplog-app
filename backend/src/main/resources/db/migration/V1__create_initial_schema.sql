@@ -420,6 +420,8 @@ CREATE TABLE users_card_landmark_log (
                                              REFERENCES users_card_landmark (users_card_landmark_id) ON DELETE CASCADE
 ) COMMENT='사용자 랜드마크 카드 획득 로그';
 
+-- 통합 활동 히스토리 조회·기록용 테이블입니다.
+-- 기존 도메인 로그 4종은 전환 안정화와 보상 원본 추적을 위해 당분간 함께 유지합니다.
 CREATE TABLE users_activity_log (
                                     users_activity_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '통합 활동 로그 식별자',
                                     users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',
