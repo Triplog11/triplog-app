@@ -61,6 +61,19 @@ class RegionServiceImplTest {
         regionService = new RegionServiceImpl(regionRepository, usersRegionRepository, regionVisitLogService, landmarkService);
     }
 
+    @Test
+    @DisplayName("사용자가 방문한 서로 다른 지역 수를 조회한다")
+    void countVisitedRegions() {
+        // given
+        given(usersRegionRepository.countByUsersId(USERS_ID)).willReturn(5L);
+
+        // when
+        int result = regionService.countVisitedRegions(USERS_ID);
+
+        // then
+        assertThat(result).isEqualTo(5);
+    }
+
     /**
      * 전국 지도 현황 조회 시 전체 지역과 완료율이 정확히 계산되는지 검증합니다.
      */
@@ -264,6 +277,32 @@ class RegionServiceImplTest {
         assertThat(response.getRegions()).hasSize(2);
         assertThat(response.getRegions().get(0).getVisited()).isTrue();
         assertThat(response.getRegions().get(1).getVisited()).isFalse();
+    }
+
+    @Test
+    @DisplayName("홈 화면용 최근 방문 지역 정보를 조회한다")
+    void getRecentVisitedRegionInfo() {
+        // given
+        Region region = createRegion(1L, "수원시", "41", "110");
+        UsersRegion usersRegion = mock(UsersRegion.class);
+        when(usersRegion.getRegion()).thenReturn(region);
+        when(usersRegion.getUsersRegionVisitedAt())
+                .thenReturn(java.time.LocalDateTime.of(2026, 7, 1, 10, 0));
+        when(usersRegion.getUsersRegionVisitedCount()).thenReturn(2);
+        PageRequest pageable = PageRequest.of(0, 3);
+        given(usersRegionRepository
+                .findByUsersIdOrderByUsersRegionVisitedAtDescUsersRegionIdDesc(USERS_ID, pageable))
+                .willReturn(List.of(usersRegion));
+
+        // when
+        List<RegionHomeInfo> result = regionService.getRecentVisitedRegionInfo(USERS_ID, 3);
+
+        // then
+        assertThat(result).singleElement().satisfies(item -> {
+            assertThat(item.regionId()).isEqualTo(1L);
+            assertThat(item.regionZipcode()).isEqualTo("41110");
+            assertThat(item.visitedCount()).isEqualTo(2);
+        });
     }
 
     /**

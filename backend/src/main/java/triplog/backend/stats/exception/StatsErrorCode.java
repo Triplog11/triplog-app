@@ -38,7 +38,15 @@ public enum StatsErrorCode implements BaseErrorCode {
     /**
      * 프로필 수정 대상 통계 정보가 존재하지 않는 경우 사용하는 에러 코드입니다.
      */
-    PROFILE_UPDATE_TARGET_NOT_FOUND(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
+    PROFILE_UPDATE_TARGET_NOT_FOUND(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
+
+    /**
+     * 서버에 필수 활동 보상 정책이 존재하지 않는 경우 사용하는 에러 코드입니다.
+     */
+    ACTIVITY_POLICY_NOT_FOUND(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "활동 보상 정책을 찾을 수 없습니다."
+    );
 
     /**
      * 클라이언트에 응답할 HTTP 상태 코드입니다.

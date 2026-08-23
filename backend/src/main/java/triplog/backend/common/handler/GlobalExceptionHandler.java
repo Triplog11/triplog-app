@@ -17,6 +17,7 @@ import triplog.backend.badge.exception.BadgeException;
 import triplog.backend.common.exception.CommonErrorCode;
 import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.fcmtoken.exception.FcmTokenException;
+import triplog.backend.event.exception.EventException;
 import triplog.backend.image.exception.ImageException;
 import triplog.backend.landmark.exception.LandmarkException;
 import triplog.backend.mission.exception.MissionException;
@@ -38,6 +39,18 @@ import static triplog.backend.common.exception.ErrorResponse.toResponseEntity;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * 이벤트 도메인 비즈니스 예외를 공통 오류 응답으로 변환합니다.
+     *
+     * @param e 이벤트 도메인에서 발생한 예외
+     * @return 이벤트 오류 코드에 해당하는 HTTP 상태와 메시지를 포함한 응답
+     */
+    @ExceptionHandler(EventException.class)
+    protected ResponseEntity<ErrorResponse> handleEventException(EventException e) {
+        log.warn("이벤트 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
 
     /**
      * 배지(Badge) 도메인 비즈니스 로직에서 발생하는 {@link BadgeException}을 처리합니다.

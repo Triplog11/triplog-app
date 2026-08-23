@@ -52,6 +52,17 @@ public class BadgeServiceImpl implements BadgeService {
     }
 
     /**
+     * 사용자가 획득한 배지 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 획득 배지 수
+     */
+    @Override
+    public int countAcquiredBadges(String usersId) {
+        return Math.toIntExact(badgeRepository.countAcquiredBadgesByUsersId(usersId));
+    }
+
+    /**
      * 빈 타입 조건은 전체 조회를 의미하는 {@code null}로 바꾸고,
      * 값이 있으면 앞뒤 공백 제거 후 대문자로 정규화합니다.
      *

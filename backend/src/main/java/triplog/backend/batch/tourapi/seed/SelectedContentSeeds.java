@@ -1,15 +1,19 @@
 package triplog.backend.batch.tourapi.seed;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * 랜드마크와 일반 관광지로 선정된 TourAPI contentId 목록입니다.
  *
- * @param landmarkContentIds 랜드마크 선정 contentId
+ * @param landmarkSeeds contentId별 랜드마크 카드 선정 정보
  * @param attractionContentIds 일반 관광지 선정 contentId
  */
 public record SelectedContentSeeds(
-        Set<String> landmarkContentIds,
+        Map<String, LandmarkSeed> landmarkSeeds,
         Set<String> attractionContentIds
 ) {
 
@@ -17,8 +21,19 @@ public record SelectedContentSeeds(
      * 전달받은 두 선정 목록을 변경할 수 없는 Set으로 복사합니다.
      */
     public SelectedContentSeeds {
-        landmarkContentIds = Set.copyOf(landmarkContentIds);
-        attractionContentIds = Set.copyOf(attractionContentIds);
+        landmarkSeeds = Collections.unmodifiableMap(new LinkedHashMap<>(landmarkSeeds));
+        attractionContentIds = Collections.unmodifiableSet(
+                new LinkedHashSet<>(attractionContentIds)
+        );
+    }
+
+    /**
+     * 선정 랜드마크 contentId 집합을 반환합니다.
+     *
+     * @return 입력 순서를 유지하는 contentId 집합
+     */
+    public Set<String> landmarkContentIds() {
+        return landmarkSeeds.keySet();
     }
 
     /**
@@ -28,7 +43,22 @@ public record SelectedContentSeeds(
      * @return 랜드마크로 선정됐으면 true
      */
     public boolean isLandmark(String contentId) {
-        return landmarkContentIds.contains(contentId);
+        return landmarkSeeds.containsKey(contentId);
+    }
+
+    /**
+     * contentId에 고정된 랜드마크 카드 정보를 반환합니다.
+     *
+     * @param contentId TourAPI 콘텐츠 식별자
+     * @return 랜드마크 카드 선정 정보
+     * @throws IllegalArgumentException 랜드마크 선정 목록에 없는 경우
+     */
+    public LandmarkSeed getLandmarkSeed(String contentId) {
+        LandmarkSeed landmarkSeed = landmarkSeeds.get(contentId);
+        if (landmarkSeed == null) {
+            throw new IllegalArgumentException("랜드마크 CSV에 contentId가 없습니다: " + contentId);
+        }
+        return landmarkSeed;
     }
 
     /**
@@ -47,8 +77,8 @@ public record SelectedContentSeeds(
      * @return 중복이 없는 전체 선정 contentId
      */
     public Set<String> allContentIds() {
-        java.util.LinkedHashSet<String> contentIds = new java.util.LinkedHashSet<>(landmarkContentIds);
+        LinkedHashSet<String> contentIds = new LinkedHashSet<>(landmarkSeeds.keySet());
         contentIds.addAll(attractionContentIds);
-        return Set.copyOf(contentIds);
+        return Collections.unmodifiableSet(contentIds);
     }
 }

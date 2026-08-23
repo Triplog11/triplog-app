@@ -92,7 +92,7 @@ public class SelectedContentSyncFacadeService {
                     skipped++;
                     continue;
                 }
-                synchronizeOne(contentId, syncType);
+                synchronizeOne(contentId, syncType, seeds);
                 failureService.resolve(syncType, contentId, LocalDateTime.now(clock));
                 succeeded++;
             } catch (RuntimeException exception) {
@@ -121,7 +121,7 @@ public class SelectedContentSyncFacadeService {
         if (syncType == TourismSyncType.ATTRACTION && !seeds.isAttraction(contentId)) {
             throw new IllegalArgumentException("관광지 CSV에 contentId가 없습니다: " + contentId);
         }
-        synchronizeOne(contentId, syncType);
+        synchronizeOne(contentId, syncType, seeds);
     }
 
     /**
@@ -140,7 +140,7 @@ public class SelectedContentSyncFacadeService {
         for (String contentId : contentIds) {
             TourismSyncType syncType = resolveSyncType(contentId, seeds);
             try {
-                synchronizeOne(contentId, syncType);
+                synchronizeOne(contentId, syncType, seeds);
                 failureService.resolve(syncType, contentId, LocalDateTime.now(clock));
                 succeeded++;
             } catch (RuntimeException exception) {
@@ -158,7 +158,11 @@ public class SelectedContentSyncFacadeService {
      * @param syncType LANDMARK 또는 ATTRACTION 동기화 유형
      * @throws IllegalArgumentException 지원하지 않는 콘텐츠 유형 또는 동기화 유형인 경우
      */
-    private void synchronizeOne(String contentId, TourismSyncType syncType) {
+    private void synchronizeOne(
+            String contentId,
+            TourismSyncType syncType,
+            SelectedContentSeeds seeds
+    ) {
         TourApiCommonItem item = tourApiClient.getCommonDetail(contentId);
         validateContentType(item);
         Region region = regionService.findByLegalCode(
@@ -171,7 +175,14 @@ public class SelectedContentSyncFacadeService {
                 LocalDateTime.now(clock)
         );
         if (syncType == TourismSyncType.LANDMARK) {
-            landmarkService.upsert(content, item.title());
+            triplog.backend.batch.tourapi.seed.LandmarkSeed landmarkSeed =
+                    seeds.getLandmarkSeed(contentId);
+            landmarkService.upsert(
+                    content,
+                    item.title(),
+                    landmarkSeed.cardTier(),
+                    landmarkSeed.cardUrl()
+            );
             return;
         }
         if (syncType == TourismSyncType.ATTRACTION) {

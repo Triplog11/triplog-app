@@ -13,7 +13,13 @@ import triplog.backend.common.exception.BaseErrorCode;
 public enum LandmarkErrorCode implements BaseErrorCode {
 
     /** 랜드마크 상세 정보를 찾을 수 없는 경우입니다. */
-    LANDMARK_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "랜드마크 상세 정보를 찾을 수 없습니다.");
+    LANDMARK_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "랜드마크 상세 정보를 찾을 수 없습니다."),
+
+    /** 랜드마크에 연결된 카드를 찾을 수 없는 경우입니다. */
+    LANDMARK_CARD_NOT_FOUND(HttpStatus.NOT_FOUND, "랜드마크 카드 정보를 찾을 수 없습니다."),
+
+    /** 페이지 번호 또는 크기가 올바르지 않은 경우입니다. */
+    INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "페이지 번호와 크기를 확인해주세요.");
 
     private final HttpStatus httpStatus;
     private final String message;

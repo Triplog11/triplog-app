@@ -23,7 +23,7 @@ class SelectedContentSeedReaderTest {
 
     /** 랜드마크와 일반 관광지 contentId 목록을 각각 읽는지 검증합니다. */
     @Test
-    @DisplayName("content_id 전용 CSV에서 랜드마크와 관광지 선정 목록을 읽는다")
+    @DisplayName("카드 정보가 포함된 랜드마크 CSV와 관광지 선정 목록을 읽는다")
     void content_id_전용_CSV에서_선정_목록을_읽는다() {
         // Given
         TourismSyncProperties properties = new TourismSyncProperties(
@@ -45,6 +45,8 @@ class SelectedContentSeedReaderTest {
         assertThat(seeds.landmarkContentIds())
                 .hasSize(102)
                 .contains("127642", "126508", "129263");
+        assertThat(seeds.getLandmarkSeed("127642").cardTier())
+                .isEqualTo(triplog.backend.landmark.entity.CardTier.LEGENDARY);
         assertThat(seeds.attractionContentIds())
                 .hasSize(208)
                 .contains("130182", "126509", "322836");
@@ -59,7 +61,7 @@ class SelectedContentSeedReaderTest {
         // Given
         Path landmarks = tempDirectory.resolve("landmarks.csv");
         Path attractions = tempDirectory.resolve("attractions.csv");
-        Files.writeString(landmarks, "content_id\n126508\n");
+        Files.writeString(landmarks, "content_id,rarity,card_url\n126508,RARE,\n");
         Files.writeString(attractions, "content_id\n126508\n");
         TourismSyncProperties properties = new TourismSyncProperties(
                 new TourismSyncProperties.Festival(30, 12),

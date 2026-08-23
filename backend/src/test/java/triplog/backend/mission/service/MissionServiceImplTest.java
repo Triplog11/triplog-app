@@ -219,6 +219,32 @@ class MissionServiceImplTest {
         assertThat(response.getMissions()).isEmpty();
     }
 
+    @Test
+    @DisplayName("홈 화면용 활성 미션 정보를 조회한다")
+    void getHomeMissions() {
+        // given
+        Mission mission = createMission(
+                12L,
+                "랜드마크 1곳 인증하기",
+                "WEEKLY",
+                "REVIEW_COUNT",
+                "\"아무 랜드마크나 방문 인증하기\""
+        );
+        given(missionRepository.findByMissionWeekStartLessThanEqualAndMissionWeekEndGreaterThanEqual(
+                any(LocalDateTime.class), any(LocalDateTime.class)))
+                .willReturn(List.of(mission));
+
+        // when
+        List<MissionHomeInfo> result = missionService.getHomeMissions();
+
+        // then
+        assertThat(result).singleElement().satisfies(item -> {
+            assertThat(item.missionId()).isEqualTo(12L);
+            assertThat(item.missionName()).isEqualTo("랜드마크 1곳 인증하기");
+            assertThat(item.missionFilter()).isEqualTo("아무 랜드마크나 방문 인증하기");
+        });
+    }
+
     /**
      * 유효하지 않은 missionType이면 예외가 발생하는지 검증합니다.
      */

@@ -9,12 +9,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,7 +26,12 @@ import org.springframework.web.multipart.MultipartFile;
 import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.review.dto.request.ReviewRequest.CreateRequest;
 import triplog.backend.review.dto.response.ReviewResponse.CreateReviewResponse;
+import triplog.backend.review.dto.response.ReviewResponse.DetailResponse;
+import triplog.backend.review.dto.response.ReviewResponse.ListResponse;
+import triplog.backend.review.exception.ReviewErrorCode;
+import triplog.backend.review.exception.ReviewException;
 import triplog.backend.review.service.ReviewService;
+import triplog.backend.review.service.ReviewFacadeService;
 
 import java.util.List;
 
@@ -36,6 +45,81 @@ import java.util.List;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final ReviewFacadeService reviewFacadeService;
+
+    /**
+     * 로그인 사용자가 작성한 방문 인증 상세 정보를 조회합니다.
+     *
+     * @param userDetails JWT 인증 사용자 정보
+     * @param reviewId 방문 인증 리뷰 식별자
+     * @return 방문 인증 상세 응답
+     */
+    @GetMapping("/{reviewId}/detail")
+    @Operation(summary = "방문 인증 상세 조회 (리뷰)", description = "로그인 사용자가 작성한 방문 인증 상세 정보를 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "방문 인증 상세 조회 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = DetailResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 리뷰 ID",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "방문 인증을 찾을 수 없거나 조회 권한이 없음",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<DetailResponse> getReviewDetail(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(description = "방문 인증 리뷰 ID", example = "7001")
+            @PathVariable Long reviewId
+    ) {
+        return ResponseEntity.ok(reviewService.getReviewDetail(userDetails.getUsername(), reviewId));
+    }
+
+    /**
+     * 로그인 사용자의 방문 인증 목록을 조회합니다.
+     *
+     * @param userDetails JWT 인증 사용자 정보
+     * @param page 페이지 번호
+     * @param size 페이지 크기
+     * @return 방문 인증 목록 응답
+     */
+    @GetMapping
+    @Operation(summary = "방문 인증 목록 조회 (리뷰)", description = "로그인 사용자의 방문 인증 목록을 최신 생성순으로 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "방문 인증 목록 조회 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ListResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 페이지 요청",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<ListResponse> getReviews(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(description = "페이지 번호(0부터 시작)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        if (page < 0 || size < 1) {
+            throw new ReviewException(ReviewErrorCode.INVALID_PAGE_REQUEST);
+        }
+        return ResponseEntity.ok(reviewService.getReviews(
+                userDetails.getUsername(),
+                PageRequest.of(page, size)
+        ));
+    }
 
     /**
      * 방문 인증 리뷰를 등록합니다.
@@ -83,6 +167,6 @@ public class ReviewController {
             @Valid @RequestPart("request") CreateRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        return ResponseEntity.ok(reviewService.createReview(userDetails.getUsername(), request, files));
+        return ResponseEntity.ok(reviewFacadeService.createReview(userDetails.getUsername(), request, files));
     }
 }

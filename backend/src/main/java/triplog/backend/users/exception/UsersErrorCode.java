@@ -28,7 +28,13 @@ public enum UsersErrorCode implements BaseErrorCode {
     /**
      * 이미 회원가입이 완료된 이메일로 회원가입을 요청한 경우 사용합니다.
      */
-    EMAIL_DUPLICATED(HttpStatus.CONFLICT, "이미 회원가입이 완료된 이메일입니다.");
+    EMAIL_DUPLICATED(HttpStatus.CONFLICT, "이미 회원가입이 완료된 이메일입니다."),
+
+    /**
+     * 페이지 번호 또는 크기가 올바르지 않은 경우 사용합니다.
+     */
+    INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "페이지 번호와 크기를 확인해주세요.");
+
 
     /**
      * 클라이언트에 응답할 HTTP 상태 코드입니다.

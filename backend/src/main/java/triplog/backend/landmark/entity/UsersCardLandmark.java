@@ -35,8 +35,9 @@ public class UsersCardLandmark {
     @JoinColumn(name = "landmark_id", nullable = false)
     private Landmark landmark;
 
-    @Column(name = "card_id", nullable = false)
-    private Long cardId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "card_id", nullable = false)
+    private Card card;
 
     @Column(name = "users_id", nullable = false, length = 36)
     private String usersId;
@@ -46,4 +47,25 @@ public class UsersCardLandmark {
 
     @Column(name = "users_card_landmark_count", nullable = false)
     private Integer usersCardLandmarkCount;
+
+    /**
+     * 사용자가 최초로 획득한 랜드마크 카드를 생성합니다.
+     *
+     * @param landmark 획득한 랜드마크
+     * @param card 랜드마크에 고정된 카드
+     * @param usersId 사용자 식별자
+     * @param visitedAt 획득 일시
+     */
+    public UsersCardLandmark(
+            Landmark landmark,
+            Card card,
+            String usersId,
+            LocalDateTime visitedAt
+    ) {
+        this.landmark = landmark;
+        this.card = card;
+        this.usersId = usersId;
+        this.usersCardLandmarkVisitedAt = visitedAt;
+        this.usersCardLandmarkCount = 1;
+    }
 }

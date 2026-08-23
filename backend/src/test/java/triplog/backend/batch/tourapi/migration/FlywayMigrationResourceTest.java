@@ -42,7 +42,7 @@ class FlywayMigrationResourceTest {
 
     /** 마이그레이션과 선정 CSV가 UTF-8 BOM 없이 패키징되는지 검증합니다. */
     @Test
-    @DisplayName("선정 CSV와 Flyway V1은 UTF-8 BOM 없이 패키징된다")
+    @DisplayName("선정 CSV와 단일 Flyway V1은 UTF-8 BOM 없이 패키징된다")
     void 선정_CSV와_Flyway_V1은_UTF8_BOM_없이_패키징된다() throws IOException {
         // Given
         String migrationPath = "db/migration/V1__create_initial_schema.sql";
@@ -58,6 +58,28 @@ class FlywayMigrationResourceTest {
         assertThat(hasUtf8Bom(migrationBytes)).isFalse();
         assertThat(hasUtf8Bom(landmarkBytes)).isFalse();
         assertThat(hasUtf8Bom(attractionBytes)).isFalse();
+    }
+
+    @Test
+    @DisplayName("V1에 V2부터 V4까지의 스키마 변경이 포함된다")
+    void V1에_V2부터_V4까지의_스키마_변경이_포함된다() throws IOException {
+        // Given
+        String migrationPath = "db/migration/V1__create_initial_schema.sql";
+
+        // When
+        String migration = readClasspathResource(migrationPath);
+
+        // Then
+        assertThat(migration)
+                .contains("CREATE TABLE users_activity_log")
+                .contains("uk_users_activity_log_event")
+                .contains("landmark_id BIGINT NULL COMMENT '카드가 속한 랜드마크 식별자'")
+                .contains("UNIQUE KEY uk_card_landmark (landmark_id)")
+                .contains("UNIQUE KEY uk_ucl_users_landmark (users_id, landmark_id)")
+                .contains("users_badge_gain_score INT NOT NULL DEFAULT 0")
+                .contains("users_level_log_gain_score INT NOT NULL DEFAULT 0")
+                .contains("users_region_log_gain_score INT NOT NULL DEFAULT 0")
+                .contains("users_card_landmark_log_gain_score INT NOT NULL DEFAULT 0");
     }
 
     private String readClasspathResource(String path) throws IOException {
