@@ -18,7 +18,8 @@ CREATE TABLE stats (
                        address_gu VARCHAR(30) NOT NULL,
                        overall_score INT NOT NULL,
                        month_score INT NOT NULL,
-                       quarter_score INT NOT NULL,
+                       overall_score_achieved_at DATETIME(6) NULL,
+                       month_score_achieved_at DATETIME(6) NULL,
                        current_tier VARCHAR(20) NOT NULL,
                        stats_level INT NOT NULL,
                        stats_xp INT NOT NULL,
@@ -46,6 +47,7 @@ CREATE TABLE users_badge (
                              badge_id BIGINT NOT NULL,
                              is_representative BOOLEAN NOT NULL DEFAULT FALSE,
                              PRIMARY KEY (users_badge_id),
+                             UNIQUE KEY uk_users_badge_users_badge (users_id, badge_id),
                              KEY idx_users_badge_users (users_id),
                              KEY idx_users_badge_badge (badge_id),
                              CONSTRAINT fk_users_badge_users FOREIGN KEY (users_id) REFERENCES users (users_id),
@@ -185,12 +187,27 @@ CREATE TABLE users_region (
                               users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',
                               users_region_visited_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '방문일자',
                               users_region_visited_count INT NOT NULL DEFAULT 0 COMMENT '방문 횟수',
+                              users_region_conquered BOOLEAN NOT NULL DEFAULT FALSE COMMENT '지역 정복 여부',
+                              users_region_conquered_at DATETIME NULL COMMENT '최초 지역 정복 일시',
                               PRIMARY KEY (users_region_id),
+                              UNIQUE KEY uk_users_region_users_region (users_id, region_id),
                               KEY idx_users_region_region (region_id),
                               KEY idx_users_region_users (users_id),
                               CONSTRAINT fk_users_region_region FOREIGN KEY (region_id) REFERENCES region (region_id) ON DELETE CASCADE,
                               CONSTRAINT fk_users_region_users FOREIGN KEY (users_id) REFERENCES users (users_id) ON DELETE CASCADE
 ) COMMENT='사용자 지역 방문 정보';
+
+CREATE TABLE region_conquest_policy (
+                                         region_conquest_policy_id VARCHAR(50) NOT NULL COMMENT '지역 정복 정책 식별자',
+                                         minimum_landmark_count INT NOT NULL COMMENT '정책 적용 최소 랜드마크 수',
+                                         maximum_landmark_count INT NULL COMMENT '정책 적용 최대 랜드마크 수. NULL이면 상한 없음',
+                                         required_visit_count INT NULL COMMENT '정복에 필요한 고유 랜드마크 방문 수',
+                                         required_visit_rate DECIMAL(5, 4) NULL COMMENT '정복에 필요한 고유 랜드마크 방문 비율',
+                                         PRIMARY KEY (region_conquest_policy_id),
+                                         UNIQUE KEY uk_region_conquest_policy_range (
+                                             minimum_landmark_count, maximum_landmark_count
+                                         )
+) COMMENT='지역 랜드마크 수별 정복 기준 정책';
 
 CREATE TABLE card (
                       card_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '카드 식별자',
@@ -254,18 +271,6 @@ CREATE TABLE attraction_visit_log (
                                       CONSTRAINT fk_attraction_visit_log_attraction FOREIGN KEY (attraction_id) REFERENCES attraction (attraction_id)
 ) COMMENT='일반 관광지 방문 로그';
 
-CREATE TABLE users_level_log (
-                                 level_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '레벨 로그 식별자',
-                                 users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',
-                                 level_log_created_at DATETIME NOT NULL COMMENT '레벨 로그 생성일자',
-                                 users_level_log_gain_xp INT NOT NULL COMMENT '레벨 로그 받은 경험치',
-                                 users_level_log_gain_score INT NOT NULL DEFAULT 0 COMMENT '레벨 로그 받은 점수',
-                                 users_level_content VARCHAR(500) NOT NULL COMMENT '레벨 로그 내용',
-                                 PRIMARY KEY (level_log_id),
-                                 KEY idx_users_level_log_users (users_id),
-                                 CONSTRAINT fk_users_level_log_users FOREIGN KEY (users_id) REFERENCES users (users_id) ON DELETE CASCADE
-) COMMENT='사용자 레벨 변경 로그';
-
 CREATE TABLE activity_policy (
                                  activity_policy_id VARCHAR(36) NOT NULL COMMENT '활동 정책 식별자',
                                  upper_policy_id VARCHAR(36) COMMENT '활동 정책 상위 policy_id',
@@ -277,6 +282,35 @@ CREATE TABLE activity_policy (
                                  CONSTRAINT fk_activity_policy_upper FOREIGN KEY (upper_policy_id)
                                      REFERENCES activity_policy (activity_policy_id) ON DELETE SET NULL
 ) COMMENT='활동 보상 정책';
+
+-- 사용자에게 노출하는 활동 히스토리는 users_activity_log에서 관리한다.
+-- users_reward_log는 XP·Score의 실제 지급 및 회수를 관리하는 내부 보상 원장이다.
+-- 사용자별 event_key로 중복 지급을 방지하고, 원본 활동(source_type/source_id)이
+-- 무효 처리되면 지급액과 회수 상태·시각·사유를 추적하는 용도로 사용한다.
+CREATE TABLE users_reward_log (
+                                  users_reward_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '사용자 보상 지급 이력 식별자',
+                                  users_id VARCHAR(36) NOT NULL COMMENT '사용자 식별자',
+                                  policy_id VARCHAR(36) NOT NULL COMMENT '적용한 활동 정책 식별자',
+                                  event_key VARCHAR(255) NOT NULL COMMENT '보상 중복 지급 방지 키',
+                                  request_key VARCHAR(100) NULL COMMENT '클라이언트 요청 멱등성 키',
+                                  source_type VARCHAR(50) NOT NULL COMMENT '보상 발생 원본 유형',
+                                  source_id VARCHAR(100) NOT NULL COMMENT '보상 발생 원본 식별자',
+                                  reward_xp INT NOT NULL COMMENT '지급 XP',
+                                  reward_score INT NOT NULL COMMENT '지급 Score',
+                                  reward_status VARCHAR(20) NOT NULL COMMENT 'GRANTED 또는 REVOKED',
+                                  awarded_at DATETIME(6) NOT NULL COMMENT '보상 지급 시각',
+                                  revoked_at DATETIME(6) NULL COMMENT '보상 회수 시각',
+                                  revocation_reason VARCHAR(500) NULL COMMENT '보상 회수 사유',
+                                  PRIMARY KEY (users_reward_log_id),
+                                  UNIQUE KEY uk_users_reward_log_event (users_id, event_key),
+                                  KEY idx_users_reward_log_source (users_id, source_type, source_id, reward_status),
+                                  KEY idx_users_reward_log_request (users_id, request_key),
+                                  KEY idx_users_reward_log_policy (policy_id),
+                                  CONSTRAINT fk_users_reward_log_users FOREIGN KEY (users_id)
+                                      REFERENCES users (users_id) ON DELETE CASCADE,
+                                  CONSTRAINT fk_users_reward_log_policy FOREIGN KEY (policy_id)
+                                      REFERENCES activity_policy (activity_policy_id)
+) COMMENT='XP와 Score 지급 및 회수 원장';
 
 CREATE TABLE level_policy (
                               level_policy_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '레벨 정책 식별자',
@@ -311,19 +345,6 @@ CREATE TABLE rank_policy (
                              PRIMARY KEY (rank_policy_id)
 ) COMMENT='랭크 및 티어 정책';
 
-CREATE TABLE users_badge_log (
-                                 users_badge_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 뱃지 로그 식별자',
-                                 users_badge_id BIGINT NOT NULL COMMENT '유저 뱃지 식별자',
-                                 users_badge_log_created_at DATETIME NOT NULL COMMENT '유저 뱃지 로그 생성일자',
-                                 users_badge_content VARCHAR(500) NOT NULL COMMENT '유저 뱃지 로그 내용',
-                                 users_badge_gain_xp INT NOT NULL COMMENT '받은 경험치',
-                                 users_badge_gain_score INT NOT NULL DEFAULT 0 COMMENT '받은 점수',
-                                 PRIMARY KEY (users_badge_log_id),
-                                 KEY idx_ubl_users_badge (users_badge_id),
-                                 CONSTRAINT fk_ubl_users_badge FOREIGN KEY (users_badge_id)
-                                     REFERENCES users_badge (users_badge_id) ON DELETE CASCADE
-) COMMENT='사용자 뱃지 획득 로그';
-
 CREATE TABLE appellation (
                              appellation_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '칭호 식별자',
                              appellation_name VARCHAR(100) NOT NULL COMMENT '칭호 이름',
@@ -340,7 +361,9 @@ CREATE TABLE users_appellation (
                                    users_appellation_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 칭호 식별자',
                                    users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',
                                    appellation_id BIGINT NOT NULL COMMENT '칭호 식별자',
+                                   is_representative BOOLEAN NOT NULL DEFAULT FALSE COMMENT '대표 칭호 여부',
                                    PRIMARY KEY (users_appellation_id),
+                                   UNIQUE KEY uk_users_appellation_users_appellation (users_id, appellation_id),
                                    KEY idx_ua_users (users_id),
                                    KEY idx_ua_appellation (appellation_id),
                                    CONSTRAINT fk_ua_users FOREIGN KEY (users_id) REFERENCES users (users_id) ON DELETE CASCADE,
@@ -394,34 +417,8 @@ CREATE TABLE fcm_token (
                            CONSTRAINT fk_fcm_token_users FOREIGN KEY (users_id) REFERENCES users (users_id) ON DELETE CASCADE
 ) COMMENT='FCM 디바이스 토큰';
 
-CREATE TABLE users_region_log (
-                                  users_region_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 지역 로그 식별자',
-                                  users_region_id BIGINT NOT NULL COMMENT '유저 지역 식별자',
-                                  users_region_log_created_at DATETIME NOT NULL COMMENT '유저 지역 로그 생성일자',
-                                  users_region_log_content VARCHAR(500) NOT NULL COMMENT '유저 지역 로그 내용',
-                                  users_region_log_xp INT NOT NULL COMMENT '유저 지역 로그 받은 경험치',
-                                  users_region_log_gain_score INT NOT NULL DEFAULT 0 COMMENT '유저 지역 로그 받은 점수',
-                                  PRIMARY KEY (users_region_log_id),
-                                  KEY idx_users_region_log_users_region (users_region_id),
-                                  CONSTRAINT fk_users_region_log_users_region FOREIGN KEY (users_region_id)
-                                      REFERENCES users_region (users_region_id) ON DELETE CASCADE
-) COMMENT='사용자 지역 방문 로그';
-
-CREATE TABLE users_card_landmark_log (
-                                         users_card_landmark_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '유저 카드 랜드마크 로그 식별자',
-                                         users_card_landmark_id BIGINT NOT NULL COMMENT '유저 카드 랜드마크 식별자',
-                                         users_card_landmark_log_created_at DATETIME NOT NULL COMMENT '유저 카드 랜드마크 로그 생성일자',
-                                         users_card_landmark_log_content VARCHAR(500) NOT NULL COMMENT '유저 카드 랜드마크 로그 내용',
-                                         users_card_landmark_log_gain_xp INT NOT NULL COMMENT '유저 카드 랜드마크 받은 경험치',
-                                         users_card_landmark_log_gain_score INT NOT NULL DEFAULT 0 COMMENT '유저 카드 랜드마크 받은 점수',
-                                         PRIMARY KEY (users_card_landmark_log_id),
-                                         KEY idx_ucl_log_ucl (users_card_landmark_id),
-                                         CONSTRAINT fk_ucl_log_ucl FOREIGN KEY (users_card_landmark_id)
-                                             REFERENCES users_card_landmark (users_card_landmark_id) ON DELETE CASCADE
-) COMMENT='사용자 랜드마크 카드 획득 로그';
-
 -- 통합 활동 히스토리 조회·기록용 테이블입니다.
--- 기존 도메인 로그 4종은 전환 안정화와 보상 원본 추적을 위해 당분간 함께 유지합니다.
+-- 화면 표시 이력은 이 테이블, XP·Score 지급·회수 이력은 users_reward_log에서 관리합니다.
 CREATE TABLE users_activity_log (
                                     users_activity_log_id BIGINT NOT NULL AUTO_INCREMENT COMMENT '통합 활동 로그 식별자',
                                     users_id VARCHAR(36) NOT NULL COMMENT '유저 식별자',

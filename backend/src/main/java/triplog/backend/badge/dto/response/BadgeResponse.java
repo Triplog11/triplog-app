@@ -2,6 +2,7 @@ package triplog.backend.badge.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.data.domain.Page;
+import triplog.backend.badge.entity.Badge;
 import triplog.backend.badge.repository.BadgeDetailQueryResult;
 import triplog.backend.badge.repository.BadgeQueryResult;
 
@@ -12,6 +13,7 @@ import java.util.List;
  */
 public final class BadgeResponse {
 
+    /** 인스턴스 생성을 막습니다. */
     private BadgeResponse() {
     }
 
@@ -23,6 +25,40 @@ public final class BadgeResponse {
      */
     private static boolean toBoolean(Integer value) {
         return value != null && value == 1;
+    }
+
+    /**
+     * 대표 배지 변경 결과입니다.
+     *
+     * @param badgeId 대표 배지 식별자
+     * @param badgeName 대표 배지 이름
+     * @param badgeUrl 대표 배지 이미지 URL
+     * @param representative 대표 배지 여부
+     */
+    @Schema(name = "RepresentativeBadgeResponse", description = "대표 배지 변경 응답")
+    public record RepresentativeResponse(
+            @Schema(description = "대표 배지 ID", example = "1") Long badgeId,
+            @Schema(description = "대표 배지 이름", example = "첫 발자국") String badgeName,
+            @Schema(description = "대표 배지 이미지 URL",
+                    example = "https://cdn.triplog.com/badges/first-step.png") String badgeUrl,
+            @Schema(description = "대표 배지 여부", example = "true") boolean representative
+    ) {
+        /**
+         * 배지 엔티티를 대표 배지 변경 응답으로 변환합니다.
+         *
+         * @param badge 대표로 지정된 배지
+         * @return 대표 배지 변경 응답
+         */
+        public static RepresentativeResponse toDto(
+                Badge badge
+        ) {
+            return new RepresentativeResponse(
+                    badge.getBadgeId(),
+                    badge.getBadgeName(),
+                    badge.getBadgeUrl(),
+                    true
+            );
+        }
     }
 
     /**

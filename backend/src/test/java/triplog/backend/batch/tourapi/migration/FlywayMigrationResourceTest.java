@@ -72,14 +72,21 @@ class FlywayMigrationResourceTest {
         // Then
         assertThat(migration)
                 .contains("CREATE TABLE users_activity_log")
+                .contains("CREATE TABLE region_conquest_policy")
+                .contains("users_region_conquered BOOLEAN NOT NULL DEFAULT FALSE")
+                .contains("uk_users_region_users_region (users_id, region_id)")
+                .contains("uk_users_badge_users_badge (users_id, badge_id)")
+                .contains("uk_users_appellation_users_appellation (users_id, appellation_id)")
+                .contains("is_representative BOOLEAN NOT NULL DEFAULT FALSE COMMENT '대표 칭호 여부'")
                 .contains("uk_users_activity_log_event")
                 .contains("landmark_id BIGINT NULL COMMENT '카드가 속한 랜드마크 식별자'")
                 .contains("UNIQUE KEY uk_card_landmark (landmark_id)")
                 .contains("UNIQUE KEY uk_ucl_users_landmark (users_id, landmark_id)")
-                .contains("users_badge_gain_score INT NOT NULL DEFAULT 0")
-                .contains("users_level_log_gain_score INT NOT NULL DEFAULT 0")
-                .contains("users_region_log_gain_score INT NOT NULL DEFAULT 0")
-                .contains("users_card_landmark_log_gain_score INT NOT NULL DEFAULT 0");
+                .contains("CREATE TABLE users_reward_log")
+                .doesNotContain("CREATE TABLE users_level_log")
+                .doesNotContain("CREATE TABLE users_badge_log")
+                .doesNotContain("CREATE TABLE users_region_log")
+                .doesNotContain("CREATE TABLE users_card_landmark_log");
     }
 
     private String readClasspathResource(String path) throws IOException {

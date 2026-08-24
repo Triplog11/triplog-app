@@ -65,7 +65,7 @@ public class MissionServiceImpl implements MissionService {
      */
     @Override
     public MyMissionListResponse getMyMissions(String usersId, String missionType) {
-        if (missionType != null && !"WEEKLY".equals(missionType) && !"DAILY".equals(missionType)) {
+        if (missionType != null && !"WEEKLY".equals(missionType)) {
             throw new MissionException(MISSION_PROGRESS_NOT_FOUND);
         }
 
@@ -113,7 +113,7 @@ public class MissionServiceImpl implements MissionService {
      */
     @Override
     public MissionListResponse getMissions(String missionType) {
-        if (missionType != null && !"WEEKLY".equals(missionType) && !"DAILY".equals(missionType)) {
+        if (missionType != null && !"WEEKLY".equals(missionType)) {
             throw new MissionException(MISSION_NOT_FOUND);
         }
 

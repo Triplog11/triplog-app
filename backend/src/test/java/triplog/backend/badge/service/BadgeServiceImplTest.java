@@ -15,9 +15,14 @@ import triplog.backend.badge.exception.BadgeException;
 import triplog.backend.badge.repository.BadgeDetailQueryResult;
 import triplog.backend.badge.repository.BadgeQueryResult;
 import triplog.backend.badge.repository.BadgeRepository;
+import triplog.backend.badge.repository.UsersBadgeRepository;
+import triplog.backend.badge.entity.Badge;
+import triplog.backend.badge.entity.UsersBadge;
+import triplog.backend.achievement.service.AchievementContext;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,8 +35,140 @@ class BadgeServiceImplTest {
     @Mock
     private BadgeRepository badgeRepository;
 
+    @Mock
+    private UsersBadgeRepository usersBadgeRepository;
+
     @InjectMocks
     private BadgeServiceImpl badgeService;
+
+    @Test
+    @DisplayName("획득한 배지를 대표 배지로 변경하면 기존 대표 배지는 해제된다")
+    void changeRepresentativeBadge() {
+        // Given
+        Badge previousBadge = org.mockito.Mockito.mock(Badge.class);
+        when(previousBadge.getBadgeId()).thenReturn(1L);
+        Badge selectedBadge = org.mockito.Mockito.mock(Badge.class);
+        when(selectedBadge.getBadgeId()).thenReturn(2L);
+        when(selectedBadge.getBadgeName()).thenReturn("여행 새싹");
+        when(selectedBadge.getBadgeUrl()).thenReturn("https://cdn.triplog.com/badge.png");
+
+        UsersBadge previous = org.mockito.Mockito.mock(UsersBadge.class);
+        when(previous.getBadge()).thenReturn(previousBadge);
+        UsersBadge selected = org.mockito.Mockito.mock(UsersBadge.class);
+        when(selected.getBadge()).thenReturn(selectedBadge);
+        when(usersBadgeRepository.findAllByUsersIdForUpdate("user-id"))
+                .thenReturn(List.of(previous, selected));
+
+        // When
+        BadgeResponse.RepresentativeResponse result =
+                badgeService.changeRepresentativeBadge("user-id", 2L);
+
+        // Then
+        assertThat(result.badgeId()).isEqualTo(2L);
+        assertThat(result.badgeName()).isEqualTo("여행 새싹");
+        assertThat(result.badgeUrl()).isEqualTo("https://cdn.triplog.com/badge.png");
+        assertThat(result.representative()).isTrue();
+        verify(previous).changeRepresentative(false);
+        verify(selected).changeRepresentative(true);
+    }
+
+    @Test
+    @DisplayName("획득하지 않은 배지는 대표 배지로 지정할 수 없다")
+    void changeRepresentativeBadge_NotAcquired() {
+        // Given
+        Badge acquiredBadge = org.mockito.Mockito.mock(Badge.class);
+        when(acquiredBadge.getBadgeId()).thenReturn(1L);
+        UsersBadge acquired = org.mockito.Mockito.mock(UsersBadge.class);
+        when(acquired.getBadge()).thenReturn(acquiredBadge);
+        when(usersBadgeRepository.findAllByUsersIdForUpdate("user-id"))
+                .thenReturn(List.of(acquired));
+
+        // When & Then
+        assertThatThrownBy(() -> badgeService
+                .changeRepresentativeBadge("user-id", 99L))
+                .isInstanceOf(BadgeException.class)
+                .extracting(exception -> ((BadgeException) exception).getErrorCode())
+                .isEqualTo(BadgeErrorCode.BADGE_NOT_ACQUIRED);
+    }
+
+    @Test
+    @DisplayName("대표 배지를 마이페이지 조합용 정보로 조회한다")
+    void getRepresentativeBadge() {
+        // Given
+        Badge badge = org.mockito.Mockito.mock(Badge.class);
+        when(badge.getBadgeId()).thenReturn(1L);
+        when(badge.getBadgeName()).thenReturn("첫 발자국");
+        when(badge.getBadgeUrl()).thenReturn("https://cdn.triplog.com/badge.png");
+        UsersBadge representative = org.mockito.Mockito.mock(UsersBadge.class);
+        when(representative.getBadge()).thenReturn(badge);
+        when(usersBadgeRepository.findRepresentativeByUsersId("user-id"))
+                .thenReturn(Optional.of(representative));
+
+        // When
+        Optional<RepresentativeBadgeInfo> result =
+                badgeService.getRepresentativeBadge("user-id");
+
+        // Then
+        assertThat(result).isPresent();
+        assertThat(result.orElseThrow().badgeId()).isEqualTo(1L);
+        assertThat(result.orElseThrow().badgeName()).isEqualTo("첫 발자국");
+        assertThat(result.orElseThrow().badgeUrl())
+                .isEqualTo("https://cdn.triplog.com/badge.png");
+    }
+
+    @Test
+    @DisplayName("한 이벤트에서 조건을 충족한 여러 뱃지를 최초 획득한다")
+    void acquireEligibleBadges() {
+        // Given
+        Badge first = org.mockito.Mockito.mock(Badge.class);
+        Badge second = org.mockito.Mockito.mock(Badge.class);
+        when(first.getBadgeId()).thenReturn(1L);
+        when(first.getBadgeName()).thenReturn("첫 발자국");
+        when(first.getBadgeTarget()).thenReturn("VISIT_COUNT");
+        when(first.getBadgeOperator()).thenReturn(">=");
+        when(first.getBadgeValue()).thenReturn(1);
+        when(second.getBadgeId()).thenReturn(2L);
+        when(second.getBadgeName()).thenReturn("여행 새싹");
+        when(second.getBadgeTarget()).thenReturn("VISIT_COUNT");
+        when(second.getBadgeOperator()).thenReturn(">=");
+        when(second.getBadgeValue()).thenReturn(5);
+        when(badgeRepository.findUnacquiredBadges("user-id"))
+                .thenReturn(List.of(first, second));
+        when(usersBadgeRepository.insertIfAbsent("user-id", 1L)).thenReturn(1);
+        when(usersBadgeRepository.insertIfAbsent("user-id", 2L)).thenReturn(1);
+
+        // When
+        List<AcquiredBadgeInfo> result = badgeService.acquireEligibleBadges(
+                "user-id",
+                new AchievementContext(Map.of("VISIT_COUNT", 5L))
+        );
+
+        // Then
+        assertThat(result).extracting(AcquiredBadgeInfo::badgeName)
+                .containsExactly("첫 발자국", "여행 새싹");
+    }
+
+    @Test
+    @DisplayName("이미 획득한 뱃지는 동시 판정에서도 획득 결과에 포함하지 않는다")
+    void acquireEligibleBadges_AlreadyAcquired() {
+        // Given
+        Badge badge = org.mockito.Mockito.mock(Badge.class);
+        when(badge.getBadgeId()).thenReturn(1L);
+        when(badge.getBadgeTarget()).thenReturn("VISIT_COUNT");
+        when(badge.getBadgeOperator()).thenReturn(">=");
+        when(badge.getBadgeValue()).thenReturn(1);
+        when(badgeRepository.findUnacquiredBadges("user-id")).thenReturn(List.of(badge));
+        when(usersBadgeRepository.insertIfAbsent("user-id", 1L)).thenReturn(0);
+
+        // When
+        List<AcquiredBadgeInfo> result = badgeService.acquireEligibleBadges(
+                "user-id",
+                new AchievementContext(Map.of("VISIT_COUNT", 1L))
+        );
+
+        // Then
+        assertThat(result).isEmpty();
+    }
 
     @Test
     @DisplayName("사용자가 획득한 배지 수를 조회한다")

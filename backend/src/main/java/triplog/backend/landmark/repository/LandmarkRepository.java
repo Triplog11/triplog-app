@@ -65,4 +65,44 @@ public interface LandmarkRepository extends JpaRepository<Landmark, Long> {
             "WHERE ucl.usersId = :usersId " +
             "GROUP BY tc.region.regionId")
     List<Object[]> countVisitedLandmarksByRegionAndUser(@Param("usersId") String usersId);
+
+    /**
+     * 특정 지역의 전체 랜드마크 수를 조회합니다.
+     *
+     * @param regionId 지역 식별자
+     * @return 전체 랜드마크 수
+     */
+    long countByTourismContentRegionRegionId(Long regionId);
+
+    /**
+     * 특정 사용자가 특정 지역에서 방문한 고유 랜드마크 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param regionId 지역 식별자
+     * @return 방문한 고유 랜드마크 수
+     */
+    @Query("SELECT COUNT(DISTINCT ucl.landmark.landmarkId) "
+            + "FROM UsersCardLandmark ucl "
+            + "JOIN ucl.landmark l "
+            + "JOIN l.tourismContent tc "
+            + "WHERE ucl.usersId = :usersId "
+            + "AND tc.region.regionId = :regionId")
+    long countVisitedLandmarksByRegionAndUser(
+            @Param("usersId") String usersId,
+            @Param("regionId") Long regionId
+    );
+
+    /** 시·도별 전체 랜드마크 수를 조회합니다. */
+    @Query("SELECT tc.region.legalRegionCode, COUNT(l) "
+            + "FROM Landmark l JOIN l.tourismContent tc "
+            + "GROUP BY tc.region.legalRegionCode")
+    List<Object[]> countLandmarksByProvince();
+
+    /** 사용자가 방문한 고유 랜드마크 수를 시·도별로 조회합니다. */
+    @Query("SELECT tc.region.legalRegionCode, COUNT(DISTINCT ucl.landmark.landmarkId) "
+            + "FROM UsersCardLandmark ucl "
+            + "JOIN ucl.landmark l JOIN l.tourismContent tc "
+            + "WHERE ucl.usersId = :usersId "
+            + "GROUP BY tc.region.legalRegionCode")
+    List<Object[]> countVisitedLandmarksByProvinceAndUser(@Param("usersId") String usersId);
 }

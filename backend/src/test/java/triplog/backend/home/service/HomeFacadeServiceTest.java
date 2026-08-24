@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import triplog.backend.landmark.service.LandmarkHomeCardInfo;
-import triplog.backend.landmark.service.LandmarkService;
+import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.mission.service.MissionHomeInfo;
 import triplog.backend.mission.service.MissionService;
 import triplog.backend.region.service.RegionHomeInfo;
@@ -43,7 +43,7 @@ class HomeFacadeServiceTest {
     private MissionService missionService;
 
     @Mock
-    private LandmarkService landmarkService;
+    private UsersCardLandmarkService usersCardLandmarkService;
 
     @Mock
     private RegionService regionService;
@@ -56,7 +56,7 @@ class HomeFacadeServiceTest {
                 usersService,
                 statsService,
                 missionService,
-                landmarkService,
+                usersCardLandmarkService,
                 regionService
         );
     }
@@ -98,7 +98,7 @@ class HomeFacadeServiceTest {
         given(usersService.findById(USERS_ID)).willReturn(users);
         given(statsService.getMyStats(USERS_ID)).willReturn(stats);
         given(missionService.getHomeMissions()).willReturn(List.of(mission));
-        given(landmarkService.getRecentObtainedCardInfo(USERS_ID, 3)).willReturn(List.of(card));
+        given(usersCardLandmarkService.getRecentObtainedCardInfo(USERS_ID, 3)).willReturn(List.of(card));
         given(regionService.getRecentVisitedRegionInfo(USERS_ID, 3)).willReturn(List.of(region));
 
         // When
@@ -124,7 +124,7 @@ class HomeFacadeServiceTest {
             assertThat(item.getVisitedAt()).isEqualTo("2026-07-01T10:00:00");
             assertThat(item.getVisitedCount()).isEqualTo(1);
         });
-        verify(landmarkService).getRecentObtainedCardInfo(USERS_ID, 3);
+        verify(usersCardLandmarkService).getRecentObtainedCardInfo(USERS_ID, 3);
         verify(regionService).getRecentVisitedRegionInfo(USERS_ID, 3);
     }
 
@@ -140,7 +140,7 @@ class HomeFacadeServiceTest {
                 2, 100, 100, "SILVER", 500
         ));
         given(missionService.getHomeMissions()).willReturn(List.of());
-        given(landmarkService.getRecentObtainedCardInfo(USERS_ID, 3)).willReturn(List.of());
+        given(usersCardLandmarkService.getRecentObtainedCardInfo(USERS_ID, 3)).willReturn(List.of());
         given(regionService.getRecentVisitedRegionInfo(USERS_ID, 3)).willReturn(List.of());
 
         // When

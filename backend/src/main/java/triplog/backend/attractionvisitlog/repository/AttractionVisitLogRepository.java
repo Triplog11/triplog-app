@@ -61,4 +61,23 @@ public interface AttractionVisitLogRepository extends JpaRepository<AttractionVi
             @Param("end") LocalDateTime end,
             @Param("visitType") String visitType
     );
+
+    /** 사용자가 특정 일반 관광지를 방문한 서로 다른 날짜 수를 조회합니다. */
+    @Query(value = """
+            SELECT COUNT(DISTINCT DATE(visited_at))
+            FROM attraction_visit_log
+            WHERE users_id = :usersId AND attraction_id = :attractionId
+            """, nativeQuery = true)
+    long countDistinctVisitDates(
+            @Param("usersId") String usersId,
+            @Param("attractionId") Long attractionId
+    );
+
+    /** 사용자의 토요일·일요일 일반 관광지 방문 인증 수를 조회합니다. */
+    @Query(value = """
+            SELECT COUNT(*)
+            FROM attraction_visit_log
+            WHERE users_id = :usersId AND DAYOFWEEK(visited_at) IN (1, 7)
+            """, nativeQuery = true)
+    long countWeekendVisits(@Param("usersId") String usersId);
 }

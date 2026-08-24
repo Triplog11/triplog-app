@@ -209,6 +209,7 @@ public class EventResponse {
         }
     }
 
+    /** 이벤트 일자를 API 날짜·시간 문자열로 변환합니다. */
     private static String toDateTimeText(LocalDate date) {
         return date == null
                 ? null

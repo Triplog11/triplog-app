@@ -3,12 +3,15 @@ package triplog.backend.stats.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import triplog.backend.stats.entity.Stats;
+import jakarta.persistence.LockModeType;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
@@ -20,6 +23,87 @@ import java.util.Optional;
 @Repository
 public interface StatsRepository extends JpaRepository<Stats, Long> {
 
+    String RANKING_METRIC_JOINS = """
+            FROM stats s
+            LEFT JOIN (
+                SELECT users_id, COUNT(DISTINCT landmark_id) AS landmark_count
+                FROM landmark_visit_log
+                WHERE (:periodStart IS NULL OR visited_at >= :periodStart)
+                GROUP BY users_id
+            ) landmark_metric ON landmark_metric.users_id = s.users_id
+            LEFT JOIN (
+                SELECT users_id, COUNT(DISTINCT attraction_id) AS attraction_count
+                FROM attraction_visit_log
+                WHERE (:periodStart IS NULL OR visited_at >= :periodStart)
+                GROUP BY users_id
+            ) attraction_metric ON attraction_metric.users_id = s.users_id
+            LEFT JOIN (
+                SELECT current_log.users_id,
+                       COUNT(DISTINCT current_log.region_id) AS region_count
+                FROM region_visit_log current_log
+                WHERE (:periodStart IS NULL OR current_log.visited_at >= :periodStart)
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM region_visit_log previous_log
+                      WHERE previous_log.users_id = current_log.users_id
+                        AND previous_log.region_id = current_log.region_id
+                        AND (
+                            previous_log.visited_at < current_log.visited_at
+                            OR (
+                                previous_log.visited_at = current_log.visited_at
+                                AND previous_log.region_visit_log_id
+                                    < current_log.region_visit_log_id
+                            )
+                        )
+                  )
+                GROUP BY current_log.users_id
+            ) region_metric ON region_metric.users_id = s.users_id
+            LEFT JOIN (
+                SELECT users_id, COUNT(*) AS conquest_count
+                FROM users_region
+                WHERE users_region_conquered = TRUE
+                  AND (:periodStart IS NULL OR users_region_conquered_at >= :periodStart)
+                GROUP BY users_id
+            ) conquest_metric ON conquest_metric.users_id = s.users_id
+            """;
+
+    String RANKING_ORDER = """
+            ORDER BY
+                CASE
+                    WHEN :rankingType = 'TOTAL' THEN s.overall_score
+                    WHEN :rankingType = 'MONTHLY' THEN s.month_score
+                END DESC,
+                COALESCE(landmark_metric.landmark_count, 0) DESC,
+                COALESCE(attraction_metric.attraction_count, 0) DESC,
+                COALESCE(region_metric.region_count, 0) DESC,
+                COALESCE(conquest_metric.conquest_count, 0) DESC,
+                CASE WHEN (
+                    CASE
+                        WHEN :rankingType = 'TOTAL' THEN s.overall_score_achieved_at
+                        WHEN :rankingType = 'MONTHLY' THEN s.month_score_achieved_at
+                    END
+                ) IS NULL THEN 1 ELSE 0 END ASC,
+                CASE
+                    WHEN :rankingType = 'TOTAL' THEN s.overall_score_achieved_at
+                    WHEN :rankingType = 'MONTHLY' THEN s.month_score_achieved_at
+                END ASC,
+                s.stats_id ASC
+            """;
+
+    /**
+     * 월간 Score가 남아 있는 모든 사용자의 월간 Score만 0으로 초기화합니다.
+     *
+     * @return 초기화된 사용자 통계 행 수
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Stats s
+            set s.monthScore = 0,
+                s.monthScoreAchievedAt = null
+            where s.monthScore <> 0 or s.monthScoreAchievedAt is not null
+            """)
+    int resetMonthlyScores();
+
     /**
      * 사용자 ID로 통계 정보를 조회합니다.
      *
@@ -29,20 +113,11 @@ public interface StatsRepository extends JpaRepository<Stats, Long> {
     Optional<Stats> findByUsersUsersId(String usersId);
 
     /**
-     * 지정한 누적 점수보다 높은 점수를 보유한 사용자 수를 조회합니다.
-     *
-     * @param overallScore 기준 누적 점수
-     * @return 기준 점수보다 높은 사용자 수
+     * 동일 사용자의 동시 보상 지급과 회수를 직렬화하기 위해 통계 행을 잠금 조회합니다.
      */
-    long countByOverallScoreGreaterThan(int overallScore);
-
-    /**
-     * 지정한 월간 점수보다 높은 점수를 보유한 사용자 수를 조회합니다.
-     *
-     * @param monthScore 기준 월간 점수
-     * @return 기준 점수보다 높은 사용자 수
-     */
-    long countByMonthScoreGreaterThan(int monthScore);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Stats s where s.users.usersId = :usersId")
+    Optional<Stats> findByUsersUsersIdForUpdate(@Param("usersId") String usersId);
 
     /**
      * 사용자 주소 프로필 정보를 수정합니다.
@@ -71,36 +146,48 @@ public interface StatsRepository extends JpaRepository<Stats, Long> {
     );
 
     /**
-     * 누적 점수 기준 내림차순으로 랭킹을 페이지 단위로 조회합니다.
+     * Score와 활동 동점 기준을 모두 적용하여 랭킹 목록을 조회합니다.
      *
-     * @param pageable 페이지네이션 정보
-     * @return 누적 점수 기준 정렬된 Stats 페이지
+     * @param rankingType TOTAL 또는 MONTHLY
+     * @param periodStart 월간 랭킹 집계 시작 시각. 전체 랭킹은 {@code null}
+     * @param pageable 페이지 정보
+     * @return 동점 기준이 적용된 랭킹 페이지
      */
-    Page<Stats> findAllByOrderByOverallScoreDesc(Pageable pageable);
+    @Query(
+            value = "SELECT s.* " + RANKING_METRIC_JOINS + RANKING_ORDER,
+            countQuery = "SELECT COUNT(*) FROM stats s WHERE :rankingType IS NOT NULL",
+            nativeQuery = true
+    )
+    Page<Stats> findRankings(
+            @Param("rankingType") String rankingType,
+            @Param("periodStart") LocalDateTime periodStart,
+            Pageable pageable
+    );
 
     /**
-     * 월간 점수 기준 내림차순으로 랭킹을 페이지 단위로 조회합니다.
+     * 목록과 동일한 정렬 기준으로 사용자의 현재 순위를 계산합니다.
      *
-     * @param pageable 페이지네이션 정보
-     * @return 월간 점수 기준 정렬된 Stats 페이지
+     * @param usersId 사용자 식별자
+     * @param rankingType TOTAL 또는 MONTHLY
+     * @param periodStart 월간 랭킹 집계 시작 시각. 전체 랭킹은 {@code null}
+     * @return 1부터 시작하는 순위
      */
-    Page<Stats> findAllByOrderByMonthScoreDesc(Pageable pageable);
-
-    /**
-     * 분기 점수 기준 내림차순으로 랭킹을 페이지 단위로 조회합니다.
-     *
-     * @param pageable 페이지네이션 정보
-     * @return 분기 점수 기준 정렬된 Stats 페이지
-     */
-    Page<Stats> findAllByOrderByQuarterScoreDesc(Pageable pageable);
-
-    /**
-     * 지정한 분기 점수보다 높은 점수를 보유한 사용자 수를 조회합니다.
-     *
-     * @param quarterScore 기준 분기 점수
-     * @return 기준 점수보다 높은 사용자 수
-     */
-    long countByQuarterScoreGreaterThan(int quarterScore);
+    @Query(value = """
+            SELECT ranked.ranking_position
+            FROM (
+                SELECT s.users_id,
+                       ROW_NUMBER() OVER (
+            """ + RANKING_ORDER + """
+                       ) AS ranking_position
+            """ + RANKING_METRIC_JOINS + """
+            ) ranked
+            WHERE ranked.users_id = :usersId
+            """, nativeQuery = true)
+    Optional<Long> findRankingPosition(
+            @Param("usersId") String usersId,
+            @Param("rankingType") String rankingType,
+            @Param("periodStart") LocalDateTime periodStart
+    );
 
     /**
      * 사용자에게 XP와 Score를 추가합니다.
@@ -116,13 +203,48 @@ public interface StatsRepository extends JpaRepository<Stats, Long> {
             set s.statsXp = s.statsXp + :xp,
                 s.overallScore = s.overallScore + :score,
                 s.monthScore = s.monthScore + :score,
-                s.quarterScore = s.quarterScore + :score
+                s.overallScoreAchievedAt = case
+                    when :score > 0 then :achievedAt
+                    else s.overallScoreAchievedAt
+                end,
+                s.monthScoreAchievedAt = case
+                    when :score > 0 then :achievedAt
+                    else s.monthScoreAchievedAt
+                end
             where s.users.usersId = :usersId
             """)
     int addXpAndScore(
             @Param("usersId") String usersId,
             @Param("xp") int xp,
-            @Param("score") int score
+            @Param("score") int score,
+            @Param("achievedAt") LocalDateTime achievedAt
+    );
+
+    /**
+     * 회수 대상 기간을 반영하여 XP와 누적·월간 Score를 각각 조정합니다.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Stats s
+            set s.statsXp = s.statsXp + :xpDelta,
+                s.overallScore = s.overallScore + :overallScoreDelta,
+                s.monthScore = s.monthScore + :monthScoreDelta,
+                s.overallScoreAchievedAt = case
+                    when :overallScoreDelta <> 0 then :adjustedAt
+                    else s.overallScoreAchievedAt
+                end,
+                s.monthScoreAchievedAt = case
+                    when :monthScoreDelta <> 0 then :adjustedAt
+                    else s.monthScoreAchievedAt
+                end
+            where s.users.usersId = :usersId
+            """)
+    int adjustRewards(
+            @Param("usersId") String usersId,
+            @Param("xpDelta") int xpDelta,
+            @Param("overallScoreDelta") int overallScoreDelta,
+            @Param("monthScoreDelta") int monthScoreDelta,
+            @Param("adjustedAt") LocalDateTime adjustedAt
     );
 
     /**

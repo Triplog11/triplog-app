@@ -26,6 +26,7 @@ public final class TourismBatchApplication {
     private static final int EXIT_SUCCESS = 0;
     private static final int EXIT_FAILURE = 1;
 
+    /** 인스턴스 생성을 막습니다. */
     private TourismBatchApplication() {
     }
 
@@ -56,12 +57,14 @@ public final class TourismBatchApplication {
         }
     }
 
+    /** Spring Batch 자동 실행 옵션을 애플리케이션 인자에 추가합니다. */
     private static String[] withBatchEnabled(String[] args) {
         String[] batchArgs = Arrays.copyOf(args, args.length + 1);
         batchArgs[args.length] = "--spring.batch.job.enabled=true";
         return batchArgs;
     }
 
+    /** 마지막 Job 실행 결과를 프로세스 종료 코드로 변환합니다. */
     private static int determineExitCode(ConfigurableApplicationContext context) {
         Environment environment = context.getEnvironment();
         String jobName = environment.getProperty("spring.batch.job.name");

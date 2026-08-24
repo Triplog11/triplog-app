@@ -125,6 +125,7 @@ public class SelectedContentSeedReader {
         }
     }
 
+    /** 공통 헤더·공백 처리 옵션으로 CSV 파서를 생성합니다. */
     private CSVParser csvParser(Reader reader) throws IOException {
         return CSVFormat.DEFAULT.builder()
                 .setHeader()
@@ -134,6 +135,7 @@ public class SelectedContentSeedReader {
                 .parse(reader);
     }
 
+    /** CSV 행에서 필수 콘텐츠 식별자를 읽고 빈 값을 거부합니다. */
     private String requiredContentId(CSVRecord record, String label) {
         String contentId = record.get(CONTENT_ID_HEADER);
         if (!StringUtils.hasText(contentId)) {
@@ -144,6 +146,7 @@ public class SelectedContentSeedReader {
         return contentId;
     }
 
+    /** 랜드마크 CSV의 희귀도 값을 카드 등급으로 변환합니다. */
     private CardTier parseCardTier(CSVRecord record, String contentId) {
         String rarity = record.get(RARITY_HEADER);
         if (!StringUtils.hasText(rarity)) {
@@ -160,12 +163,14 @@ public class SelectedContentSeedReader {
         }
     }
 
+    /** 중복 콘텐츠 식별자 오류를 생성합니다. */
     private InvalidSelectedContentSeedException duplicateContentId(String label, String contentId) {
         return new InvalidSelectedContentSeedException(
                 label + " CSV에 중복 content_id가 있습니다: " + contentId
         );
     }
 
+    /** CSV 읽기 오류를 선정 데이터 도메인 예외로 변환합니다. */
     private InvalidSelectedContentSeedException convertReadException(
             String label,
             Exception exception

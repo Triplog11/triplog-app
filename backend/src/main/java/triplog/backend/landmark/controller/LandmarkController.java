@@ -23,7 +23,8 @@ import triplog.backend.landmark.dto.response.LandmarkResponse.LandmarkDetailResp
 import triplog.backend.landmark.dto.response.LandmarkResponse.ObtainedCardListResponse;
 import triplog.backend.landmark.exception.LandmarkErrorCode;
 import triplog.backend.landmark.exception.LandmarkException;
-import triplog.backend.landmark.service.LandmarkService;
+import triplog.backend.landmark.service.LandmarkFacadeService;
+import triplog.backend.landmark.service.UsersCardLandmarkService;
 
 /**
  * 랜드마크(Landmark) 관련 API 요청을 처리하는 REST Controller입니다.
@@ -34,7 +35,8 @@ import triplog.backend.landmark.service.LandmarkService;
 @Tag(name = "Landmark API", description = "랜드마크 API")
 public class LandmarkController {
 
-    private final LandmarkService landmarkService;
+    private final LandmarkFacadeService landmarkFacadeService;
+    private final UsersCardLandmarkService usersCardLandmarkService;
 
     /**
      * 로그인 사용자가 획득한 카드 목록을 조회합니다.
@@ -70,7 +72,7 @@ public class LandmarkController {
         if (page < 0 || size < 1) {
             throw new LandmarkException(LandmarkErrorCode.INVALID_PAGE_REQUEST);
         }
-        return ResponseEntity.ok(landmarkService.getObtainedCards(
+        return ResponseEntity.ok(usersCardLandmarkService.getObtainedCards(
                 userDetails.getUsername(),
                 PageRequest.of(page, size)
         ));
@@ -132,6 +134,8 @@ public class LandmarkController {
             @Parameter(description = "랜드마크 ID", required = true, example = "301")
             @PathVariable Long landmarkId
     ) {
-        return ResponseEntity.ok(landmarkService.getLandmarkDetail(userDetails.getUsername(), landmarkId));
+        return ResponseEntity.ok(landmarkFacadeService.getLandmarkDetail(
+                userDetails.getUsername(), landmarkId
+        ));
     }
 }

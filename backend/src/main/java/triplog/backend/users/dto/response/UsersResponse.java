@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplog.backend.stats.dto.response.StatsResponse.MyStatsResponse;
+import triplog.backend.appellation.service.RepresentativeAppellationInfo;
+import triplog.backend.badge.service.RepresentativeBadgeInfo;
 import triplog.backend.users.entity.Users;
 
 /**
@@ -35,10 +37,10 @@ public class UsersResponse {
         @Schema(description = "현재 레벨", example = "3")
         private final Integer level;
 
-        @Schema(description = "현재 경험치", example = "340")
+        @Schema(description = "현재 누적 경험치", example = "240")
         private final Integer xp;
 
-        @Schema(description = "현재 티어", example = "BRONZE")
+        @Schema(description = "현재 티어", example = "SILVER")
         private final String tier;
 
         @Schema(description = "누적 스코어", example = "1250")
@@ -59,6 +61,12 @@ public class UsersResponse {
         @Schema(description = "수집 카드 수", example = "8")
         private final Integer collectedCardCount;
 
+        @Schema(description = "대표 칭호", nullable = true)
+        private final RepresentativeAppellationResponse representativeAppellation;
+
+        @Schema(description = "대표 배지", nullable = true)
+        private final RepresentativeBadgeResponse representativeBadge;
+
         public MyPageInfoResponse(
                 String nickname,
                 String profileUrl,
@@ -70,7 +78,9 @@ public class UsersResponse {
                 Integer totalCertificationCount,
                 Integer visitedRegionCount,
                 Integer acquiredBadgeCount,
-                Integer collectedCardCount
+                Integer collectedCardCount,
+                RepresentativeAppellationResponse representativeAppellation,
+                RepresentativeBadgeResponse representativeBadge
         ) {
             this.nickname = nickname;
             this.profileUrl = profileUrl;
@@ -83,6 +93,8 @@ public class UsersResponse {
             this.visitedRegionCount = visitedRegionCount;
             this.acquiredBadgeCount = acquiredBadgeCount;
             this.collectedCardCount = collectedCardCount;
+            this.representativeAppellation = representativeAppellation;
+            this.representativeBadge = representativeBadge;
         }
 
         /**
@@ -94,6 +106,8 @@ public class UsersResponse {
          * @param visitedRegionCount 방문 지역 수
          * @param acquiredBadgeCount 획득 배지 수
          * @param collectedCardCount 수집 카드 수
+         * @param representativeAppellation 대표 칭호 정보, 미지정 시 {@code null}
+         * @param representativeBadge 대표 배지 정보, 미지정 시 {@code null}
          * @return 마이페이지 정보 응답
          */
         public static MyPageInfoResponse toDto(
@@ -102,7 +116,9 @@ public class UsersResponse {
                 int totalCertificationCount,
                 int visitedRegionCount,
                 int acquiredBadgeCount,
-                int collectedCardCount
+                int collectedCardCount,
+                RepresentativeAppellationInfo representativeAppellation,
+                RepresentativeBadgeInfo representativeBadge
         ) {
             return new MyPageInfoResponse(
                     users.getNickname(),
@@ -115,7 +131,98 @@ public class UsersResponse {
                     totalCertificationCount,
                     visitedRegionCount,
                     acquiredBadgeCount,
-                    collectedCardCount
+                    collectedCardCount,
+                    RepresentativeAppellationResponse.toDto(representativeAppellation),
+                    RepresentativeBadgeResponse.toDto(representativeBadge)
+            );
+        }
+    }
+
+    /**
+     * 마이페이지에 표시할 대표 배지 정보입니다.
+     */
+    @Getter
+    @Schema(description = "대표 배지 정보")
+    public static class RepresentativeBadgeResponse {
+
+        @Schema(description = "대표 배지 ID", example = "1")
+        private final Long badgeId;
+
+        @Schema(description = "대표 배지 이름", example = "첫 발자국")
+        private final String badgeName;
+
+        @Schema(description = "대표 배지 이미지 URL",
+                example = "https://cdn.triplog.com/badges/first-step.png")
+        private final String badgeUrl;
+
+        /** 대표 배지 응답을 생성합니다. */
+        private RepresentativeBadgeResponse(
+                Long badgeId,
+                String badgeName,
+                String badgeUrl
+        ) {
+            this.badgeId = badgeId;
+            this.badgeName = badgeName;
+            this.badgeUrl = badgeUrl;
+        }
+
+        /**
+         * 대표 배지 조회 결과를 마이페이지 응답으로 변환합니다.
+         *
+         * @param representativeBadge 대표 배지 조회 결과
+         * @return 대표 배지 응답, 미지정 시 {@code null}
+         */
+        public static RepresentativeBadgeResponse toDto(
+                RepresentativeBadgeInfo representativeBadge
+        ) {
+            if (representativeBadge == null) {
+                return null;
+            }
+            return new RepresentativeBadgeResponse(
+                    representativeBadge.badgeId(),
+                    representativeBadge.badgeName(),
+                    representativeBadge.badgeUrl()
+            );
+        }
+    }
+
+    /**
+     * 마이페이지에 표시할 대표 칭호 정보입니다.
+     */
+    @Getter
+    @Schema(description = "대표 칭호 정보")
+    public static class RepresentativeAppellationResponse {
+
+        @Schema(description = "대표 칭호 ID", example = "2")
+        private final Long appellationId;
+
+        @Schema(description = "대표 칭호 이름", example = "랜드마크 탐험가")
+        private final String appellationName;
+
+        /** 대표 칭호 응답을 생성합니다. */
+        private RepresentativeAppellationResponse(
+                Long appellationId,
+                String appellationName
+        ) {
+            this.appellationId = appellationId;
+            this.appellationName = appellationName;
+        }
+
+        /**
+         * 대표 칭호 조회 결과를 마이페이지 응답으로 변환합니다.
+         *
+         * @param representativeAppellation 대표 칭호 조회 결과
+         * @return 대표 칭호 응답, 미지정 시 {@code null}
+         */
+        public static RepresentativeAppellationResponse toDto(
+                RepresentativeAppellationInfo representativeAppellation
+        ) {
+            if (representativeAppellation == null) {
+                return null;
+            }
+            return new RepresentativeAppellationResponse(
+                    representativeAppellation.appellationId(),
+                    representativeAppellation.appellationName()
             );
         }
     }

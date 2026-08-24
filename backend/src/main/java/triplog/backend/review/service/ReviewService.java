@@ -40,6 +40,17 @@ public interface ReviewService {
     int countCertifications(String usersId);
 
     /**
+     * 사용자가 방문 인증한 서로 다른 관광 콘텐츠 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 고유 관광 콘텐츠 수
+     */
+    int countUniqueVisitedContents(String usersId);
+
+    /** 사용자가 방문 인증한 서로 다른 시·도 수를 조회합니다. */
+    int countVisitedProvinces(String usersId);
+
+    /**
      * 방문 인증 리뷰를 등록합니다.
      *
      * @param usersId 사용자 식별자

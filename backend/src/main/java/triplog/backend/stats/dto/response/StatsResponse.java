@@ -38,17 +38,11 @@ public class StatsResponse {
         @Schema(description = "월간 순위", example = "34")
         private Integer monthlyRank;
 
-        @Schema(description = "분기 순위", example = "56")
-        private Integer quarterRank;
-
         @Schema(description = "누적 스코어", example = "1250")
         private Integer overallScore;
 
         @Schema(description = "월간 스코어", example = "220")
         private Integer monthScore;
-
-        @Schema(description = "분기 스코어", example = "680")
-        private Integer quarterScore;
 
         @Schema(description = "현재 레벨", example = "3")
         private Integer level;
@@ -134,7 +128,7 @@ public class StatsResponse {
         @Schema(description = "현재 레벨", example = "3")
         private Integer level;
 
-        @Schema(description = "현재 경험치", example = "340")
+        @Schema(description = "현재 누적 경험치", example = "240")
         private Integer xp;
 
         @Schema(description = "현재 티어", example = "BRONZE")
@@ -149,16 +143,16 @@ public class StatsResponse {
         @Schema(description = "다음 레벨", example = "4", nullable = true)
         private Integer nextLevel;
 
-        @Schema(description = "다음 레벨 필요 경험치", example = "500", nullable = true)
+        @Schema(description = "다음 레벨 달성에 필요한 누적 경험치", example = "300", nullable = true)
         private Integer requiredXp;
 
-        @Schema(description = "남은 경험치", example = "160", nullable = true)
+        @Schema(description = "다음 레벨까지 남은 경험치", example = "60", nullable = true)
         private Integer remainingXp;
 
-        @Schema(description = "다음 티어", example = "SILVER", nullable = true)
+        @Schema(description = "다음 티어", example = "GOLD", nullable = true)
         private String nextTier;
 
-        @Schema(description = "다음 티어 필요 점수", example = "500", nullable = true)
+        @Schema(description = "다음 티어 필요 누적 점수", example = "1500", nullable = true)
         private Integer requiredScore;
     }
 }

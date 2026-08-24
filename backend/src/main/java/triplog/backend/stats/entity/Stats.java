@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import triplog.backend.users.entity.Users;
 
+import java.time.LocalDateTime;
+
 /**
  * 사용자의 통계 정보(Stats)를 관리하는 엔티티 클래스입니다.
  * <p>
@@ -45,8 +47,11 @@ public class Stats {
     @Column(name = "month_score", nullable = false)
     private int monthScore;
 
-    @Column(name = "quarter_score", nullable = false)
-    private int quarterScore;
+    @Column(name = "overall_score_achieved_at")
+    private LocalDateTime overallScoreAchievedAt;
+
+    @Column(name = "month_score_achieved_at")
+    private LocalDateTime monthScoreAchievedAt;
 
     @Column(name = "current_tier", nullable = false, length = 20)
     private String currentTier;
@@ -64,7 +69,8 @@ public class Stats {
         this.addressGu = addressGu;
         this.overallScore = 0;
         this.monthScore = 0;
-        this.quarterScore = 0;
+        this.overallScoreAchievedAt = null;
+        this.monthScoreAchievedAt = null;
         this.currentTier = "BRONZE";
         this.statsLevel = 1;
         this.statsXp = 0;

@@ -11,6 +11,7 @@ import triplog.backend.region.dto.response.RegionResponse.RegionDetailResponse;
 import triplog.backend.region.dto.response.RegionResponse.RegionListResponse;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.service.LandmarkService;
+import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.entity.UsersRegion;
 import triplog.backend.region.exception.RegionErrorCode;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +39,8 @@ public class RegionServiceImpl implements RegionService {
     private final UsersRegionRepository usersRegionRepository;
     private final RegionVisitLogService regionVisitLogService;
     private final LandmarkService landmarkService;
+    private final UsersCardLandmarkService usersCardLandmarkService;
+    private final RegionConquestPolicyService regionConquestPolicyService;
 
     /**
      * 홈 화면에 노출할 최근 방문 지역 정보를 조회합니다.
@@ -68,6 +72,30 @@ public class RegionServiceImpl implements RegionService {
     @Transactional(readOnly = true)
     public int countVisitedRegions(String usersId) {
         return Math.toIntExact(usersRegionRepository.countByUsersId(usersId));
+    }
+
+    /**
+     * 사용자가 정복한 서로 다른 지역 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 정복 지역 수
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public int countConqueredRegions(String usersId) {
+        return Math.toIntExact(usersRegionRepository.countByUsersIdAndConqueredTrue(usersId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int countProvinces() {
+        return Math.toIntExact(regionRepository.countDistinctProvinces());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int countConsecutiveNewRegionVisits(String usersId) {
+        return regionVisitLogService.countConsecutiveNewRegionVisits(usersId);
     }
 
     /**
@@ -128,6 +156,18 @@ public class RegionServiceImpl implements RegionService {
     }
 
     /**
+     * 식별자로 지역을 조회합니다.
+     *
+     * @param regionId 지역 식별자
+     * @return 지역, 존재하지 않으면 빈 값
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Region> findOptionalById(Long regionId) {
+        return regionRepository.findById(regionId);
+    }
+
+    /**
      * 전국 지도 현황을 조회합니다.
      *
      * @param usersId 사용자 식별자
@@ -145,12 +185,22 @@ public class RegionServiceImpl implements RegionService {
         Set<Long> visitedRegionIds = userRegions.stream()
                 .map(ur -> ur.getRegion().getRegionId())
                 .collect(Collectors.toSet());
+        Set<Long> conqueredRegionIds = userRegions.stream()
+                .filter(UsersRegion::isConquered)
+                .map(ur -> ur.getRegion().getRegionId())
+                .collect(Collectors.toSet());
 
         Map<Long, Long> landmarkCountMap = landmarkService.countLandmarksByRegion();
 
         Map<Long, Long> visitedLandmarkMap = landmarkService.countVisitedLandmarksByRegionAndUser(usersId);
 
-        return NationwideMapResponse.toDto(allRegions, visitedRegionIds, landmarkCountMap, visitedLandmarkMap);
+        return NationwideMapResponse.toDto(
+                allRegions,
+                visitedRegionIds,
+                conqueredRegionIds,
+                landmarkCountMap,
+                visitedLandmarkMap
+        );
     }
 
     /**
@@ -172,12 +222,22 @@ public class RegionServiceImpl implements RegionService {
         Set<Long> visitedRegionIds = userRegions.stream()
                 .map(ur -> ur.getRegion().getRegionId())
                 .collect(Collectors.toSet());
+        Set<Long> conqueredRegionIds = userRegions.stream()
+                .filter(UsersRegion::isConquered)
+                .map(ur -> ur.getRegion().getRegionId())
+                .collect(Collectors.toSet());
 
         Map<Long, Long> landmarkCountMap = landmarkService.countLandmarksByRegion();
 
         Map<Long, Long> visitedLandmarkMap = landmarkService.countVisitedLandmarksByRegionAndUser(usersId);
 
-        return ProvinceMapResponse.toDto(provinceRegions, visitedRegionIds, landmarkCountMap, visitedLandmarkMap);
+        return ProvinceMapResponse.toDto(
+                provinceRegions,
+                visitedRegionIds,
+                conqueredRegionIds,
+                landmarkCountMap,
+                visitedLandmarkMap
+        );
     }
 
     /**
@@ -198,7 +258,8 @@ public class RegionServiceImpl implements RegionService {
 
         List<Landmark> landmarks = landmarkService.findByRegionId(regionId);
 
-        Set<Long> acquiredLandmarkIds = landmarkService.findAcquiredLandmarkIdsByUsersId(usersId);
+        Set<Long> acquiredLandmarkIds = usersCardLandmarkService
+                .findAcquiredLandmarkIdsByUsersId(usersId);
 
         return RegionDetailResponse.toDto(region, usersRegion, landmarks, acquiredLandmarkIds);
     }
@@ -248,6 +309,33 @@ public class RegionServiceImpl implements RegionService {
         }
 
         regionVisitLogService.createLog(usersId, regionId);
+    }
+
+    /**
+     * 정복 기준을 충족한 지역의 상태를 최초 1회만 변경합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param regionId 지역 식별자
+     * @param totalLandmarkCount 지역의 전체 랜드마크 수
+     * @param visitedLandmarkCount 사용자가 방문한 고유 랜드마크 수
+     * @return 이번 호출에서 최초 정복 처리되었으면 {@code true}
+     */
+    @Override
+    @Transactional
+    public boolean conquerIfEligible(
+            String usersId,
+            Long regionId,
+            long totalLandmarkCount,
+            long visitedLandmarkCount
+    ) {
+        if (!regionConquestPolicyService.isSatisfied(
+                totalLandmarkCount, visitedLandmarkCount
+        )) {
+            return false;
+        }
+        return usersRegionRepository.conquerIfNotConquered(
+                usersId, regionId, LocalDateTime.now()
+        ) == 1;
     }
 
     /**

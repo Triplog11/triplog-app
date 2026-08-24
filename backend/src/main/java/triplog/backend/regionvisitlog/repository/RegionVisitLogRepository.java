@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import triplog.backend.regionvisitlog.entity.RegionVisitLog;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * RegionVisitLog 영속성 처리를 담당하는 Repository입니다.
@@ -39,4 +40,7 @@ public interface RegionVisitLogRepository extends JpaRepository<RegionVisitLog, 
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    /** 사용자의 지역 방문 로그를 오래된 순서로 조회합니다. */
+    List<RegionVisitLog> findByUsersIdOrderByVisitedAtAscRegionVisitLogIdAsc(String usersId);
 }

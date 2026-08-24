@@ -26,6 +26,7 @@ import triplog.backend.bookmark.dto.response.BookmarkResponse.BookmarkListResult
 import triplog.backend.bookmark.dto.response.BookmarkResponse.CreateResponse;
 import triplog.backend.bookmark.dto.response.BookmarkResponse.DeleteResponse;
 import triplog.backend.bookmark.service.BookmarkService;
+import triplog.backend.bookmark.service.BookmarkFacadeService;
 import triplog.backend.common.exception.ErrorResponse;
 
 /**
@@ -38,6 +39,7 @@ import triplog.backend.common.exception.ErrorResponse;
 public class BookmarkController {
 
     private final BookmarkService bookmarkService;
+    private final BookmarkFacadeService bookmarkFacadeService;
 
     /**
      * 로그인 사용자의 북마크를 해제합니다.
@@ -152,7 +154,9 @@ public class BookmarkController {
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CreateRequest request
     ) {
-        return ResponseEntity.ok(bookmarkService.createBookmark(userDetails.getUsername(), request));
+        return ResponseEntity.ok(bookmarkFacadeService.createBookmark(
+                userDetails.getUsername(), request
+        ));
     }
 
     /**
@@ -252,6 +256,8 @@ public class BookmarkController {
             @Parameter(description = "페이지 크기", example = "10")
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(bookmarkService.getBookmarks(userDetails.getUsername(), bookmarkType, page, size));
+        return ResponseEntity.ok(bookmarkFacadeService.getBookmarks(
+                userDetails.getUsername(), bookmarkType, page, size
+        ));
     }
 }

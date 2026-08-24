@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import triplog.backend.badge.entity.Badge;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -78,4 +79,23 @@ public interface BadgeRepository extends JpaRepository<Badge, Long> {
      */
     @Query("select count(ub) from UsersBadge ub where ub.users.usersId = :usersId")
     long countAcquiredBadgesByUsersId(@Param("usersId") String usersId);
+
+    /**
+     * 사용자가 아직 획득하지 않은 뱃지 정책을 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 미획득 뱃지 목록
+     */
+    @Query("""
+            select b
+            from Badge b
+            where not exists (
+                select 1
+                from UsersBadge ub
+                where ub.badge = b
+                  and ub.users.usersId = :usersId
+            )
+            order by b.badgeId asc
+            """)
+    List<Badge> findUnacquiredBadges(@Param("usersId") String usersId);
 }

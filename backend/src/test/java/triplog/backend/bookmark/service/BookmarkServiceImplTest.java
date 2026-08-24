@@ -21,17 +21,14 @@ import triplog.backend.bookmark.entity.BookmarkType;
 import triplog.backend.bookmark.exception.BookmarkException;
 import triplog.backend.bookmark.repository.BookmarkRepository;
 import triplog.backend.event.entity.Event;
-import triplog.backend.event.repository.EventRepository;
 import triplog.backend.event.service.EventService;
 import triplog.backend.landmark.entity.Landmark;
-import triplog.backend.landmark.repository.LandmarkRepository;
 import triplog.backend.landmark.service.LandmarkService;
 import triplog.backend.region.entity.Region;
-import triplog.backend.region.repository.RegionRepository;
 import triplog.backend.region.service.RegionService;
 import triplog.backend.tourismcontent.entity.TourismContent;
 import triplog.backend.users.entity.Users;
-import triplog.backend.users.repository.UsersRepository;
+import triplog.backend.users.service.UsersService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -64,7 +61,7 @@ class BookmarkServiceImplTest {
     private BookmarkRepository bookmarkRepository;
 
     @Mock
-    private UsersRepository usersRepository;
+    private UsersService usersService;
 
     @Mock
     private RegionService regionService;
@@ -76,22 +73,14 @@ class BookmarkServiceImplTest {
     private EventService eventService;
 
     @Mock
-    private EventRepository eventRepository;
-
-    @Mock
-    private LandmarkRepository landmarkRepository;
-
-    @Mock
-    private RegionRepository regionRepository;
-
     private BookmarkServiceImpl bookmarkService;
+    private BookmarkFacadeService bookmarkFacadeService;
 
     @BeforeEach
     void setUp() {
-        bookmarkService = new BookmarkServiceImpl(
-                bookmarkRepository, usersRepository,
-                regionService, landmarkService, eventService,
-                eventRepository, landmarkRepository, regionRepository
+        bookmarkService = new BookmarkServiceImpl(bookmarkRepository);
+        bookmarkFacadeService = new BookmarkFacadeService(
+                bookmarkService, usersService, eventService, landmarkService, regionService
         );
     }
 
@@ -167,14 +156,15 @@ class BookmarkServiceImplTest {
         given(regionService.existsById(101L)).willReturn(true);
         given(bookmarkRepository.existsByUsersUsersIdAndBookmarkTypeAndBookmarkIdentifier(
                 USERS_ID, BookmarkType.REGION, 101L)).willReturn(false);
-        given(usersRepository.findById(USERS_ID)).willReturn(Optional.of(users));
+        given(usersService.findById(USERS_ID)).willReturn(users);
+        when(users.getUsersId()).thenReturn(USERS_ID);
         given(bookmarkRepository.save(any(Bookmark.class))).willReturn(saved);
         when(saved.getBookmarkId()).thenReturn(9001L);
         when(saved.getBookmarkType()).thenReturn(BookmarkType.REGION);
         when(saved.getBookmarkIdentifier()).thenReturn(101L);
 
         // when
-        CreateResponse response = bookmarkService.createBookmark(USERS_ID, request);
+        CreateResponse response = bookmarkFacadeService.createBookmark(USERS_ID, request);
 
         // then
         assertThat(response.getBookmarkId()).isEqualTo(9001L);
@@ -194,7 +184,7 @@ class BookmarkServiceImplTest {
         given(regionService.existsById(999L)).willReturn(false);
 
         // when / then
-        assertThatThrownBy(() -> bookmarkService.createBookmark(USERS_ID, request))
+        assertThatThrownBy(() -> bookmarkFacadeService.createBookmark(USERS_ID, request))
                 .isInstanceOf(BookmarkException.class)
                 .extracting("errorCode")
                 .isEqualTo(BOOKMARK_TARGET_NOT_FOUND);
@@ -214,7 +204,11 @@ class BookmarkServiceImplTest {
                 USERS_ID, BookmarkType.LANDMARK, 5L)).willReturn(true);
 
         // when / then
-        assertThatThrownBy(() -> bookmarkService.createBookmark(USERS_ID, request))
+        Users users = mock(Users.class);
+        given(usersService.findById(USERS_ID)).willReturn(users);
+        when(users.getUsersId()).thenReturn(USERS_ID);
+
+        assertThatThrownBy(() -> bookmarkFacadeService.createBookmark(USERS_ID, request))
                 .isInstanceOf(BookmarkException.class)
                 .extracting("errorCode")
                 .isEqualTo(BOOKMARK_ALREADY_EXISTS);
@@ -231,7 +225,7 @@ class BookmarkServiceImplTest {
         CreateRequest request = new CreateRequest("INVALID", 1L);
 
         // when / then
-        assertThatThrownBy(() -> bookmarkService.createBookmark(USERS_ID, request))
+        assertThatThrownBy(() -> bookmarkFacadeService.createBookmark(USERS_ID, request))
                 .isInstanceOf(BookmarkException.class)
                 .extracting("errorCode")
                 .isEqualTo(BOOKMARK_TARGET_NOT_FOUND);
@@ -260,10 +254,10 @@ class BookmarkServiceImplTest {
         Page<Bookmark> page = new PageImpl<>(List.of(bookmark), PageRequest.of(0, 10), 1);
         given(bookmarkRepository.findByUsersUsersIdAndBookmarkType(
                 eq(USERS_ID), eq(BookmarkType.EVENT), any(Pageable.class))).willReturn(page);
-        given(eventRepository.findById(201L)).willReturn(Optional.of(event));
+        given(eventService.findOptionalById(201L)).willReturn(Optional.of(event));
 
         // when
-        Object result = bookmarkService.getBookmarks(USERS_ID, "EVENT", 0, 10);
+        Object result = bookmarkFacadeService.getBookmarks(USERS_ID, "EVENT", 0, 10);
 
         // then
         assertThat(result).isInstanceOf(EventListResponse.class);
@@ -299,10 +293,10 @@ class BookmarkServiceImplTest {
         Page<Bookmark> page = new PageImpl<>(List.of(bookmark), PageRequest.of(0, 10), 1);
         given(bookmarkRepository.findByUsersUsersIdAndBookmarkType(
                 eq(USERS_ID), eq(BookmarkType.LANDMARK), any(Pageable.class))).willReturn(page);
-        given(landmarkRepository.findById(301L)).willReturn(Optional.of(landmark));
+        given(landmarkService.findOptionalByIdWithContent(301L)).willReturn(Optional.of(landmark));
 
         // when
-        Object result = bookmarkService.getBookmarks(USERS_ID, "LANDMARK", 0, 10);
+        Object result = bookmarkFacadeService.getBookmarks(USERS_ID, "LANDMARK", 0, 10);
 
         // then
         assertThat(result).isInstanceOf(LandmarkListResponse.class);
@@ -331,10 +325,10 @@ class BookmarkServiceImplTest {
         Page<Bookmark> page = new PageImpl<>(List.of(bookmark), PageRequest.of(0, 10), 1);
         given(bookmarkRepository.findByUsersUsersIdAndBookmarkType(
                 eq(USERS_ID), eq(BookmarkType.REGION), any(Pageable.class))).willReturn(page);
-        given(regionRepository.findById(101L)).willReturn(Optional.of(region));
+        given(regionService.findOptionalById(101L)).willReturn(Optional.of(region));
 
         // when
-        Object result = bookmarkService.getBookmarks(USERS_ID, "REGION", 0, 10);
+        Object result = bookmarkFacadeService.getBookmarks(USERS_ID, "REGION", 0, 10);
 
         // then
         assertThat(result).isInstanceOf(RegionListResponse.class);
@@ -355,7 +349,7 @@ class BookmarkServiceImplTest {
                 eq(USERS_ID), eq(BookmarkType.EVENT), any(Pageable.class))).willReturn(emptyPage);
 
         // when / then
-        assertThatThrownBy(() -> bookmarkService.getBookmarks(USERS_ID, "EVENT", 2, 10))
+        assertThatThrownBy(() -> bookmarkFacadeService.getBookmarks(USERS_ID, "EVENT", 2, 10))
                 .isInstanceOf(BookmarkException.class)
                 .extracting("errorCode")
                 .isEqualTo(BOOKMARK_LIST_NOT_FOUND);
@@ -368,7 +362,7 @@ class BookmarkServiceImplTest {
     @DisplayName("유효하지 않은 bookmarkType이면 예외가 발생한다")
     void getBookmarks_InvalidType() {
         // when / then
-        assertThatThrownBy(() -> bookmarkService.getBookmarks(USERS_ID, "INVALID", 0, 10))
+        assertThatThrownBy(() -> bookmarkFacadeService.getBookmarks(USERS_ID, "INVALID", 0, 10))
                 .isInstanceOf(BookmarkException.class)
                 .extracting("errorCode")
                 .isEqualTo(BOOKMARK_LIST_NOT_FOUND);

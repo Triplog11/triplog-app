@@ -1,6 +1,7 @@
 package triplog.backend.region.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import triplog.backend.region.entity.Region;
 
 import java.util.List;
@@ -30,4 +31,8 @@ public interface RegionRepository extends JpaRepository<Region, Long> {
      * @return 광역에 속한 지역 목록
      */
     List<Region> findByLegalRegionCode(String legalRegionCode);
+
+    /** 서비스에 등록된 서로 다른 시·도 수를 조회합니다. */
+    @Query("SELECT COUNT(DISTINCT r.legalRegionCode) FROM Region r")
+    long countDistinctProvinces();
 }

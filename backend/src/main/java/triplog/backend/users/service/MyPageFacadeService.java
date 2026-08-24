@@ -4,7 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.badge.service.BadgeService;
-import triplog.backend.landmark.service.LandmarkService;
+import triplog.backend.badge.service.RepresentativeBadgeInfo;
+import triplog.backend.appellation.service.AppellationService;
+import triplog.backend.appellation.service.RepresentativeAppellationInfo;
+import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.region.service.RegionService;
 import triplog.backend.review.service.ReviewService;
 import triplog.backend.stats.dto.response.StatsResponse.MyStatsResponse;
@@ -24,7 +27,8 @@ public class MyPageFacadeService {
     private final ReviewService reviewService;
     private final RegionService regionService;
     private final BadgeService badgeService;
-    private final LandmarkService landmarkService;
+    private final UsersCardLandmarkService usersCardLandmarkService;
+    private final AppellationService appellationService;
 
     /**
      * 로그인 사용자의 프로필과 활동 요약 정보를 조회합니다.
@@ -36,10 +40,16 @@ public class MyPageFacadeService {
     public MyPageInfoResponse getMyPageInfo(String usersId) {
         Users users = usersService.findById(usersId);
         MyStatsResponse stats = statsService.getMyStats(usersId);
+
         int totalCertificationCount = reviewService.countCertifications(usersId);
         int visitedRegionCount = regionService.countVisitedRegions(usersId);
         int acquiredBadgeCount = badgeService.countAcquiredBadges(usersId);
-        int collectedCardCount = landmarkService.countCollectedCards(usersId);
+        int collectedCardCount = usersCardLandmarkService.countCollectedCards(usersId);
+
+        RepresentativeAppellationInfo representativeAppellation =
+                appellationService.getRepresentativeAppellation(usersId).orElse(null);
+        RepresentativeBadgeInfo representativeBadge =
+                badgeService.getRepresentativeBadge(usersId).orElse(null);
 
         return MyPageInfoResponse.toDto(
                 users,
@@ -47,7 +57,9 @@ public class MyPageFacadeService {
                 totalCertificationCount,
                 visitedRegionCount,
                 acquiredBadgeCount,
-                collectedCardCount
+                collectedCardCount,
+                representativeAppellation,
+                representativeBadge
         );
     }
 }

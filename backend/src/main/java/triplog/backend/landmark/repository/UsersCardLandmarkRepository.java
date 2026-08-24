@@ -5,11 +5,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import triplog.backend.landmark.entity.UsersCardLandmark;
 
 import java.util.Optional;
 import java.util.Set;
+import java.time.LocalDateTime;
 
 /**
  * 사용자 랜드마크 카드 획득 정보 영속성 처리를 담당하는 Repository입니다.
@@ -74,6 +76,32 @@ public interface UsersCardLandmarkRepository extends JpaRepository<UsersCardLand
     Optional<UsersCardLandmark> findByUsersIdAndLandmarkLandmarkIdWithCard(
             @Param("usersId") String usersId,
             @Param("landmarkId") Long landmarkId
+    );
+
+    /**
+     * 사용자와 랜드마크의 유일 제약을 이용해 카드를 최초 1회만 저장합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param landmarkId 랜드마크 식별자
+     * @param cardId 카드 식별자
+     * @param visitedAt 카드 획득 일시
+     * @return 새로 저장한 경우 1, 이미 획득한 경우 0
+     */
+    @Modifying
+    @Query(value = """
+            INSERT IGNORE INTO users_card_landmark (
+                landmark_id,
+                card_id,
+                users_id,
+                users_card_landmark_visited_at,
+                users_card_landmark_count
+            ) VALUES (:landmarkId, :cardId, :usersId, :visitedAt, 1)
+            """, nativeQuery = true)
+    int insertIfAbsent(
+            @Param("usersId") String usersId,
+            @Param("landmarkId") Long landmarkId,
+            @Param("cardId") Long cardId,
+            @Param("visitedAt") LocalDateTime visitedAt
     );
 
 }

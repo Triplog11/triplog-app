@@ -68,6 +68,24 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     /**
+     * 사용자가 방문 인증한 서로 다른 관광 콘텐츠 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 고유 관광 콘텐츠 수
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public int countUniqueVisitedContents(String usersId) {
+        return Math.toIntExact(reviewRepository.countDistinctVisitedContents(usersId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int countVisitedProvinces(String usersId) {
+        return Math.toIntExact(reviewRepository.countDistinctVisitedProvinces(usersId));
+    }
+
+    /**
      * 검증된 관광 콘텐츠로 방문 인증 리뷰를 저장합니다.
      *
      * @param usersId 사용자 식별자

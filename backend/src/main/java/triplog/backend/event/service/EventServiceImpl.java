@@ -13,6 +13,8 @@ import triplog.backend.event.repository.EventRepository;
 import triplog.backend.tourismcontent.entity.TourismContent;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Optional;
+
 /**
  * {@link EventService}의 기본 구현체입니다.
  * 관광 콘텐츠를 기준으로 축제 상세정보를 생성하거나 갱신합니다.
@@ -60,6 +62,18 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     public boolean existsById(Long eventId) {
         return eventRepository.existsById(eventId);
+    }
+
+    /**
+     * 이벤트를 관광 콘텐츠와 함께 조회합니다.
+     *
+     * @param eventId 이벤트 식별자
+     * @return 이벤트, 존재하지 않으면 빈 값
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Event> findOptionalById(Long eventId) {
+        return eventRepository.findByEventId(eventId);
     }
 
     /**

@@ -14,7 +14,6 @@ public interface ReviewLogRepository extends JpaRepository<ReviewLog, Long> {
 
     /**
      * 지정 기간에 작성된 여행 기록 수를 이미지 조건에 따라 집계합니다.
-     * 제목과 내용이 모두 비어 있는 방문 인증은 여행 기록에서 제외합니다.
      *
      * @param usersId      사용자 식별자
      * @param start        집계 시작 시각
@@ -28,7 +27,6 @@ public interface ReviewLogRepository extends JpaRepository<ReviewLog, Long> {
             JOIN review review ON review.review_id = review_log.review_id
             WHERE review.users_id = :usersId
               AND review_log.review_created_at BETWEEN :start AND :end
-              AND (TRIM(review.review_title) <> '' OR TRIM(review.review_content) <> '')
               AND (:imageRequired = FALSE OR EXISTS (
                   SELECT 1 FROM image image
                   WHERE image.review_id = review.review_id
@@ -40,4 +38,28 @@ public interface ReviewLogRepository extends JpaRepository<ReviewLog, Long> {
             @Param("end") LocalDateTime end,
             @Param("imageRequired") boolean imageRequired
     );
+
+    /**
+     * 사용자의 유효한 전체 여행 기록 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 저장된 여행 기록 수
+     */
+    @Query(value = """
+            SELECT COUNT(DISTINCT review.review_id)
+            FROM review_log review_log
+            JOIN review review ON review.review_id = review_log.review_id
+            WHERE review.users_id = :usersId
+            """, nativeQuery = true)
+    long countTravelRecords(@Param("usersId") String usersId);
+
+    /** 사용자의 사진 포함 유효 여행 기록 수를 조회합니다. */
+    @Query(value = """
+            SELECT COUNT(DISTINCT review.review_id)
+            FROM review_log review_log
+            JOIN review review ON review.review_id = review_log.review_id
+            WHERE review.users_id = :usersId
+              AND EXISTS (SELECT 1 FROM image image WHERE image.review_id = review.review_id)
+            """, nativeQuery = true)
+    long countPhotoTravelRecords(@Param("usersId") String usersId);
 }

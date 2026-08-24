@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,6 +36,54 @@ import triplog.backend.common.exception.ErrorResponse;
 public class BadgeController {
 
     private final BadgeService badgeService;
+
+    /**
+     * 로그인 사용자가 획득한 배지를 대표 배지로 지정합니다.
+     *
+     * @param userDetails JWT 인증 사용자 정보
+     * @param badgeId 대표로 지정할 배지 식별자
+     * @return 지정된 대표 배지 정보
+     */
+    @PatchMapping("/{badgeId}/representative")
+    @Operation(
+            summary = "대표 배지 변경",
+            description = "로그인 사용자가 획득한 배지 중 하나를 대표 배지로 지정합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "대표 배지 변경 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BadgeResponse.RepresentativeResponse.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "badgeId": 1,
+                                      "badgeName": "첫 발자국",
+                                      "badgeUrl": "https://cdn.triplog.com/badges/first-step.png",
+                                      "representative": true
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "401", description = "로그인 필요",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "획득한 배지 없음",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value =
+                                    "{\"status\":404,\"message\":\"획득한 뱃지를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<BadgeResponse.RepresentativeResponse> changeRepresentativeBadge(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(description = "대표로 지정할 배지 ID", required = true, example = "1")
+            @PathVariable Long badgeId
+    ) {
+        return ResponseEntity.ok(
+                badgeService.changeRepresentativeBadge(
+                        userDetails.getUsername(), badgeId
+                )
+        );
+    }
 
     /**
      * 배지 상세 정보와 로그인 사용자의 획득 상태를 조회합니다.

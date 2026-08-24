@@ -70,7 +70,7 @@ public class NotificationResponse {
                     policyMap.get("CARD_ACQUIRED").isActive(),
                     policyMap.get("REGION_COMPLETED").isActive(),
                     policyMap.get("LANDMARK_VERIFIED").isActive(),
-                    policyMap.get("WEEKLY_MISSION_COMPLETED").isActive()
+                    policyMap.get("WEEKLY_MISSION_COMPLETE").isActive()
             );
         }
 
