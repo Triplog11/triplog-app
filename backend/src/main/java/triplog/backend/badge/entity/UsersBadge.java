@@ -53,4 +53,13 @@ public class UsersBadge {
         this.badge = badge;
         this.representative = representative;
     }
+
+    /**
+     * 현재 배지의 대표 배지 여부를 변경합니다.
+     *
+     * @param representative 대표 배지로 사용할지 여부
+     */
+    public void changeRepresentative(boolean representative) {
+        this.representative = representative;
+    }
 }

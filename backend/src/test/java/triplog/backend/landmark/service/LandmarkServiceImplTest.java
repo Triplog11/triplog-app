@@ -7,7 +7,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
-import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
@@ -59,14 +59,21 @@ class LandmarkServiceImplTest {
     private triplog.backend.landmarkvisitlog.service.LandmarkVisitLogService landmarkVisitLogService;
 
     private LandmarkServiceImpl landmarkService;
+    private UsersCardLandmarkServiceImpl usersCardLandmarkService;
+    private LandmarkFacadeService landmarkFacadeService;
 
     @BeforeEach
     void setUp() {
         landmarkService = new LandmarkServiceImpl(
                 landmarkRepository,
                 cardService,
-                usersCardLandmarkRepository,
                 landmarkVisitLogService
+        );
+        usersCardLandmarkService = new UsersCardLandmarkServiceImpl(
+                usersCardLandmarkRepository, landmarkService, cardService
+        );
+        landmarkFacadeService = new LandmarkFacadeService(
+                landmarkService, cardService, usersCardLandmarkService
         );
     }
 
@@ -77,7 +84,7 @@ class LandmarkServiceImplTest {
         given(usersCardLandmarkRepository.countByUsersId(USERS_ID)).willReturn(8L);
 
         // when
-        int result = landmarkService.countCollectedCards(USERS_ID);
+        int result = usersCardLandmarkService.countCollectedCards(USERS_ID);
 
         // then
         assertThat(result).isEqualTo(8);
@@ -170,7 +177,7 @@ class LandmarkServiceImplTest {
         given(cardService.findOptionalByLandmarkId(1L)).willReturn(Optional.of(card));
 
         // when
-        LandmarkDetailResponse response = landmarkService.getLandmarkDetail(USERS_ID, 1L);
+        LandmarkDetailResponse response = landmarkFacadeService.getLandmarkDetail(USERS_ID, 1L);
 
         // then
         assertThat(response.getLandmarkId()).isEqualTo(1L);
@@ -222,7 +229,7 @@ class LandmarkServiceImplTest {
         given(cardService.findOptionalByLandmarkId(1L)).willReturn(Optional.of(card));
 
         // when
-        LandmarkDetailResponse response = landmarkService.getLandmarkDetail(USERS_ID, 1L);
+        LandmarkDetailResponse response = landmarkFacadeService.getLandmarkDetail(USERS_ID, 1L);
 
         // then
         assertThat(response.getCardTier()).isEqualTo("RARE");
@@ -242,7 +249,7 @@ class LandmarkServiceImplTest {
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> landmarkService.getLandmarkDetail(USERS_ID, 999L))
+        assertThatThrownBy(() -> landmarkFacadeService.getLandmarkDetail(USERS_ID, 999L))
                 .isInstanceOf(LandmarkException.class)
                 .extracting("errorCode")
                 .isEqualTo(LANDMARK_DETAIL_NOT_FOUND);
@@ -296,7 +303,7 @@ class LandmarkServiceImplTest {
                 .willReturn(Set.of(1L, 3L, 5L));
 
         // when
-        Set<Long> result = landmarkService.findAcquiredLandmarkIdsByUsersId(USERS_ID);
+        Set<Long> result = usersCardLandmarkService.findAcquiredLandmarkIdsByUsersId(USERS_ID);
 
         // then
         assertThat(result).containsExactlyInAnyOrder(1L, 3L, 5L);
@@ -328,7 +335,8 @@ class LandmarkServiceImplTest {
                 .willReturn(new PageImpl<>(List.of(obtainedCard), pageable, 1));
 
         // When
-        ObtainedCardListResponse response = landmarkService.getObtainedCards(USERS_ID, pageable);
+        ObtainedCardListResponse response = usersCardLandmarkService
+                .getObtainedCards(USERS_ID, pageable);
 
         // Then
         assertThat(response.getPage()).isZero();
@@ -359,7 +367,8 @@ class LandmarkServiceImplTest {
                 .willReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // When
-        ObtainedCardListResponse response = landmarkService.getObtainedCards(USERS_ID, pageable);
+        ObtainedCardListResponse response = usersCardLandmarkService
+                .getObtainedCards(USERS_ID, pageable);
 
         // Then
         assertThat(response.getTotalElements()).isZero();
@@ -397,7 +406,7 @@ class LandmarkServiceImplTest {
 
         // when
         List<LandmarkHomeCardInfo> result =
-                landmarkService.getRecentObtainedCardInfo(USERS_ID, 3);
+                usersCardLandmarkService.getRecentObtainedCardInfo(USERS_ID, 3);
 
         // then
         assertThat(result).singleElement().satisfies(item -> {
@@ -411,39 +420,45 @@ class LandmarkServiceImplTest {
     @DisplayName("랜드마크에 고정된 카드를 사용자에게 최초 한 번 저장한다")
     void acquireCard_SavesLinkedCard() {
         // Given
-        Landmark landmark = mock(Landmark.class);
         Card card = mock(Card.class);
-        given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(USERS_ID, 1L))
-                .willReturn(Optional.empty());
-        given(landmarkRepository.findById(1L)).willReturn(Optional.of(landmark));
+        when(card.getCardId()).thenReturn(10L);
+        given(landmarkRepository.findByIdWithTourismContentAndRegion(1L))
+                .willReturn(Optional.of(mock(Landmark.class)));
         given(cardService.findByLandmarkId(1L)).willReturn(card);
+        given(usersCardLandmarkRepository.insertIfAbsent(
+                eq(USERS_ID), eq(1L), eq(10L), any(LocalDateTime.class)
+        )).willReturn(1);
 
         // When
-        boolean acquired = landmarkService.acquireCard(USERS_ID, 1L);
+        boolean acquired = usersCardLandmarkService.acquireCard(USERS_ID, 1L);
 
         // Then
-        ArgumentCaptor<UsersCardLandmark> acquisitionCaptor =
-                ArgumentCaptor.forClass(UsersCardLandmark.class);
-        verify(usersCardLandmarkRepository).save(acquisitionCaptor.capture());
         assertThat(acquired).isTrue();
-        assertThat(acquisitionCaptor.getValue().getLandmark()).isSameAs(landmark);
-        assertThat(acquisitionCaptor.getValue().getCard()).isSameAs(card);
-        assertThat(acquisitionCaptor.getValue().getUsersId()).isEqualTo(USERS_ID);
-        assertThat(acquisitionCaptor.getValue().getUsersCardLandmarkCount()).isEqualTo(1);
+        verify(usersCardLandmarkRepository).insertIfAbsent(
+                eq(USERS_ID), eq(1L), eq(10L), any(LocalDateTime.class)
+        );
     }
 
     @Test
     @DisplayName("이미 획득한 랜드마크 카드는 다시 저장하지 않는다")
     void acquireCard_AlreadyAcquired() {
         // Given
-        given(usersCardLandmarkRepository.findByUsersIdAndLandmarkLandmarkId(USERS_ID, 1L))
-                .willReturn(Optional.of(mock(UsersCardLandmark.class)));
+        Card card = mock(Card.class);
+        when(card.getCardId()).thenReturn(10L);
+        given(landmarkRepository.findByIdWithTourismContentAndRegion(1L))
+                .willReturn(Optional.of(mock(Landmark.class)));
+        given(cardService.findByLandmarkId(1L)).willReturn(card);
+        given(usersCardLandmarkRepository.insertIfAbsent(
+                eq(USERS_ID), eq(1L), eq(10L), any(LocalDateTime.class)
+        )).willReturn(0);
 
         // When
-        boolean acquired = landmarkService.acquireCard(USERS_ID, 1L);
+        boolean acquired = usersCardLandmarkService.acquireCard(USERS_ID, 1L);
 
         // Then
         assertThat(acquired).isFalse();
-        verify(usersCardLandmarkRepository, never()).save(any());
+        verify(usersCardLandmarkRepository).insertIfAbsent(
+                eq(USERS_ID), eq(1L), eq(10L), any(LocalDateTime.class)
+        );
     }
 }

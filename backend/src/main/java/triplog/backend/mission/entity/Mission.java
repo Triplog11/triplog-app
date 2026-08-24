@@ -96,41 +96,4 @@ public class Mission {
         this.missionXp = missionXp;
     }
 
-    /**
-     * 일일 미션을 생성합니다.
-     *
-     * @param missionName      미션 이름
-     * @param missionGroup     난이도 그룹
-     * @param missionTarget    미션 판정 대상
-     * @param missionValue     완료에 필요한 값
-     * @param missionFilter    미션 상세 조건
-     * @param missionDayStart  일일 시작 시각
-     * @param missionDayEnd    일일 종료 시각
-     * @param missionXp        완료 보상 경험치
-     * @return 생성된 일일 미션
-     */
-    public static Mission createDaily(
-            String missionName,
-            Integer missionGroup,
-            String missionTarget,
-            Integer missionValue,
-            String missionFilter,
-            LocalDateTime missionDayStart,
-            LocalDateTime missionDayEnd,
-            int missionXp
-    ) {
-        Mission mission = new Mission();
-        mission.missionName = missionName;
-        mission.missionGroup = missionGroup;
-        mission.missionType = "DAILY";
-        mission.missionTarget = missionTarget;
-        mission.missionOperator = ">=";
-        mission.missionValue = missionValue;
-        mission.missionFilter = missionFilter;
-        mission.missionWeekStart = missionDayStart;
-        mission.missionWeekEnd = missionDayEnd;
-        mission.missionScore = 0;
-        mission.missionXp = missionXp;
-        return mission;
-    }
 }

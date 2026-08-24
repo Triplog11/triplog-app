@@ -114,6 +114,8 @@ class AuthServiceImplTest {
         given(usersService.findById(usersId)).willReturn(createdUsers);
         given(usersService.createLocalUser(EMAIL, "여행자", "profile-default.png", ENCODED_PASSWORD))
                 .willReturn(new UsersSignupInfo(usersId, "여행자"));
+        given(statsService.createInitialStats(createdUsers, "수원시", "경기도", "팔달구"))
+                .willReturn(initialStats());
 
         // when
         SignupResponse response = authService.signup(request);
@@ -345,5 +347,9 @@ class AuthServiceImplTest {
         verify(jwtTokenProvider, never()).createTokenRecord(any());
         verify(refreshTokenRepository, never()).save(any());
         log.info("LOCAL 로그인 비밀번호 불일치 예외 테스트 완료");
+    }
+
+    private StatsLoginInfo initialStats() {
+        return new StatsLoginInfo(1, 30, "BRONZE");
     }
 }

@@ -75,7 +75,7 @@ class NotificationServiceImplTest {
                         policy("CARD_ACQUIRED", true),
                         policy("REGION_COMPLETED", true),
                         policy("LANDMARK_VERIFIED", false),
-                        policy("WEEKLY_MISSION_COMPLETED", true)
+                        policy("WEEKLY_MISSION_COMPLETE", true)
                 ));
 
         // when
@@ -127,7 +127,7 @@ class NotificationServiceImplTest {
                         policy("CARD_ACQUIRED", false),
                         policy("REGION_COMPLETED", false),
                         policy("LANDMARK_VERIFIED", true),
-                        policy("WEEKLY_MISSION_COMPLETED", false)
+                        policy("WEEKLY_MISSION_COMPLETE", false)
                 ));
 
         // when
@@ -140,7 +140,7 @@ class NotificationServiceImplTest {
         verify(notificationPolicyRepository).updateActive("CARD_ACQUIRED", true);
         verify(notificationPolicyRepository).updateActive("REGION_COMPLETED", true);
         verify(notificationPolicyRepository).updateActive("LANDMARK_VERIFIED", false);
-        verify(notificationPolicyRepository).updateActive("WEEKLY_MISSION_COMPLETED", true);
+        verify(notificationPolicyRepository).updateActive("WEEKLY_MISSION_COMPLETE", true);
         assertThat(response.getIsLevelUp()).isTrue();
         assertThat(response.getIsRankUp()).isTrue();
         assertThat(response.getIsBadgeAcquired()).isFalse();

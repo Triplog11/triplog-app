@@ -121,6 +121,7 @@ public class LandmarkResponse {
             this.acquiredAt = acquiredAt;
         }
 
+        /** 사용자 카드 획득 엔티티를 목록 항목으로 변환합니다. */
         private static ObtainedCardItem toDto(UsersCardLandmark obtainedCard) {
             Card card = obtainedCard.getCard();
             Landmark landmark = obtainedCard.getLandmark();

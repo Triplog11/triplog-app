@@ -41,6 +41,12 @@ public class UsersRegion {
     @Column(name = "users_region_visited_count", nullable = false)
     private Integer usersRegionVisitedCount;
 
+    @Column(name = "users_region_conquered", nullable = false)
+    private boolean conquered;
+
+    @Column(name = "users_region_conquered_at")
+    private LocalDateTime conqueredAt;
+
     /**
      * 사용자의 지역 방문 정보를 생성합니다.
      *
@@ -52,5 +58,7 @@ public class UsersRegion {
         this.usersId = usersId;
         this.usersRegionVisitedAt = LocalDateTime.now();
         this.usersRegionVisitedCount = 1;
+        this.conquered = false;
+        this.conqueredAt = null;
     }
 }

@@ -56,14 +56,12 @@ public class StatsController {
                                       "profileUrl": "https://cdn.triplog.com/profiles/user-001.png",
                                       "totalRank": 120,
                                       "monthlyRank": 34,
-                                      "quarterRank": 56,
                                       "overallScore": 1250,
                                       "monthScore": 220,
-                                      "quarterScore": 680,
                                       "level": 3,
-                                      "tier": "BRONZE",
-                                      "nextTier": "SILVER",
-                                      "requiredScore": 500
+                                      "tier": "SILVER",
+                                      "nextTier": "GOLD",
+                                      "requiredScore": 1500
                                     }
                                     """))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.",
@@ -96,7 +94,7 @@ public class StatsController {
     /**
      * 전체 랭킹을 페이지 단위로 조회합니다.
      *
-     * @param rankingType 랭킹 타입 (TOTAL, MONTHLY, QUARTER)
+     * @param rankingType 랭킹 타입 (TOTAL, MONTHLY)
      * @param page 페이지 번호 (0부터 시작)
      * @param size 페이지 크기
      * @return 전체 랭킹 목록
@@ -149,8 +147,8 @@ public class StatsController {
                                     value = "{\"status\":500,\"message\":\"서버 내부 오류가 발생했습니다.\"}")))
     })
     public ResponseEntity<RankingListResponse> getRankings(
-            @Parameter(description = "랭킹 타입", example = "TOTAL")
-            @RequestParam String rankingType,
+            @Parameter(description = "랭킹 타입 (TOTAL, MONTHLY)", example = "MONTHLY")
+            @RequestParam(defaultValue = "MONTHLY") String rankingType,
             @Parameter(description = "페이지 번호(0부터 시작)", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기", example = "10")
@@ -174,15 +172,15 @@ public class StatsController {
                             examples = @ExampleObject(value = """
                                     {
                                       "level": 3,
-                                      "xp": 340,
-                                      "currentTier": "BRONZE",
+                                      "xp": 240,
+                                      "currentTier": "SILVER",
                                       "overallScore": 1250,
                                       "monthScore": 220,
                                       "nextLevel": 4,
-                                      "requiredXp": 500,
-                                      "remainingXp": 160,
-                                      "nextTier": "SILVER",
-                                      "requiredScore": 500
+                                      "requiredXp": 300,
+                                      "remainingXp": 60,
+                                      "nextTier": "GOLD",
+                                      "requiredScore": 1500
                                     }
                                     """))),
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.",

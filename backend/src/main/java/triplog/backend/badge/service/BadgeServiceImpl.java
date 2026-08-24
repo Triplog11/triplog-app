@@ -11,6 +11,15 @@ import triplog.backend.badge.exception.BadgeErrorCode;
 import triplog.backend.badge.exception.BadgeException;
 import triplog.backend.badge.repository.BadgeQueryResult;
 import triplog.backend.badge.repository.BadgeRepository;
+import triplog.backend.badge.repository.UsersBadgeRepository;
+import triplog.backend.badge.entity.UsersBadge;
+import triplog.backend.achievement.service.AchievementContext;
+
+import static triplog.backend.achievement.service.AchievementConditionEvaluator.isSatisfied;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * 배지 조회 비즈니스 로직을 처리하는 서비스 구현체입니다.
@@ -21,6 +30,42 @@ import triplog.backend.badge.repository.BadgeRepository;
 public class BadgeServiceImpl implements BadgeService {
 
     private final BadgeRepository badgeRepository;
+    private final UsersBadgeRepository usersBadgeRepository;
+
+    @Override
+    public Optional<RepresentativeBadgeInfo> getRepresentativeBadge(String usersId) {
+        return usersBadgeRepository.findRepresentativeByUsersId(usersId)
+                .map(RepresentativeBadgeInfo::from);
+    }
+
+    /**
+     * 획득한 배지 행을 잠근 뒤 기존 대표 배지를 해제하고 요청 배지만 대표로 지정합니다.
+     *
+     * @throws BadgeException 사용자가 요청한 배지를 획득하지 않은 경우
+     */
+    @Override
+    @Transactional
+    public BadgeResponse.RepresentativeResponse changeRepresentativeBadge(
+            String usersId,
+            Long badgeId
+    ) {
+        List<UsersBadge> acquiredBadges =
+                usersBadgeRepository.findAllByUsersIdForUpdate(usersId);
+
+        UsersBadge representativeBadge = acquiredBadges.stream()
+                .filter(usersBadge -> usersBadge.getBadge().getBadgeId().equals(badgeId))
+                .findFirst()
+                .orElseThrow(() -> new BadgeException(
+                        BadgeErrorCode.BADGE_NOT_ACQUIRED
+                ));
+
+        acquiredBadges.forEach(usersBadge ->
+                usersBadge.changeRepresentative(usersBadge == representativeBadge));
+
+        return BadgeResponse.RepresentativeResponse.toDto(
+                representativeBadge.getBadge()
+        );
+    }
 
     /**
      * {@inheritDoc}
@@ -60,6 +105,39 @@ public class BadgeServiceImpl implements BadgeService {
     @Override
     public int countAcquiredBadges(String usersId) {
         return Math.toIntExact(badgeRepository.countAcquiredBadgesByUsersId(usersId));
+    }
+
+    /**
+     * DB에 등록된 미획득 뱃지 정책을 판정하고 조건을 충족한 뱃지를 최초 획득 처리합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param context 현재 사용자 활동 지표
+     * @return 이번 이벤트에서 최초 획득한 뱃지 목록
+     */
+    @Override
+    @Transactional
+    public List<AcquiredBadgeInfo> acquireEligibleBadges(
+            String usersId,
+            AchievementContext context
+    ) {
+        List<AcquiredBadgeInfo> acquiredBadges = new ArrayList<>();
+        for (triplog.backend.badge.entity.Badge badge
+                : badgeRepository.findUnacquiredBadges(usersId)) {
+            if (!isSatisfied(
+                    context,
+                    badge.getBadgeTarget(),
+                    badge.getBadgeOperator(),
+                    badge.getBadgeValue()
+            )) {
+                continue;
+            }
+            if (usersBadgeRepository.insertIfAbsent(usersId, badge.getBadgeId()) == 1) {
+                acquiredBadges.add(new AcquiredBadgeInfo(
+                        badge.getBadgeId(), badge.getBadgeName()
+                ));
+            }
+        }
+        return List.copyOf(acquiredBadges);
     }
 
     /**

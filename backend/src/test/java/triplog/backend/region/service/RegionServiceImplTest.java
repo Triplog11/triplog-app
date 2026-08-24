@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.service.LandmarkService;
+import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.region.dto.response.RegionResponse.NationwideMapResponse;
 import triplog.backend.region.dto.response.RegionResponse.ProvinceMapResponse;
 import triplog.backend.region.dto.response.RegionResponse.RegionDetailResponse;
@@ -31,6 +32,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static triplog.backend.region.exception.RegionErrorCode.*;
 
@@ -52,13 +55,26 @@ class RegionServiceImplTest {
     private LandmarkService landmarkService;
 
     @Mock
+    private UsersCardLandmarkService usersCardLandmarkService;
+
+    @Mock
     private triplog.backend.regionvisitlog.service.RegionVisitLogService regionVisitLogService;
+
+    @Mock
+    private RegionConquestPolicyService regionConquestPolicyService;
 
     private RegionServiceImpl regionService;
 
     @BeforeEach
     void setUp() {
-        regionService = new RegionServiceImpl(regionRepository, usersRegionRepository, regionVisitLogService, landmarkService);
+        regionService = new RegionServiceImpl(
+                regionRepository,
+                usersRegionRepository,
+                regionVisitLogService,
+                landmarkService,
+                usersCardLandmarkService,
+                regionConquestPolicyService
+        );
     }
 
     @Test
@@ -74,6 +90,60 @@ class RegionServiceImplTest {
         assertThat(result).isEqualTo(5);
     }
 
+    @Test
+    @DisplayName("정복 기준을 충족하고 아직 정복하지 않은 지역을 최초 정복 처리한다")
+    void conquerIfEligible_FirstConquest() {
+        // Given
+        given(regionConquestPolicyService.isSatisfied(4, 3)).willReturn(true);
+        given(usersRegionRepository.conquerIfNotConquered(
+                org.mockito.ArgumentMatchers.eq(USERS_ID),
+                org.mockito.ArgumentMatchers.eq(1L),
+                any(java.time.LocalDateTime.class)
+        )).willReturn(1);
+
+        // When
+        boolean result = regionService.conquerIfEligible(USERS_ID, 1L, 4, 3);
+
+        // Then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("이미 정복한 지역은 정복 기준을 충족해도 다시 정복 처리하지 않는다")
+    void conquerIfEligible_AlreadyConquered() {
+        // Given
+        given(regionConquestPolicyService.isSatisfied(4, 3)).willReturn(true);
+        given(usersRegionRepository.conquerIfNotConquered(
+                org.mockito.ArgumentMatchers.eq(USERS_ID),
+                org.mockito.ArgumentMatchers.eq(1L),
+                any(java.time.LocalDateTime.class)
+        )).willReturn(0);
+
+        // When
+        boolean result = regionService.conquerIfEligible(USERS_ID, 1L, 4, 3);
+
+        // Then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("정복 기준에 도달하지 못하면 정복 상태를 변경하지 않는다")
+    void conquerIfEligible_NotSatisfied() {
+        // Given
+        given(regionConquestPolicyService.isSatisfied(4, 2)).willReturn(false);
+
+        // When
+        boolean result = regionService.conquerIfEligible(USERS_ID, 1L, 4, 2);
+
+        // Then
+        assertThat(result).isFalse();
+        verify(usersRegionRepository, never()).conquerIfNotConquered(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                any(java.time.LocalDateTime.class)
+        );
+    }
+
     /**
      * 전국 지도 현황 조회 시 전체 지역과 완료율이 정확히 계산되는지 검증합니다.
      */
@@ -86,6 +156,7 @@ class RegionServiceImplTest {
 
         UsersRegion usersRegion = mock(UsersRegion.class);
         when(usersRegion.getRegion()).thenReturn(region1);
+        when(usersRegion.isConquered()).thenReturn(true);
 
         given(regionRepository.findAll()).willReturn(List.of(region1, region2));
         given(usersRegionRepository.findByUsersId(USERS_ID)).willReturn(List.of(usersRegion));
@@ -191,7 +262,7 @@ class RegionServiceImplTest {
         given(usersRegionRepository.findByUsersIdAndRegionRegionId(USERS_ID, 1L))
                 .willReturn(Optional.of(usersRegion));
         given(landmarkService.findByRegionId(1L)).willReturn(List.of(landmark));
-        given(landmarkService.findAcquiredLandmarkIdsByUsersId(USERS_ID)).willReturn(Set.of(101L));
+        given(usersCardLandmarkService.findAcquiredLandmarkIdsByUsersId(USERS_ID)).willReturn(Set.of(101L));
 
         // when
         RegionDetailResponse response = regionService.getRegionDetail(USERS_ID, 1L);
@@ -222,7 +293,7 @@ class RegionServiceImplTest {
         given(usersRegionRepository.findByUsersIdAndRegionRegionId(USERS_ID, 1L))
                 .willReturn(Optional.empty());
         given(landmarkService.findByRegionId(1L)).willReturn(List.of());
-        given(landmarkService.findAcquiredLandmarkIdsByUsersId(USERS_ID)).willReturn(Set.of());
+        given(usersCardLandmarkService.findAcquiredLandmarkIdsByUsersId(USERS_ID)).willReturn(Set.of());
 
         // when
         RegionDetailResponse response = regionService.getRegionDetail(USERS_ID, 1L);

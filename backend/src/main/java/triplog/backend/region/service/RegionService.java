@@ -8,6 +8,7 @@ import triplog.backend.region.entity.Region;
 import triplog.backend.region.exception.RegionNotFoundException;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Region 조회와 법정동 코드 동기화 기능을 정의하는 도메인 서비스입니다.
@@ -30,6 +31,20 @@ public interface RegionService {
      * @return 방문 지역 수
      */
     int countVisitedRegions(String usersId);
+
+    /**
+     * 사용자가 정복한 서로 다른 지역 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 정복 지역 수
+     */
+    int countConqueredRegions(String usersId);
+
+    /** 서비스에 등록된 서로 다른 시·도 수를 조회합니다. */
+    int countProvinces();
+
+    /** 최근 방문이 연속으로 새로운 지역이었던 횟수를 조회합니다. */
+    int countConsecutiveNewRegionVisits(String usersId);
 
     /**
      * 법정동 시도·시군구 코드 조합으로 Region을 조회합니다.
@@ -56,6 +71,14 @@ public interface RegionService {
      * @return 존재하면 true
      */
     boolean existsById(Long regionId);
+
+    /**
+     * 식별자로 지역을 조회합니다.
+     *
+     * @param regionId 지역 식별자
+     * @return 지역, 존재하지 않으면 빈 값
+     */
+    Optional<Region> findOptionalById(Long regionId);
 
     /**
      * 전국 지도 현황을 조회합니다.
@@ -100,6 +123,22 @@ public interface RegionService {
      * @param regionId 지역 식별자
      */
     void recordRegionVisit(String usersId, Long regionId);
+
+    /**
+     * 정복 기준을 충족한 지역을 최초 정복 상태로 변경합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @param regionId 지역 식별자
+     * @param totalLandmarkCount 지역의 전체 랜드마크 수
+     * @param visitedLandmarkCount 사용자가 방문한 고유 랜드마크 수
+     * @return 이번 호출에서 최초 정복 상태로 변경했으면 {@code true}
+     */
+    boolean conquerIfEligible(
+            String usersId,
+            Long regionId,
+            long totalLandmarkCount,
+            long visitedLandmarkCount
+    );
 
     /**
      * 사용자가 해당 지역을 방문한 적 있는지 확인합니다.

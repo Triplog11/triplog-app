@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import jakarta.validation.Valid;
@@ -127,6 +128,7 @@ public class ReviewController {
      * @param userDetails JWT 인증 사용자 정보
      * @param request     방문 인증 등록 요청 데이터 (JSON)
      * @param files       인증 이미지 파일 목록 (선택)
+     * @param idempotencyKey 네트워크 재시도 시 동일하게 전달할 요청 키
      * @return 방문 인증 등록 응답
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -165,8 +167,12 @@ public class ReviewController {
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "방문 인증 요청 데이터", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
             @Valid @RequestPart("request") CreateRequest request,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @Parameter(description = "중복 보상 방지 요청 키", example = "review-20260824-550e8400")
+            @RequestHeader("Idempotency-Key") String idempotencyKey
     ) {
-        return ResponseEntity.ok(reviewFacadeService.createReview(userDetails.getUsername(), request, files));
+        return ResponseEntity.ok(reviewFacadeService.createReview(
+                userDetails.getUsername(), request, files, idempotencyKey
+        ));
     }
 }

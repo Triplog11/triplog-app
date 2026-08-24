@@ -110,11 +110,10 @@ class MissionServiceImplTest {
     void getMyMissions_AllTypes() {
         // given
         Mission weekly = createMission(10L, "주간 미션", "WEEKLY", "REGION_VISIT", null);
-        Mission daily = createMission(11L, "일일 미션", "DAILY", "PHOTO_UPLOAD", null);
 
         given(missionRepository.findByMissionWeekStartLessThanEqualAndMissionWeekEndGreaterThanEqual(
                 any(LocalDateTime.class), any(LocalDateTime.class)))
-                .willReturn(List.of(weekly, daily));
+                .willReturn(List.of(weekly));
         given(usersMissionRepository.findByUsersUsersIdAndMissionMissionIdIn(eq(USERS_ID), any()))
                 .willReturn(List.of());
 
@@ -122,7 +121,7 @@ class MissionServiceImplTest {
         MyMissionListResponse response = missionService.getMyMissions(USERS_ID, null);
 
         // then
-        assertThat(response.getMissions()).hasSize(2);
+        assertThat(response.getMissions()).hasSize(1);
     }
 
     /**
@@ -188,17 +187,16 @@ class MissionServiceImplTest {
     void getMissions_AllTypes() {
         // given
         Mission weekly = createMission(10L, "주간 미션", "WEEKLY", "REGION_VISIT", null);
-        Mission daily = createMission(11L, "일일 미션", "DAILY", "PHOTO_UPLOAD", null);
 
         given(missionRepository.findByMissionWeekStartLessThanEqualAndMissionWeekEndGreaterThanEqual(
                 any(LocalDateTime.class), any(LocalDateTime.class)))
-                .willReturn(List.of(weekly, daily));
+                .willReturn(List.of(weekly));
 
         // when
         MissionListResponse response = missionService.getMissions(null);
 
         // then
-        assertThat(response.getMissions()).hasSize(2);
+        assertThat(response.getMissions()).hasSize(1);
     }
 
     /**
@@ -209,11 +207,11 @@ class MissionServiceImplTest {
     void getMissions_Empty() {
         // given
         given(missionRepository.findByMissionTypeAndMissionWeekStartLessThanEqualAndMissionWeekEndGreaterThanEqual(
-                eq("DAILY"), any(LocalDateTime.class), any(LocalDateTime.class)))
+                eq("WEEKLY"), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .willReturn(List.of());
 
         // when
-        MissionListResponse response = missionService.getMissions("DAILY");
+        MissionListResponse response = missionService.getMissions("WEEKLY");
 
         // then
         assertThat(response.getMissions()).isEmpty();

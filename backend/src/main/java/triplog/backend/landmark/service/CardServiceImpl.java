@@ -74,6 +74,12 @@ public class CardServiceImpl implements CardService {
                 .orElseThrow(() -> new LandmarkException(LANDMARK_CARD_NOT_FOUND));
     }
 
+    /**
+     * 카드 이미지 URL이 비어 있으면 설정된 기본 이미지를 사용합니다.
+     *
+     * @param cardUrl 입력 카드 이미지 URL
+     * @return 저장할 카드 이미지 URL
+     */
     private String resolveCardUrl(String cardUrl) {
         if (StringUtils.hasText(cardUrl)) {
             return cardUrl;

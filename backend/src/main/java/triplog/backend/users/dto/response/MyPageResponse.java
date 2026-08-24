@@ -86,7 +86,10 @@ public class MyPageResponse {
         @Schema(description = "활동 로그 식별자", example = "101")
         private final Long activityId;
 
-        @Schema(description = "활동 유형", allowableValues = {"BADGE", "LEVEL", "REGION", "LANDMARK"},
+        @Schema(description = "활동 유형", allowableValues = {
+                "ATTRACTION", "LANDMARK", "REGION", "CARD", "BADGE",
+                "TITLE", "LEVEL", "RANK", "MISSION"
+        },
                 example = "BADGE")
         private final String activityType;
 

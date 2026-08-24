@@ -63,14 +63,23 @@ public class UsersController {
                                       "nickname": "여행자",
                                       "profileUrl": "https://example.com/profile.png",
                                       "level": 3,
-                                      "xp": 340,
-                                      "tier": "BRONZE",
+                                      "xp": 240,
+                                      "tier": "SILVER",
                                       "overallScore": 1250,
                                       "monthScore": 220,
                                       "totalCertificationCount": 12,
                                       "visitedRegionCount": 5,
                                       "acquiredBadgeCount": 4,
-                                      "collectedCardCount": 8
+                                      "collectedCardCount": 8,
+                                      "representativeAppellation": {
+                                        "appellationId": 2,
+                                        "appellationName": "랜드마크 탐험가"
+                                      },
+                                      "representativeBadge": {
+                                        "badgeId": 1,
+                                        "badgeName": "첫 발자국",
+                                        "badgeUrl": "https://cdn.triplog.com/badges/first-step.png"
+                                      }
                                     }
                                     """))),
             @ApiResponse(responseCode = "401", description = "로그인 필요",

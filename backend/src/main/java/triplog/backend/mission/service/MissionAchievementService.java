@@ -2,6 +2,8 @@ package triplog.backend.mission.service;
 
 import triplog.backend.mission.entity.Mission;
 
+import java.util.List;
+
 /**
  * 사용자 행동에 따른 미션 완료 판정 기능을 정의하는 도메인 서비스입니다.
  */
@@ -21,21 +23,23 @@ public interface MissionAchievementService {
      *
      * @param usersId   사용자 식별자
      * @param contentType 방문 콘텐츠 유형
-     * @param firstVisit 최초 방문 여부
+     * @return 이번 판정에서 최초 완료된 미션 목록
      */
-    void evaluateVisit(String usersId, String contentType, boolean firstVisit);
+    List<MissionCompletionInfo> evaluateVisit(String usersId, String contentType);
 
     /**
      * 여행 기록 작성으로 달성 가능한 미션을 판정합니다.
      *
      * @param usersId 사용자 식별자
+     * @return 이번 판정에서 최초 완료된 미션 목록
      */
-    void evaluateReview(String usersId);
+    List<MissionCompletionInfo> evaluateReview(String usersId);
 
     /**
      * 지역 방문으로 달성 가능한 미션을 판정합니다.
      *
      * @param usersId 사용자 식별자
+     * @return 이번 판정에서 최초 완료된 미션 목록
      */
-    void evaluateRegion(String usersId);
+    List<MissionCompletionInfo> evaluateRegion(String usersId);
 }

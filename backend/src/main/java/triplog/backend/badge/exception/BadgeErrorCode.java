@@ -19,7 +19,10 @@ public enum BadgeErrorCode implements BaseErrorCode {
     BADGES_NOT_FOUND(HttpStatus.NOT_FOUND, "뱃지 정보들을 찾을 수 없습니다."),
 
     /** 요청한 ID에 해당하는 배지가 존재하지 않는 경우입니다. */
-    BADGE_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "뱃지 상세 정보를 찾을 수 없습니다.");
+    BADGE_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "뱃지 상세 정보를 찾을 수 없습니다."),
+
+    /** 사용자가 대표로 지정하려는 배지를 아직 획득하지 않은 경우입니다. */
+    BADGE_NOT_ACQUIRED(HttpStatus.NOT_FOUND, "획득한 뱃지를 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

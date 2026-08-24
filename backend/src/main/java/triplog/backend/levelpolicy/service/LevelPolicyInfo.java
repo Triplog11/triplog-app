@@ -6,7 +6,7 @@ package triplog.backend.levelpolicy.service;
  * Stats 도메인이 LevelPolicy 엔티티에 직접 의존하지 않도록 서비스 반환 계약으로 사용합니다.
  *
  * @param nextLevel 다음 레벨
- * @param requiredXp 다음 레벨 달성 조건 경험치
+ * @param requiredXp 다음 레벨 달성에 필요한 누적 경험치
  */
 public record LevelPolicyInfo(
         Integer nextLevel,

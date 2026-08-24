@@ -24,6 +24,7 @@ public class ReviewResponse {
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
+    /** 리뷰 생성 시각을 API 문자열로 변환합니다. */
     private static String formatCreatedAt(LocalDateTime createdAt) {
         return createdAt == null ? null : createdAt.format(DATE_TIME_FORMATTER);
     }
@@ -216,6 +217,7 @@ public class ReviewResponse {
             this.createdAt = createdAt;
         }
 
+        /** 리뷰 목록 조회 결과를 API 목록 항목으로 변환합니다. */
         private static ListItem toDto(ReviewListQueryResult result) {
             return new ListItem(
                     result.getReviewId(),

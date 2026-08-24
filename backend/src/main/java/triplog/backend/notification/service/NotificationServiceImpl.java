@@ -41,7 +41,7 @@ public class NotificationServiceImpl implements NotificationService {
             "CARD_ACQUIRED",
             "REGION_COMPLETED",
             "LANDMARK_VERIFIED",
-            "WEEKLY_MISSION_COMPLETED"
+            "WEEKLY_MISSION_COMPLETE"
     );
 
     /**
@@ -96,7 +96,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationPolicyRepository.updateActive("REGION_COMPLETED", request.getIsRegionCompleted());
         notificationPolicyRepository.updateActive("LANDMARK_VERIFIED", request.getIsLandmarkVerified());
         notificationPolicyRepository.updateActive(
-                "WEEKLY_MISSION_COMPLETED",
+                "WEEKLY_MISSION_COMPLETE",
                 request.getIsWeeklyMissonCompleted()
         );
 

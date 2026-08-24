@@ -104,6 +104,7 @@ public class HomeResponse {
             this.levelPolicy = levelPolicy;
         }
 
+        /** 사용자명과 통계로 홈 레벨 정보를 생성합니다. */
         private static LevelInformation toDto(String nickname, MyStatsResponse stats) {
             return new LevelInformation(
                     stats.getLevel(),
@@ -131,6 +132,7 @@ public class HomeResponse {
             this.overallScore = overallScore;
         }
 
+        /** 사용자 통계로 홈 랭크 정보를 생성합니다. */
         private static RankInformation toDto(MyStatsResponse stats) {
             return new RankInformation(
                     stats.getCurrentTier(),
@@ -185,6 +187,7 @@ public class HomeResponse {
             this.missionXp = missionXp;
         }
 
+        /** 미션 조회 정보를 홈 미션 항목으로 변환합니다. */
         private static MissionInformation toDto(MissionHomeInfo mission) {
             return new MissionInformation(
                     mission.missionId(),
@@ -232,6 +235,7 @@ public class HomeResponse {
             this.cardUrl = cardUrl;
         }
 
+        /** 최근 획득 카드 정보를 홈 카드 항목으로 변환합니다. */
         private static CardInformation toDto(LandmarkHomeCardInfo card) {
             return new CardInformation(
                     card.landmarkId(),
@@ -274,6 +278,7 @@ public class HomeResponse {
             this.visitedCount = visitedCount;
         }
 
+        /** 최근 방문 지역 정보를 홈 지역 항목으로 변환합니다. */
         private static RegionInformation toDto(RegionHomeInfo region) {
             return new RegionInformation(
                     region.regionId(),
@@ -286,6 +291,7 @@ public class HomeResponse {
         }
     }
 
+    /** 날짜·시간 값을 API 문자열로 변환합니다. */
     private static String format(LocalDateTime value) {
         return value == null ? null : value.format(DATE_TIME_FORMATTER);
     }

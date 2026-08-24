@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.home.dto.response.HomeResponse.HomeInfoResponse;
 import triplog.backend.landmark.service.LandmarkHomeCardInfo;
-import triplog.backend.landmark.service.LandmarkService;
+import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.mission.service.MissionHomeInfo;
 import triplog.backend.mission.service.MissionService;
 import triplog.backend.region.service.RegionHomeInfo;
@@ -30,7 +30,7 @@ public class HomeFacadeService {
     private final UsersService usersService;
     private final StatsService statsService;
     private final MissionService missionService;
-    private final LandmarkService landmarkService;
+    private final UsersCardLandmarkService usersCardLandmarkService;
     private final RegionService regionService;
 
     /**
@@ -45,7 +45,7 @@ public class HomeFacadeService {
         MyStatsResponse stats = statsService.getMyStats(usersId);
         List<MissionHomeInfo> missions = missionService.getHomeMissions();
         List<LandmarkHomeCardInfo> cards =
-                landmarkService.getRecentObtainedCardInfo(usersId, HOME_CARD_LIMIT);
+                usersCardLandmarkService.getRecentObtainedCardInfo(usersId, HOME_CARD_LIMIT);
         List<RegionHomeInfo> regions =
                 regionService.getRecentVisitedRegionInfo(usersId, HOME_REGION_LIMIT);
 

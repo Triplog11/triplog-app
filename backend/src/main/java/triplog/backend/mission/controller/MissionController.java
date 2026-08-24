@@ -87,7 +87,7 @@ public class MissionController {
     })
     public ResponseEntity<MyMissionListResponse> getMyMissions(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "미션 타입 (WEEKLY, DAILY), 미입력 시 전체 조회", example = "WEEKLY")
+            @Parameter(description = "미션 타입 (WEEKLY), 미입력 시 전체 조회", example = "WEEKLY")
             @RequestParam(required = false) String missionType
     ) {
         return ResponseEntity.ok(missionService.getMyMissions(userDetails.getUsername(), missionType));
@@ -144,7 +144,7 @@ public class MissionController {
                                     value = "{\"status\":500,\"message\":\"서버 내부 오류가 발생했습니다.\"}")))
     })
     public ResponseEntity<MissionListResponse> getMissions(
-            @Parameter(description = "미션 타입 (WEEKLY, DAILY), 미입력 시 전체 조회", example = "WEEKLY")
+            @Parameter(description = "미션 타입 (WEEKLY), 미입력 시 전체 조회", example = "WEEKLY")
             @RequestParam(required = false) String missionType
     ) {
         return ResponseEntity.ok(missionService.getMissions(missionType));

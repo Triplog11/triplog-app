@@ -9,7 +9,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import triplog.backend.users.repository.ActivityHistoryQueryResult;
-import triplog.backend.users.repository.ActivityHistoryRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,13 +26,13 @@ class ActivityHistoryFacadeServiceTest {
     private static final String USERS_ID = "013d613e-de7d-4a31-8661-ba8e65ff14c6";
 
     @Mock
-    private ActivityHistoryRepository activityHistoryRepository;
+    private ActivityHistoryService activityHistoryService;
 
     private ActivityHistoryFacadeService activityHistoryFacadeService;
 
     @BeforeEach
     void setUp() {
-        activityHistoryFacadeService = new ActivityHistoryFacadeService(activityHistoryRepository);
+        activityHistoryFacadeService = new ActivityHistoryFacadeService(activityHistoryService);
     }
 
     @Test
@@ -50,7 +49,7 @@ class ActivityHistoryFacadeServiceTest {
                 30,
                 LocalDateTime.of(2026, 8, 23, 14, 30)
         );
-        given(activityHistoryRepository.findByUsersId(USERS_ID, pageable))
+        given(activityHistoryService.getHistory(USERS_ID, pageable))
                 .willReturn(new PageImpl<>(List.of(activity), pageable, 24));
 
         // When
@@ -70,6 +69,6 @@ class ActivityHistoryFacadeServiceTest {
         assertThat(item.getScore()).isEqualTo(100);
         assertThat(item.getXp()).isEqualTo(30);
         assertThat(item.getCreatedAt()).isEqualTo("2026-08-23T14:30:00");
-        verify(activityHistoryRepository).findByUsersId(USERS_ID, pageable);
+        verify(activityHistoryService).getHistory(USERS_ID, pageable);
     }
 }

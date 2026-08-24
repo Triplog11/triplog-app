@@ -58,6 +58,12 @@ public record MissionHomeInfo(
     /**
      * JSON 문자열 값이 DB에서 따옴표를 포함해 조회되는 경우 API 표시값만 추출합니다.
      */
+    /**
+     * JSON 스칼라 문자열의 양끝 따옴표를 제거합니다.
+     *
+     * @param value JSON 문자열 표현
+     * @return 화면에 표시할 문자열 값
+     */
     private static String stripJsonQuotes(String value) {
         if (value != null && value.startsWith("\"") && value.endsWith("\"")) {
             return value.substring(1, value.length() - 1);

@@ -49,6 +49,7 @@ public class RegionResponse {
 
         public static NationwideMapResponse toDto(List<Region> allRegions,
                                                   Set<Long> visitedRegionIds,
+                                                  Set<Long> conqueredRegionIds,
                                                   Map<Long, Long> landmarkCountMap,
                                                   Map<Long, Long> visitedLandmarkMap) {
             int totalRegionCount = allRegions.size();
@@ -67,7 +68,7 @@ public class RegionResponse {
                 double completionRate = totalLandmarks > 0
                         ? Math.round(visitedLandmarks * 10000.0 / totalLandmarks) / 100.0
                         : 0.0;
-                boolean completed = totalLandmarks > 0 && visitedLandmarks >= totalLandmarks;
+                boolean completed = conqueredRegionIds.contains(regionId);
 
                 if (visited) {
                     visitedRegionCount++;
@@ -118,6 +119,7 @@ public class RegionResponse {
 
         public static ProvinceMapResponse toDto(List<Region> regions,
                                                 Set<Long> visitedRegionIds,
+                                                Set<Long> conqueredRegionIds,
                                                 Map<Long, Long> landmarkCountMap,
                                                 Map<Long, Long> visitedLandmarkMap) {
             int totalRegionCount = regions.size();
@@ -136,7 +138,7 @@ public class RegionResponse {
                 double completionRate = totalLandmarks > 0
                         ? Math.round(visitedLandmarks * 10000.0 / totalLandmarks) / 100.0
                         : 0.0;
-                boolean completed = totalLandmarks > 0 && visitedLandmarks >= totalLandmarks;
+                boolean completed = conqueredRegionIds.contains(regionId);
 
                 if (visited) {
                     visitedRegionCount++;

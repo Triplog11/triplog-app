@@ -7,6 +7,8 @@ import triplog.backend.event.dto.response.EventResponse.EventListResponse;
 import triplog.backend.event.exception.InvalidEventContentTypeException;
 import triplog.backend.tourismcontent.entity.TourismContent;
 
+import java.util.Optional;
+
 /**
  * Event 생성과 축제 상세정보 갱신 기능을 정의하는 도메인 서비스입니다.
  */
@@ -29,6 +31,14 @@ public interface EventService {
      * @return 존재하면 true
      */
     boolean existsById(Long eventId);
+
+    /**
+     * 이벤트를 관광 콘텐츠와 함께 조회합니다.
+     *
+     * @param eventId 이벤트 식별자
+     * @return 이벤트, 존재하지 않으면 빈 값
+     */
+    Optional<Event> findOptionalById(Long eventId);
 
     /**
      * 이벤트 상세 정보를 조회합니다.

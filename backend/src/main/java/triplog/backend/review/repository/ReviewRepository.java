@@ -24,6 +24,21 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     long countByUsersId(String usersId);
 
     /**
+     * 사용자가 방문 인증한 서로 다른 관광 콘텐츠 수를 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 고유 관광 콘텐츠 수
+     */
+    @Query("SELECT COUNT(DISTINCT r.tourismContent.tourismContentId) "
+            + "FROM Review r WHERE r.usersId = :usersId")
+    long countDistinctVisitedContents(@Param("usersId") String usersId);
+
+    /** 사용자가 방문 인증한 서로 다른 시·도 수를 조회합니다. */
+    @Query("SELECT COUNT(DISTINCT r.tourismContent.region.legalRegionCode) "
+            + "FROM Review r WHERE r.usersId = :usersId")
+    long countDistinctVisitedProvinces(@Param("usersId") String usersId);
+
+    /**
      * 로그인 사용자의 방문 인증 목록을 최신 생성순으로 조회합니다.
      * 첨부 이미지와 리뷰 로그가 여러 건이면 최초 등록 데이터를 대표값으로 사용합니다.
      *

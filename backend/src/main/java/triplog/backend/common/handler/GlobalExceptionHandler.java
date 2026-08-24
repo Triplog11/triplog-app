@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import triplog.backend.bookmark.exception.BookmarkException;
+import triplog.backend.appellation.exception.AppellationException;
 import triplog.backend.common.auth.exception.AuthException;
 import triplog.backend.badge.exception.BadgeException;
 import triplog.backend.common.exception.CommonErrorCode;
@@ -20,6 +21,7 @@ import triplog.backend.fcmtoken.exception.FcmTokenException;
 import triplog.backend.event.exception.EventException;
 import triplog.backend.image.exception.ImageException;
 import triplog.backend.landmark.exception.LandmarkException;
+import triplog.backend.levelpolicy.exception.LevelPolicyException;
 import triplog.backend.mission.exception.MissionException;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.rankpolicy.exception.RankPolicyException;
@@ -39,6 +41,30 @@ import static triplog.backend.common.exception.ErrorResponse.toResponseEntity;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * 레벨 정책 설정 예외를 공통 오류 응답으로 변환합니다.
+     *
+     * @param e 레벨 정책 조회 또는 계산 중 발생한 예외
+     * @return 레벨 정책 오류 응답
+     */
+    @ExceptionHandler(LevelPolicyException.class)
+    protected ResponseEntity<ErrorResponse> handleLevelPolicyException(LevelPolicyException e) {
+        log.error("레벨 정책 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
+
+    /**
+     * 칭호 도메인 비즈니스 예외를 공통 오류 응답으로 변환합니다.
+     *
+     * @param e 칭호 도메인에서 발생한 예외
+     * @return 칭호 오류 코드에 해당하는 HTTP 상태와 메시지를 포함한 응답
+     */
+    @ExceptionHandler(AppellationException.class)
+    protected ResponseEntity<ErrorResponse> handleAppellationException(AppellationException e) {
+        log.warn("칭호 도메인 예외 발생: {}", e.getErrorCode());
+        return toResponseEntity(e.getErrorCode());
+    }
 
     /**
      * 이벤트 도메인 비즈니스 예외를 공통 오류 응답으로 변환합니다.
