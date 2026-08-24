@@ -43,12 +43,18 @@ public class LandmarkVisitLogServiceImpl implements LandmarkVisitLogService {
         landmarkVisitLogRepository.save(new LandmarkVisitLog(usersId, landmarkId));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public long countDistinctVisitDates(String usersId, Long landmarkId) {
         return landmarkVisitLogRepository.countDistinctVisitDates(usersId, landmarkId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public long countWeekendVisits(String usersId) {

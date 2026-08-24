@@ -86,12 +86,18 @@ public class RegionServiceImpl implements RegionService {
         return Math.toIntExact(usersRegionRepository.countByUsersIdAndConqueredTrue(usersId));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public int countProvinces() {
         return Math.toIntExact(regionRepository.countDistinctProvinces());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public int countConsecutiveNewRegionVisits(String usersId) {
