@@ -3,6 +3,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+triplog-75c71-firebase-adminsdk-fbsvc-e5a2d22f0a.json
 
 ### STS ###
 .apt_generated

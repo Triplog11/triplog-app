@@ -6,6 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
+import com.google.firebase.messaging.FirebaseMessaging;
 import triplog.backend.fcmtoken.entity.FcmToken;
 import triplog.backend.fcmtoken.exception.FcmTokenException;
 import triplog.backend.fcmtoken.repository.FcmTokenRepository;
@@ -30,9 +32,17 @@ class FcmTokenServiceImplTest {
     private static final String TOKEN = "fcm_device_token_string";
     @Mock private FcmTokenRepository fcmTokenRepository;
     @Mock private UsersService usersService;
+    @Mock private ObjectProvider<FirebaseMessaging> firebaseMessagingProvider;
     private FcmTokenServiceImpl service;
 
-    @BeforeEach void setUp() { service = new FcmTokenServiceImpl(fcmTokenRepository, usersService); }
+    @BeforeEach
+    void setUp() {
+        service = new FcmTokenServiceImpl(
+                fcmTokenRepository,
+                usersService,
+                firebaseMessagingProvider
+        );
+    }
 
     @Test void registersFcmToken() {
         Users users = user();

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import triplog.backend.fcmtoken.entity.FcmToken;
 
 import java.util.Optional;
+import java.util.List;
 
 /**
  * FCM 푸시 토큰 엔티티의 데이터 접근을 담당하는 JPA Repository입니다.
@@ -13,6 +14,14 @@ import java.util.Optional;
  */
 @Repository
 public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
+
+    /**
+     * 사용자의 모든 등록 디바이스 토큰을 조회합니다.
+     *
+     * @param usersId 사용자 식별자
+     * @return 등록된 FCM 토큰 목록
+     */
+    List<FcmToken> findAllByUsersUsersId(String usersId);
 
     /**
      * 동일한 FCM 토큰이 이미 저장되어 있는지 확인합니다.

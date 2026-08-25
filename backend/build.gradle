@@ -53,6 +53,9 @@ dependencies {
 	// Cloudinary
 	implementation 'com.cloudinary:cloudinary-http5:2.0.0'
 
+	// Firebase Cloud Messaging
+	implementation 'com.google.firebase:firebase-admin:9.7.0'
+
 	// Prometheus
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 

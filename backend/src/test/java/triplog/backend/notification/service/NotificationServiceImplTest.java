@@ -18,8 +18,13 @@ import triplog.backend.notification.entity.NotificationPolicy;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.notification.repository.NotificationPolicyRepository;
 import triplog.backend.notification.repository.NotificationRepository;
+import triplog.backend.users.service.UsersService;
+import triplog.backend.users.entity.Users;
+import triplog.backend.fcmtoken.service.FcmTokenService;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,6 +33,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_ALREADY_READ;
@@ -50,13 +56,21 @@ class NotificationServiceImplTest {
     @Mock
     private NotificationPolicyRepository notificationPolicyRepository;
 
+    @Mock
+    private UsersService usersService;
+
+    @Mock
+    private FcmTokenService fcmTokenService;
+
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
         notificationService = new NotificationServiceImpl(
                 notificationRepository,
-                notificationPolicyRepository
+                notificationPolicyRepository,
+                usersService,
+                fcmTokenService
         );
     }
 
@@ -73,9 +87,9 @@ class NotificationServiceImplTest {
                         policy("RANK_UP", true),
                         policy("BADGE_ACQUIRED", false),
                         policy("CARD_ACQUIRED", true),
-                        policy("REGION_COMPLETED", true),
-                        policy("LANDMARK_VERIFIED", false),
-                        policy("WEEKLY_MISSION_COMPLETE", true)
+                        policy("REGION_CONQUERED", true),
+                        policy("VISIT_VERIFIED", false),
+                        policy("WEEKLY_MISSION_COMPLETED", true)
                 ));
 
         // when
@@ -125,9 +139,9 @@ class NotificationServiceImplTest {
                         policy("RANK_UP", false),
                         policy("BADGE_ACQUIRED", true),
                         policy("CARD_ACQUIRED", false),
-                        policy("REGION_COMPLETED", false),
-                        policy("LANDMARK_VERIFIED", true),
-                        policy("WEEKLY_MISSION_COMPLETE", false)
+                        policy("REGION_CONQUERED", false),
+                        policy("VISIT_VERIFIED", true),
+                        policy("WEEKLY_MISSION_COMPLETED", false)
                 ));
 
         // when
@@ -138,9 +152,9 @@ class NotificationServiceImplTest {
         verify(notificationPolicyRepository).updateActive("RANK_UP", true);
         verify(notificationPolicyRepository).updateActive("BADGE_ACQUIRED", false);
         verify(notificationPolicyRepository).updateActive("CARD_ACQUIRED", true);
-        verify(notificationPolicyRepository).updateActive("REGION_COMPLETED", true);
-        verify(notificationPolicyRepository).updateActive("LANDMARK_VERIFIED", false);
-        verify(notificationPolicyRepository).updateActive("WEEKLY_MISSION_COMPLETE", true);
+        verify(notificationPolicyRepository).updateActive("REGION_CONQUERED", true);
+        verify(notificationPolicyRepository).updateActive("VISIT_VERIFIED", false);
+        verify(notificationPolicyRepository).updateActive("WEEKLY_MISSION_COMPLETED", true);
         assertThat(response.getIsLevelUp()).isTrue();
         assertThat(response.getIsRankUp()).isTrue();
         assertThat(response.getIsBadgeAcquired()).isFalse();
@@ -320,6 +334,81 @@ class NotificationServiceImplTest {
                 .isInstanceOf(NotificationException.class)
                 .extracting("errorCode")
                 .isEqualTo(NOTIFICATION_ALREADY_READ);
+    }
+
+    /**
+     * 활성 정책의 템플릿이 이벤트 데이터로 치환되어 알림으로 저장되는지 검증합니다.
+     */
+    @Test
+    @DisplayName("방문 인증 이벤트가 발생하면 정책 템플릿으로 알림을 생성한다")
+    void createsNotificationFromActivePolicy() {
+        // given
+        Users users = mock(Users.class);
+        NotificationPolicy policy = new NotificationPolicy(
+                "VISIT_VERIFIED",
+                "방문 인증 성공 알림",
+                "VISIT_VERIFICATION_SUCCEEDED",
+                "방문 인증 완료",
+                "{placeName} 방문 인증이 완료되었습니다. +{xp} XP, +{score} Score를 획득했습니다.",
+                true,
+                true
+        );
+        NotificationEvent event = new NotificationEvent(
+                "VISIT_VERIFICATION_SUCCEEDED",
+                10L,
+                "REVIEW",
+                Map.of("placeName", "수원화성", "xp", 80, "score", 50)
+        );
+        when(usersService.findById(USERS_ID)).thenReturn(users);
+        when(notificationPolicyRepository.findByTriggerEventAndActiveTrue(
+                "VISIT_VERIFICATION_SUCCEEDED"
+        )).thenReturn(Optional.of(policy));
+
+        // when
+        notificationService.createNotifications(USERS_ID, List.of(event));
+
+        // then
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository).save(captor.capture());
+        assertThat(captor.getValue().getNotificationType()).isEqualTo("VISIT_VERIFIED");
+        assertThat(captor.getValue().getNotificationTitle()).isEqualTo("방문 인증 완료");
+        assertThat(captor.getValue().getNotificationContent())
+                .isEqualTo("수원화성 방문 인증이 완료되었습니다. +80 XP, +50 Score를 획득했습니다.");
+        assertThat(captor.getValue().getNotificationIdentifier()).isEqualTo(10L);
+        assertThat(captor.getValue().getTargetType()).isEqualTo("REVIEW");
+        verify(fcmTokenService).sendPush(
+                USERS_ID,
+                "방문 인증 완료",
+                "수원화성 방문 인증이 완료되었습니다. +80 XP, +50 Score를 획득했습니다.",
+                event.data()
+        );
+    }
+
+    /**
+     * 이벤트에 해당하는 활성 정책이 없으면 알림을 저장하지 않는지 검증합니다.
+     */
+    @Test
+    @DisplayName("알림 정책이 비활성이면 알림을 생성하지 않는다")
+    void skipsNotificationWithoutActivePolicy() {
+        // given
+        Users users = mock(Users.class);
+        NotificationEvent event = new NotificationEvent(
+                "WEEKLY_MISSION_COMPLETED",
+                20L,
+                "MISSION",
+                Map.of("missionName", "여행 한 걸음", "xp", 30)
+        );
+        when(usersService.findById(USERS_ID)).thenReturn(users);
+        when(notificationPolicyRepository.findByTriggerEventAndActiveTrue(
+                "WEEKLY_MISSION_COMPLETED"
+        )).thenReturn(Optional.empty());
+
+        // when
+        notificationService.createNotifications(USERS_ID, List.of(event));
+
+        // then
+        verify(notificationRepository, never()).save(any(Notification.class));
+        verify(fcmTokenService, never()).sendPush(anyString(), anyString(), anyString(), any());
     }
 
     /**

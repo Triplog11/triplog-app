@@ -2,6 +2,12 @@ package triplog.backend.fcmtoken.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.MulticastMessage;
+import com.google.firebase.messaging.Notification;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import triplog.backend.fcmtoken.dto.response.FcmTokenResponse.RegisterResponse;
@@ -11,6 +17,10 @@ import triplog.backend.fcmtoken.exception.FcmTokenException;
 import triplog.backend.fcmtoken.repository.FcmTokenRepository;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.service.UsersService;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static triplog.backend.fcmtoken.exception.FcmTokenErrorCode.FCM_TOKEN_ALREADY_REGISTERED;
 import static triplog.backend.fcmtoken.exception.FcmTokenErrorCode.FCM_TOKEN_NOT_FOUND;
@@ -28,6 +38,53 @@ public class FcmTokenServiceImpl implements FcmTokenService {
 
     private final FcmTokenRepository fcmTokenRepository;
     private final UsersService usersService;
+    private final ObjectProvider<FirebaseMessaging> firebaseMessagingProvider;
+
+    /**
+     * Firebase가 활성화된 경우 사용자의 모든 등록 토큰으로 푸시 알림을 전송합니다.
+     *
+     * @param usersId 수신 사용자 식별자
+     * @param title 푸시 알림 제목
+     * @param content 푸시 알림 내용
+     * @param data 앱 화면 이동 등에 사용할 추가 데이터
+     */
+    @Override
+    public void sendPush(
+            String usersId,
+            String title,
+            String content,
+            Map<String, Object> data
+    ) {
+        FirebaseMessaging firebaseMessaging = firebaseMessagingProvider.getIfAvailable();
+        if (firebaseMessaging == null) {
+            return;
+        }
+
+        List<String> tokens = fcmTokenRepository.findAllByUsersUsersId(usersId).stream()
+                .map(FcmToken::getToken)
+                .toList();
+        if (tokens.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> messageData = data.entrySet().stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
+                        entry -> String.valueOf(entry.getValue())
+                ));
+        MulticastMessage message = MulticastMessage.builder()
+                .setNotification(Notification.builder().setTitle(title).setBody(content).build())
+                .setAndroidConfig(AndroidConfig.builder()
+                        .setPriority(AndroidConfig.Priority.HIGH)
+                        .setNotification(AndroidNotification.builder()
+                                .setChannelId("triplog_default")
+                                .build())
+                        .build())
+                .putAllData(messageData)
+                .addAllTokens(tokens)
+                .build();
+        firebaseMessaging.sendEachForMulticastAsync(message);
+    }
 
     /**
      * 로그인한 사용자의 FCM 푸시 토큰과 디바이스 정보를 등록합니다.

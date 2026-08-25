@@ -22,6 +22,8 @@ import triplog.backend.landmark.service.LandmarkService;
 import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.mission.service.MissionAchievementService;
 import triplog.backend.mission.service.MissionCompletionInfo;
+import triplog.backend.notification.service.NotificationService;
+import triplog.backend.notification.service.NotificationEvent;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.service.RegionService;
 import triplog.backend.review.dto.request.ReviewRequest.CreateRequest;
@@ -72,6 +74,7 @@ class ReviewFacadeServiceTest {
     @Mock private ActivityHistoryService activityHistoryService;
     @Mock private BadgeService badgeService;
     @Mock private AppellationService appellationService;
+    @Mock private NotificationService notificationService;
 
     private ReviewFacadeService reviewFacadeService;
 
@@ -91,7 +94,8 @@ class ReviewFacadeServiceTest {
                 missionAchievementService,
                 activityHistoryService,
                 badgeService,
-                appellationService
+                appellationService,
+                notificationService
         );
     }
 
@@ -312,6 +316,48 @@ class ReviewFacadeServiceTest {
         assertThat(historyCaptor.getValue().score()).isEqualTo(10);
     }
 
+    /**
+     * 이미 방문한 관광 콘텐츠를 재인증하면 방문 인증 알림을 생성하지 않는지 검증합니다.
+     */
+    @Test
+    @DisplayName("재방문 인증에는 방문 인증 알림을 생성하지 않는다")
+    void createReview_DoesNotNotifyRepeatedVisit() {
+        // Given
+        CreateRequest request = new CreateRequest(
+                1L, "41", "110", "재방문", "재방문 기록", 4.5F
+        );
+        Region region = region();
+        TourismContent content = content(region);
+        Landmark landmark = landmark();
+        Review review = review();
+        given(tourismContentService.findOptionalById(1L)).willReturn(Optional.of(content));
+        given(landmarkService.findByTourismContentId(101L)).willReturn(Optional.of(landmark));
+        given(attractionService.findByTourismContentId(101L)).willReturn(Optional.empty());
+        given(landmarkService.hasVisited(USERS_ID, 301L)).willReturn(true);
+        given(regionService.hasVisited(USERS_ID, 201L)).willReturn(true);
+        given(reviewService.createReview(USERS_ID, request, content)).willReturn(review);
+        given(statsService.applyActivityPolicies(eq(USERS_ID), anyList()))
+                .willReturn(new ActivityRewardResult(
+                        List.of(), 0, 0, 1, "BRONZE", false, false
+                ));
+
+        // When
+        reviewFacadeService.createReview(
+                USERS_ID, request, null, "repeat-visit-request-1"
+        );
+
+        // Then
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<NotificationEvent>> notificationCaptor =
+                ArgumentCaptor.forClass(List.class);
+        verify(notificationService).createNotifications(
+                eq(USERS_ID), notificationCaptor.capture()
+        );
+        assertThat(notificationCaptor.getValue())
+                .extracting(NotificationEvent::triggerEvent)
+                .doesNotContain("VISIT_VERIFICATION_SUCCEEDED");
+    }
+
     private Region region() {
         Region region = org.mockito.Mockito.mock(Region.class);
         given(region.getRegionId()).willReturn(201L);
@@ -332,7 +378,7 @@ class ReviewFacadeServiceTest {
     private Landmark landmark() {
         Landmark landmark = org.mockito.Mockito.mock(Landmark.class);
         given(landmark.getLandmarkId()).willReturn(301L);
-        given(landmark.getLandmarkName()).willReturn("수원화성");
+        org.mockito.Mockito.lenient().when(landmark.getLandmarkName()).thenReturn("수원화성");
         return landmark;
     }
 

@@ -2,6 +2,7 @@ package triplog.backend.fcmtoken.service;
 
 import triplog.backend.fcmtoken.dto.response.FcmTokenResponse.RegisterResponse;
 import triplog.backend.fcmtoken.dto.response.FcmTokenResponse.DeleteResponse;
+import java.util.Map;
 
 /**
  * FCM 푸시 토큰 도메인의 비즈니스 로직을 정의하는 Service 인터페이스입니다.
@@ -9,6 +10,16 @@ import triplog.backend.fcmtoken.dto.response.FcmTokenResponse.DeleteResponse;
  * FCM 토큰 등록, 조회, 수정, 삭제와 관련된 기능을 선언합니다.
  */
 public interface FcmTokenService {
+
+    /**
+     * 사용자의 모든 등록 디바이스에 푸시 알림을 전송합니다.
+     *
+     * @param usersId 수신 사용자 식별자
+     * @param title 푸시 알림 제목
+     * @param content 푸시 알림 내용
+     * @param data 앱 화면 이동 등에 사용할 추가 데이터
+     */
+    void sendPush(String usersId, String title, String content, Map<String, Object> data);
 
     /**
      * 로그인한 사용자의 FCM 푸시 토큰과 디바이스 정보를 등록합니다.

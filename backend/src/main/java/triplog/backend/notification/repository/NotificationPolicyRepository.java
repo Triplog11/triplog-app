@@ -7,11 +7,20 @@ import org.springframework.data.repository.query.Param;
 import triplog.backend.notification.entity.NotificationPolicy;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 알림 정책 엔티티의 저장과 조회를 담당하는 Repository입니다.
  */
 public interface NotificationPolicyRepository extends JpaRepository<NotificationPolicy, Long> {
+
+    /**
+     * 트리거 이벤트에 대응하는 활성 알림 정책을 조회합니다.
+     *
+     * @param triggerEvent 발생한 트리거 이벤트
+     * @return 활성화된 알림 정책
+     */
+    Optional<NotificationPolicy> findByTriggerEventAndActiveTrue(String triggerEvent);
 
     /**
      * 전달받은 알림 유형에 해당하는 정책 목록을 조회합니다.
