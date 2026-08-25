@@ -68,9 +68,9 @@ public class NotificationResponse {
                     policyMap.get("RANK_UP").isActive(),
                     policyMap.get("BADGE_ACQUIRED").isActive(),
                     policyMap.get("CARD_ACQUIRED").isActive(),
-                    policyMap.get("REGION_COMPLETED").isActive(),
-                    policyMap.get("LANDMARK_VERIFIED").isActive(),
-                    policyMap.get("WEEKLY_MISSION_COMPLETE").isActive()
+                    policyMap.get("REGION_CONQUERED").isActive(),
+                    policyMap.get("VISIT_VERIFIED").isActive(),
+                    policyMap.get("WEEKLY_MISSION_COMPLETED").isActive()
             );
         }
 

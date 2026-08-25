@@ -5,11 +5,20 @@ import triplog.backend.notification.dto.response.NotificationResponse.ListRespon
 import triplog.backend.notification.dto.response.NotificationResponse.ReadResponse;
 import triplog.backend.notification.dto.response.NotificationResponse.SettingsResponse;
 import triplog.backend.notification.dto.request.NotificationRequest.SettingsUpdateRequest;
+import java.util.List;
 
 /**
  * 알림 관련 비즈니스 기능을 정의하는 서비스 인터페이스입니다.
  */
 public interface NotificationService {
+
+    /**
+     * 발생한 이벤트에 대응하는 활성 알림 정책을 적용하여 사용자 알림을 저장합니다.
+     *
+     * @param usersId 알림을 받을 사용자 식별자
+     * @param events 발생한 알림 이벤트 목록
+     */
+    void createNotifications(String usersId, List<NotificationEvent> events);
 
     /**
      * 알림 정책별 활성화 상태를 조회합니다.

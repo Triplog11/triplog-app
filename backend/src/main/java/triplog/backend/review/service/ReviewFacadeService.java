@@ -18,6 +18,8 @@ import triplog.backend.landmark.service.LandmarkService;
 import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.mission.service.MissionAchievementService;
 import triplog.backend.mission.service.MissionCompletionInfo;
+import triplog.backend.notification.service.NotificationEvent;
+import triplog.backend.notification.service.NotificationService;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.service.RegionService;
 import triplog.backend.review.dto.request.ReviewRequest.CreateRequest;
@@ -77,6 +79,7 @@ public class ReviewFacadeService {
     private final ActivityHistoryService activityHistoryService;
     private final BadgeService badgeService;
     private final AppellationService appellationService;
+    private final NotificationService notificationService;
 
     /**
      * 방문 인증을 생성하고 관련 방문·보상·미션·활동 히스토리를 함께 처리합니다.
@@ -183,10 +186,156 @@ public class ReviewFacadeService {
                 reward,
                 missionCompletions
         );
+        createNotifications(
+                usersId,
+                review.getReviewId(),
+                content,
+                landmark,
+                region,
+                firstVisit,
+                firstRegionVisit,
+                visitResult,
+                acquiredBadges,
+                acquiredAppellations,
+                reward,
+                missionCompletions
+        );
 
         return CreateReviewResponse.toDto(
                 reward.rewards(), reward.totalXp(), reward.totalScore()
         );
+    }
+
+    /**
+     * 방문 인증 처리에서 실제로 발생한 결과를 알림 이벤트로 변환하여 저장합니다.
+     *
+     * @param usersId 알림을 받을 사용자 식별자
+     * @param reviewId 방문 인증 식별자
+     * @param content 방문한 관광 콘텐츠
+     * @param landmark 방문한 랜드마크
+     * @param region 방문 지역
+     * @param firstVisit 관광 콘텐츠 최초 방문 여부
+     * @param firstRegionVisit 신규 지역 방문 여부
+     * @param visitResult 카드 획득 및 지역 정복 결과
+     * @param acquiredBadges 이번에 획득한 뱃지 목록
+     * @param acquiredAppellations 이번에 획득한 칭호 목록
+     * @param reward 활동 정책 적용 결과
+     * @param missionCompletions 이번에 완료한 미션 목록
+     */
+    private void createNotifications(
+            String usersId,
+            Long reviewId,
+            TourismContent content,
+            Optional<Landmark> landmark,
+            Region region,
+            boolean firstVisit,
+            boolean firstRegionVisit,
+            VisitResult visitResult,
+            List<AcquiredBadgeInfo> acquiredBadges,
+            List<AcquiredAppellationInfo> acquiredAppellations,
+            ActivityRewardResult reward,
+            List<MissionCompletionInfo> missionCompletions
+    ) {
+        List<NotificationEvent> events = new ArrayList<>();
+        if (firstVisit) {
+            events.add(new NotificationEvent(
+                    "VISIT_VERIFICATION_SUCCEEDED",
+                    reviewId,
+                    "REVIEW",
+                    Map.of(
+                            "placeName", content.getTitle(),
+                            "xp", reward.totalXp(),
+                            "score", reward.totalScore()
+                    )
+            ));
+        }
+
+        if (firstRegionVisit) {
+            findReward(reward, regionVisitRewardKey(region.getRegionId()))
+                    .ifPresent(regionReward -> events.add(new NotificationEvent(
+                            "REGION_FIRST_VISITED",
+                            region.getRegionId(),
+                            "REGION",
+                            Map.of(
+                                    "regionName", region.getRegionName(),
+                                    "xp", regionReward.xp(),
+                                    "score", regionReward.score()
+                            )
+                    )));
+        }
+        if (visitResult.regionConquered()) {
+            findReward(reward, regionConquestRewardKey(region.getRegionId()))
+                    .ifPresent(regionReward -> events.add(new NotificationEvent(
+                            "REGION_CONQUERED",
+                            region.getRegionId(),
+                            "REGION",
+                            Map.of(
+                                    "regionName", region.getRegionName(),
+                                    "xp", regionReward.xp(),
+                                    "score", regionReward.score()
+                            )
+                    )));
+        }
+        if (landmark.isPresent() && visitResult.cardAcquired()) {
+            events.add(new NotificationEvent(
+                    "LANDMARK_CARD_ACQUIRED",
+                    landmark.get().getLandmarkId(),
+                    "CARD",
+                    Map.of("cardName", landmarkName(landmark.get(), content))
+            ));
+        }
+        for (AcquiredBadgeInfo badge : acquiredBadges) {
+            findReward(reward, badgeRewardKey(badge.badgeId()))
+                    .ifPresent(badgeReward -> events.add(new NotificationEvent(
+                            "BADGE_ACQUIRED",
+                            badge.badgeId(),
+                            "BADGE",
+                            Map.of("badgeName", badge.badgeName(), "xp", badgeReward.xp())
+                    )));
+        }
+        for (AcquiredAppellationInfo appellation : acquiredAppellations) {
+            findReward(reward, appellationRewardKey(appellation.appellationId()))
+                    .ifPresent(appellationReward -> events.add(new NotificationEvent(
+                            "APPELLATION_ACQUIRED",
+                            appellation.appellationId(),
+                            "APPELLATION",
+                            Map.of(
+                                    "appellationName", appellation.appellationName(),
+                                    "xp", appellationReward.xp()
+                            )
+                    )));
+        }
+        for (MissionCompletionInfo mission : missionCompletions) {
+            events.add(new NotificationEvent(
+                    "WEEKLY_MISSION_COMPLETED",
+                    mission.missionId(),
+                    "MISSION",
+                    Map.of("missionName", mission.missionName(), "xp", mission.xp())
+            ));
+        }
+
+        boolean missionLevelUp = missionCompletions.stream()
+                .anyMatch(completion -> completion.growth().levelUp());
+        boolean missionRankUp = missionCompletions.stream()
+                .anyMatch(completion -> completion.growth().rankUp());
+        int currentLevel = missionCompletions.isEmpty()
+                ? reward.currentLevel()
+                : missionCompletions.getLast().growth().currentLevel();
+        String currentTier = missionCompletions.isEmpty()
+                ? reward.currentTier()
+                : missionCompletions.getLast().growth().currentTier();
+        if (reward.levelUp() || missionLevelUp) {
+            events.add(new NotificationEvent(
+                    "USER_LEVEL_UP", reviewId, "STATS", Map.of("level", currentLevel)
+            ));
+        }
+        if (reward.rankUp() || missionRankUp) {
+            events.add(new NotificationEvent(
+                    "USER_RANK_UP", reviewId, "STATS", Map.of("rank", currentTier)
+            ));
+        }
+
+        notificationService.createNotifications(usersId, events);
     }
 
     /**

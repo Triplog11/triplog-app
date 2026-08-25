@@ -14,9 +14,13 @@ import triplog.backend.notification.entity.NotificationPolicy;
 import triplog.backend.notification.exception.NotificationException;
 import triplog.backend.notification.repository.NotificationPolicyRepository;
 import triplog.backend.notification.repository.NotificationRepository;
+import triplog.backend.users.entity.Users;
+import triplog.backend.users.service.UsersService;
+import triplog.backend.fcmtoken.service.FcmTokenService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import static triplog.backend.notification.dto.response.NotificationResponse.ReadResponse.toDto;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_ALREADY_READ;
 import static triplog.backend.notification.exception.NotificationErrorCode.NOTIFICATION_NOT_FOUND;
@@ -39,9 +43,9 @@ public class NotificationServiceImpl implements NotificationService {
             "RANK_UP",
             "BADGE_ACQUIRED",
             "CARD_ACQUIRED",
-            "REGION_COMPLETED",
-            "LANDMARK_VERIFIED",
-            "WEEKLY_MISSION_COMPLETE"
+            "REGION_CONQUERED",
+            "VISIT_VERIFIED",
+            "WEEKLY_MISSION_COMPLETED"
     );
 
     /**
@@ -53,6 +57,60 @@ public class NotificationServiceImpl implements NotificationService {
      * 알림 정책 저장과 조회를 담당하는 Repository입니다.
      */
     private final NotificationPolicyRepository notificationPolicyRepository;
+
+    private final UsersService usersService;
+    private final FcmTokenService fcmTokenService;
+
+    /**
+     * 발생한 이벤트별 활성 정책을 조회하고 템플릿을 치환하여 알림을 저장합니다.
+     *
+     * @param usersId 알림을 받을 사용자 식별자
+     * @param events 발생한 알림 이벤트 목록
+     */
+    @Override
+    @Transactional
+    public void createNotifications(String usersId, List<NotificationEvent> events) {
+        if (events.isEmpty()) {
+            return;
+        }
+
+        Users users = usersService.findById(usersId);
+        for (NotificationEvent event : events) {
+            notificationPolicyRepository.findByTriggerEventAndActiveTrue(event.triggerEvent())
+                    .ifPresent(policy -> {
+                        String title = applyTemplate(policy.getTitleTemplate(), event.data());
+                        String content = applyTemplate(policy.getContentTemplate(), event.data());
+                        notificationRepository.save(new Notification(
+                                users,
+                                policy,
+                                title,
+                                content,
+                                event.identifier(),
+                                event.targetType(),
+                                event.data()
+                        ));
+                        fcmTokenService.sendPush(usersId, title, content, event.data());
+                    });
+        }
+    }
+
+    /**
+     * 정책 템플릿의 중괄호 변수를 이벤트 데이터로 치환합니다.
+     *
+     * @param template 알림 제목 또는 내용 템플릿
+     * @param data 변수명과 치환값
+     * @return 변수가 치환된 문자열
+     */
+    private String applyTemplate(String template, Map<String, Object> data) {
+        String result = template;
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            result = result.replace(
+                    "{" + entry.getKey() + "}",
+                    String.valueOf(entry.getValue())
+            );
+        }
+        return result;
+    }
 
     /**
      * 알림 정책별 활성화 상태를 조회하여 알림 설정 응답으로 반환합니다.
@@ -93,10 +151,10 @@ public class NotificationServiceImpl implements NotificationService {
         notificationPolicyRepository.updateActive("RANK_UP", request.getIsRankUp());
         notificationPolicyRepository.updateActive("BADGE_ACQUIRED", request.getIsBadgeAcquired());
         notificationPolicyRepository.updateActive("CARD_ACQUIRED", request.getIsCardAcquired());
-        notificationPolicyRepository.updateActive("REGION_COMPLETED", request.getIsRegionCompleted());
-        notificationPolicyRepository.updateActive("LANDMARK_VERIFIED", request.getIsLandmarkVerified());
+        notificationPolicyRepository.updateActive("REGION_CONQUERED", request.getIsRegionCompleted());
+        notificationPolicyRepository.updateActive("VISIT_VERIFIED", request.getIsLandmarkVerified());
         notificationPolicyRepository.updateActive(
-                "WEEKLY_MISSION_COMPLETE",
+                "WEEKLY_MISSION_COMPLETED",
                 request.getIsWeeklyMissonCompleted()
         );
 
