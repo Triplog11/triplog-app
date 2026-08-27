@@ -88,10 +88,10 @@ export default function VerifyProgress({ landmark, onVerified }) {
       </Animated.View>
 
       <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.title}>
-        {status === 'loading' && '현재 위치를 확인하고 있어요'}
+        {status === 'loading' && '현재 위치를 확인하고 있습니다'}
         {status === 'ready' && '현재 위치 확인 완료'}
-        {status === 'denied' && '위치 권한이 필요해요'}
-        {status === 'error' && '현재 위치를 확인하지 못했어요'}
+        {status === 'denied' && '위치 권한이 필요합니다'}
+        {status === 'error' && '현재 위치를 확인하지 못했습니다'}
       </CustomText>
       <CustomText variant="Body/Medium" color={theme.colors.textSecondary} style={styles.subtitle}>
         {landmark.landmarkName}
@@ -99,12 +99,12 @@ export default function VerifyProgress({ landmark, onVerified }) {
 
       {status === 'denied' && (
         <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.helpText}>
-          방문 인증은 현재 위치로 확인해요. 설정에서 트립로그의 위치 권한을 허용한 뒤 다시 시도해 주세요.
+          방문 인증은 현재 위치로 확인합니다. 설정에서 트립로그의 위치 권한을 허용한 뒤 다시 시도해 주십시오.
         </CustomText>
       )}
       {status === 'error' && (
         <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.helpText}>
-          GPS 신호가 약하거나 위치 서비스가 꺼져 있을 수 있어요. 잠시 후 다시 시도해 주세요.
+          GPS 신호가 약하거나 위치 서비스가 꺼져 있을 수 있습니다. 잠시 후 다시 시도해 주십시오.
         </CustomText>
       )}
 
@@ -117,7 +117,7 @@ export default function VerifyProgress({ landmark, onVerified }) {
       </View>
       {status === 'ready' && !landmarkCoords && (
         <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.helpText}>
-          이 랜드마크는 아직 좌표 정보가 없어 거리 확인 없이 진행해요.
+          해당 랜드마크는 좌표 정보가 등록되지 않아 거리 확인 없이 진행합니다.
         </CustomText>
       )}
 

@@ -40,11 +40,11 @@ export default function ReviewWrite({ landmark, submitting, errorMessage, onSubm
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.title}>
-          방문 기록을 남겨 주세요
+          방문 기록을 작성해 주십시오
         </CustomText>
         <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.subtitle}>
           {landmark.landmarkName}
-          {landmark.acquired ? ' · 이미 획득한 랜드마크라 보상은 지급되지 않아요' : ''}
+          {landmark.acquired ? ' · 이미 획득한 랜드마크라 보상이 지급되지 않습니다' : ''}
         </CustomText>
 
         <View style={styles.starBlock}>
@@ -67,7 +67,7 @@ export default function ReviewWrite({ landmark, submitting, errorMessage, onSubm
         <View style={styles.inputBox}>
           <TextInput
             style={styles.contentInput}
-            placeholder="어떤 점이 기억에 남았는지 적어 주세요. (선택)"
+            placeholder="어떤 점이 기억에 남았는지 작성해 주십시오. (선택)"
             placeholderTextColor={theme.colors.textMuted}
             value={content}
             onChangeText={setContent}
@@ -90,7 +90,7 @@ export default function ReviewWrite({ landmark, submitting, errorMessage, onSubm
         ) : (
           !canSubmit && (
             <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.hint}>
-              제목과 별점을 입력하면 인증할 수 있어요
+              제목과 별점을 입력하면 인증을 완료할 수 있습니다
             </CustomText>
           )
         )}

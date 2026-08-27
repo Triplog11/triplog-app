@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchEventDetail } from '../../api/events';
+import { EventAssets } from '../../assets';
 import ListStateView from './components/ListStateView';
 import { formatDate, getEventStatus, EVENT_STATUS_LABEL } from './utils/format';
 
@@ -13,6 +14,8 @@ export default function EventDetailScreen({ route }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [imgError0, setImgError0] = useState(false);
+  const [imgError1, setImgError1] = useState(false);
 
   const load = useCallback(async () => {
     if (eventId == null) {
@@ -52,14 +55,18 @@ export default function EventDetailScreen({ route }) {
 
   const status = getEventStatus(event.eventStart, event.eventEnd);
   const ended = status === 'ended';
-  const images = [event.eventImageUrl1, event.eventImageUrl2].filter(Boolean);
+  const fallbackBanner = EventAssets.banners[Math.abs(Number(eventId) || 0) % 2];
+  const heroSource = event.eventImageUrl1 && !imgError0 ? { uri: event.eventImageUrl1 } : fallbackBanner;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {images[0] ? (
-          <Image source={{ uri: images[0] }} style={styles.hero} resizeMode="cover" />
-        ) : null}
+        <Image
+          source={heroSource}
+          style={styles.hero}
+          resizeMode="cover"
+          onError={() => setImgError0(true)}
+        />
 
         <View style={styles.card}>
           <View style={styles.titleRow}>
@@ -86,8 +93,13 @@ export default function EventDetailScreen({ route }) {
           ) : null}
         </View>
 
-        {images[1] ? (
-          <Image source={{ uri: images[1] }} style={styles.secondary} resizeMode="cover" />
+        {event.eventImageUrl2 && !imgError1 ? (
+          <Image
+            source={{ uri: event.eventImageUrl2 }}
+            style={styles.secondary}
+            resizeMode="cover"
+            onError={() => setImgError1(true)}
+          />
         ) : null}
       </ScrollView>
     </SafeAreaView>

@@ -1,14 +1,14 @@
 import React from 'react';
-import { StyleSheet, View, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
 
 /**
- * 목록 화면 공용 상태 뷰 — 로딩 / 에러(다시 시도) / 빈 상태(+선택 CTA).
+ * 목록 화면 공용 상태 뷰 — 로딩 / 에러(다시 시도) / 빈 상태(+선택 CTA 및 일러스트).
  * 렌더할 상태가 없으면 null을 돌려준다.
  */
 export default function ListStateView({
-  loading, errorMessage, empty, emptyText, emptyHint, ctaLabel, onCta, onRetry,
+  loading, errorMessage, empty, emptyText, emptyHint, image, ctaLabel, onCta, onRetry,
 }) {
   if (loading) {
     return (
@@ -36,6 +36,13 @@ export default function ListStateView({
   if (empty) {
     return (
       <View style={styles.centerBox}>
+        {image && (
+          <Image
+            source={image}
+            style={styles.emptyIllustration}
+            resizeMode="contain"
+          />
+        )}
         <CustomText variant="Body/Medium" color={theme.colors.textSecondary} style={styles.text}>
           {emptyText}
         </CustomText>
@@ -65,6 +72,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.section,
     paddingVertical: theme.spacing.section,
     gap: theme.spacing.md,
+  },
+  emptyIllustration: {
+    width: 180,
+    height: 120,
+    marginBottom: theme.spacing.sm,
   },
   text: {
     textAlign: 'center',

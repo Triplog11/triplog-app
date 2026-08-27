@@ -19,6 +19,7 @@ import AuthField from './email/AuthField';
 import AuthSubmitButton from './email/AuthSubmitButton';
 import TermsAgreement, { EMPTY_AGREEMENT, isAllAgreed } from './email/TermsAgreement';
 import useAvailabilityCheck from './email/useAvailabilityCheck';
+import RegionPicker from '../../components/common/RegionPicker';
 import {
   NICKNAME_MIN,
   NICKNAME_MAX,
@@ -190,28 +191,20 @@ export default function EmailSignupScreen() {
           <CustomText variant="Label/Medium" color={theme.colors.textSecondary} style={[styles.label, styles.field]}>
             거주 지역
           </CustomText>
-          <View style={styles.addressRow}>
-            <TextInput
-              style={[styles.input, styles.addressInput]}
-              placeholder="도 (예: 경기도, 없으면 비워두세요)"
-              placeholderTextColor={theme.colors.textMuted}
-              value={form.addressDoGun}
-              onChangeText={setField('addressDoGun')}
-            />
-            <TextInput
-              style={[styles.input, styles.addressInput]}
-              placeholder="시 (예: 수원시)"
-              placeholderTextColor={theme.colors.textMuted}
-              value={form.addressSi}
-              onChangeText={setField('addressSi')}
-            />
-          </View>
-          <TextInput
-            style={[styles.input, styles.addressBottomInput]}
-            placeholder="구/군 (예: 팔달구)"
-            placeholderTextColor={theme.colors.textMuted}
-            value={form.addressGu}
-            onChangeText={setField('addressGu')}
+          <RegionPicker
+            value={{
+              addressDoGun: form.addressDoGun,
+              addressSi: form.addressSi,
+              addressGu: form.addressGu,
+            }}
+            onSelect={(selected) => {
+              setForm((prev) => ({
+                ...prev,
+                addressDoGun: selected.addressDoGun,
+                addressSi: selected.addressSi,
+                addressGu: selected.addressGu,
+              }));
+            }}
           />
 
           <View style={styles.notificationRow}>

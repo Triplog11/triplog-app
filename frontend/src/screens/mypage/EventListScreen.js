@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   StyleSheet, View, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl,
 } from 'react-native';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchEvents } from '../../api/events';
+import { EmptyStateAssets, EventAssets } from '../../assets';
 import usePagedList from './hooks/usePagedList';
 import ListStateView from './components/ListStateView';
 import { formatDate, getEventStatus, EVENT_STATUS_LABEL } from './utils/format';
@@ -43,6 +44,7 @@ export default function EventListScreen({ navigation }) {
             empty={!loading && !errorMessage && items.length === 0}
             emptyText="지금은 진행 중인 이벤트가 없어요."
             emptyHint="새 이벤트가 열리면 여기서 알려드릴게요."
+            image={EmptyStateAssets.event}
             onRetry={refresh}
           />
         )}
@@ -63,16 +65,26 @@ export default function EventListScreen({ navigation }) {
 }
 
 function EventCard({ event, onPress }) {
+  const [imageError, setImageError] = useState(false);
   const status = getEventStatus(event.eventStart, event.eventEnd);
   const ended = status === 'ended';
+  const fallbackBanner = EventAssets.banners[Math.abs(Number(event.eventId) || 0) % 2];
+
   return (
     <TouchableOpacity style={[styles.card, ended && styles.cardEnded]} onPress={onPress} activeOpacity={0.85}>
-      {event.eventImageUrl ? (
-        <Image source={{ uri: event.eventImageUrl }} style={styles.image} resizeMode="cover" />
+      {event.eventImageUrl && !imageError ? (
+        <Image
+          source={{ uri: event.eventImageUrl }}
+          style={styles.image}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+        />
       ) : (
-        <View style={[styles.image, styles.imagePlaceholder]}>
-          <Ionicons name="megaphone-outline" size={28} color={theme.colors.textMuted} />
-        </View>
+        <Image
+          source={fallbackBanner}
+          style={styles.image}
+          resizeMode="cover"
+        />
       )}
       <View style={styles.body}>
         <View style={styles.titleRow}>

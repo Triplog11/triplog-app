@@ -11,6 +11,7 @@ import {
 import { fetchBadges, setRepresentativeBadge } from '../../api/badges';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
+import { getBadgeFallback } from '../../utils/badgeAssets';
 import InlineToast from './components/InlineToast';
 
 const PAGE_SIZE = 20;
@@ -109,15 +110,11 @@ export default function BadgeListScreen({ navigation }) {
           </View>
         )}
         <View style={styles.iconWrapper}>
-          {item.badgeUrl ? (
-            <Image
-              source={{ uri: item.badgeUrl }}
-              style={[styles.badgeImage, !acquired && styles.lockedImage]}
-              resizeMode="contain"
-            />
-          ) : (
-            <CustomText style={styles.fallbackIcon}>🏅</CustomText>
-          )}
+          <Image
+            source={item.badgeUrl ? { uri: item.badgeUrl } : getBadgeFallback(item.badgeName)}
+            style={[styles.badgeImage, !acquired && styles.lockedImage]}
+            resizeMode="contain"
+          />
         </View>
         <CustomText
           variant="Heading/H5"

@@ -3,6 +3,7 @@ import { StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-n
 import { useNavigation } from '@react-navigation/native';
 import theme from '../../../theme/theme';
 import { fetchMyReviews } from '../../../api/reviews';
+import { EmptyStateAssets } from '../../../assets';
 import usePagedList from '../hooks/usePagedList';
 import ListStateView from './ListStateView';
 import ReviewListItem from './ReviewListItem';
@@ -30,6 +31,7 @@ export default function ReviewList({ renderHeader, emptyText }) {
       errorMessage={items.length === 0 ? errorMessage : null}
       empty={!loading && !errorMessage && items.length === 0}
       emptyText={emptyText}
+      image={EmptyStateAssets.travelLog}
       ctaLabel="탐험하러 가기"
       onCta={() => navigation.navigate('Home')}
       onRetry={refresh}

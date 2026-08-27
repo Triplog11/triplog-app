@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, FlatList, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchAppellations, setRepresentativeAppellation } from '../../api/appellations';
+import { getAppellationFallback } from '../../utils/badgeAssets';
 import ListStateView from './components/ListStateView';
 import InlineToast from './components/InlineToast';
 
@@ -91,10 +92,10 @@ export default function AppellationScreen({ navigation }) {
             disabled={updatingId != null}
           >
             <View style={[styles.iconWrap, item.representative && styles.iconWrapActive]}>
-              <Ionicons
-                name="pricetag"
-                size={18}
-                color={item.representative ? theme.colors.white : theme.colors.primary}
+              <Image
+                source={item.appellationUrl ? { uri: item.appellationUrl } : getAppellationFallback(item.appellationName)}
+                style={styles.appellationIcon}
+                resizeMode="contain"
               />
             </View>
             <CustomText variant="Label/Medium" color={theme.colors.text} style={styles.name}>
@@ -149,12 +150,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.colors.primarySoft,
+    backgroundColor: theme.colors.surfaceDim,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   iconWrapActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.primarySoft,
+  },
+  appellationIcon: {
+    width: 28,
+    height: 28,
   },
   name: {
     flex: 1,

@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Modal, Pressable, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Modal, Pressable, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
 import { GRADE_CONFIG, tierToGrade, formatAcquiredDate } from '../../../data/collection';
 import { fetchLandmarkDetail } from '../../../api/landmarks';
+import { CardAssets } from '../../../assets';
 import PhotoPlaceholder from './PhotoPlaceholder';
 
 const MAX_STARS = 4;
 
 /**
  * 카드 상세 바텀시트.
- * - card: {landmarkId?, name, region?, grade?, imageUrl?, obtained, date?}
+ * - card: {landmarkId?, name, region?, grade?, cardTier?, imageUrl?, obtained, date?}
  * - landmarkId가 있으면 GET /landmarks/{id}로 카드명·등급·이미지·획득일·방문횟수를 보강한다.
  * - 미획득 카드는 정보를 가리고 "방문 인증하러 가기" CTA를 노출한다.
  */
@@ -35,8 +36,9 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
 
   if (!card) return null;
 
-  const gradeKey = tierToGrade(detail?.cardTier) ?? card.grade ?? null;
+  const gradeKey = tierToGrade(detail?.cardTier) ?? card.grade ?? tierToGrade(card.cardTier) ?? null;
   const grade = gradeKey ? GRADE_CONFIG[gradeKey] : null;
+  const frameSource = gradeKey ? CardAssets.frames[gradeKey.toUpperCase()] : null;
   const obtained = detail?.acquired ?? card.obtained;
   const name = detail?.cardName ?? card.name;
   const imageUrl = detail?.cardUrl ?? card.imageUrl ?? null;
@@ -63,6 +65,14 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
                   size={44}
                 />
                 {imageUrl ? <View style={styles.heroShade} /> : null}
+                {frameSource && (
+                  <Image
+                    source={frameSource}
+                    style={StyleSheet.absoluteFillObject}
+                    resizeMode="stretch"
+                    pointerEvents="none"
+                  />
+                )}
                 <View style={styles.heroTextWrap}>
                   {grade && (
                     <View style={[styles.gradePill, { backgroundColor: theme.colors.canvas }]}>

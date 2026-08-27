@@ -161,7 +161,7 @@ export default function VisitCertScreen({ navigation, route }) {
           방문 인증
         </CustomText>
         <CustomText variant="Body/Small" color={theme.colors.textSecondary}>
-          인증할 지역을 먼저 골라 주세요
+          인증할 지역을 먼저 선택해 주십시오.
         </CustomText>
       </View>
       <RegionSelectList

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>TripLog Store Banner - Home</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 1080px;
+      height: 1920px;
+      background: linear-gradient(180deg, #F5F6F7 0%, #FFFFFF 60%, #E8F4FF 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .header {
+      width: 100%;
+      height: 480px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 40px 20px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 8px 24px;
+      background-color: #0ECEDB;
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 700;
+      border-radius: 9999px;
+      margin-bottom: 24px;
+      letter-spacing: -0.5px;
+    }
+    .main-copy {
+      font-size: 52px;
+      font-weight: 800;
+      color: #1B1D1F;
+      line-height: 1.35;
+      letter-spacing: -1.5px;
+    }
+    .highlight {
+      color: #368FFF;
+    }
+    .sub-copy {
+      margin-top: 16px;
+      font-size: 26px;
+      font-weight: 500;
+      color: #7E848A;
+      letter-spacing: -0.5px;
+    }
+    .phone-container {
+      width: 820px;
+      height: 1440px;
+      background: #FFFFFF;
+      border-radius: 64px 64px 0 0;
+      border: 14px solid #1B1D1F;
+      border-bottom: none;
+      box-shadow: 0 30px 90px rgba(27, 29, 31, 0.15);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+    }
+    .notch {
+      width: 240px;
+      height: 36px;
+      background: #1B1D1F;
+      border-radius: 0 0 20px 20px;
+      position: absolute;
+      top: 0;
+      z-index: 10;
+    }
+    .screen-slot {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #F5F6F7;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="badge">TripLog 대한민국 여행</div>
+    <h1 class="main-copy">발 닿은 곳이<br><span class="highlight">나만의 도감</span>이 돼요</h1>
+    <p class="sub-copy">전국 시군구 랜드마크 방문 인증과 미션 탐험</p>
+  </div>
+  <div class="phone-container">
+    <div class="notch"></div>
+    <img class="screen-slot" src="../screens-2026-08-27/home.png" alt="홈 화면 스크린샷" />
+  </div>
+</body>
+</html>

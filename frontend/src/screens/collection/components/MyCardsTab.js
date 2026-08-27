@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, FlatList, ActivityIndicator, Image } from 'react-native';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
 import { GRADE_CONFIG, GRADE_ORDER, toCardModel } from '../../../data/collection';
 import { fetchMyCards } from '../../../api/landmarks';
+import { EmptyStateAssets } from '../../../assets';
 import LandmarkCardItem from './LandmarkCardItem';
 
 const PAGE_SIZE = 20;
@@ -158,11 +159,18 @@ export default function MyCardsTab({ onSelectCard }) {
       )}
       ListHeaderComponent={header}
       ListEmptyComponent={
-        <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.centerText}>
-          {cards.length === 0
-            ? '아직 모은 카드가 없어요. 첫 번째 랜드마크를 인증해 보세요!'
-            : '이 등급의 카드는 아직 없어요.'}
-        </CustomText>
+        <View style={styles.emptyContainer}>
+          <Image
+            source={EmptyStateAssets.collection}
+            style={styles.emptyIllustration}
+            resizeMode="contain"
+          />
+          <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.centerText}>
+            {cards.length === 0
+              ? '아직 모은 카드가 없어요. 첫 번째 랜드마크를 인증해 보세요!'
+              : '이 등급의 카드는 아직 없어요.'}
+          </CustomText>
+        </View>
       }
       ListFooterComponent={
         status === 'more' ? <ActivityIndicator size="small" color={theme.colors.primary} style={styles.footer} /> : null
@@ -188,7 +196,17 @@ const styles = StyleSheet.create({
   },
   centerText: {
     textAlign: 'center',
-    paddingVertical: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.xl,
+    gap: theme.spacing.sm,
+  },
+  emptyIllustration: {
+    width: 180,
+    height: 120,
   },
   retryPill: {
     borderRadius: theme.rounded.pill ?? 9999,
