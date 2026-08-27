@@ -26,7 +26,9 @@ function toFilePart(uri, index) {
  */
 export function submitReview(review, imageUris = [], { idempotencyKey } = {}) {
   const formData = new FormData();
-  formData.append('request', JSON.stringify(review));
+  // RN FormData는 문자열 파트에 Content-Type을 붙이지 않아 서버(@RequestPart)가
+  // application/octet-stream으로 거부한다 → {string, type} 형태로 JSON 타입을 명시한다.
+  formData.append('request', { string: JSON.stringify(review), type: 'application/json' });
   imageUris.forEach((uri, index) => {
     formData.append('files', toFilePart(uri, index));
   });

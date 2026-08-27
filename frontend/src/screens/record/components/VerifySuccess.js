@@ -52,7 +52,7 @@ export default function VerifySuccess({ landmark, result, onGoCollection, onGoHo
             </View>
           ) : (
             rewards.map((reward, index) => (
-              <RewardRow key={reward.policyId ?? index} reward={reward} index={index} last={index === rewards.length - 1} />
+              <RewardRow key={`${reward.policyId ?? "reward"}-${index}`} reward={reward} index={index} last={index === rewards.length - 1} />
             ))
           )}
           <View style={styles.totalRow}>
