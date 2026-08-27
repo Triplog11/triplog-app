@@ -22,3 +22,14 @@ export function updateProfile(changes) {
     body: changes,
   });
 }
+
+/**
+ * 이메일 중복 확인.
+ * @returns {available: boolean, message: string}
+ */
+export function checkEmail(email) {
+  return request('/users/email/check', {
+    method: 'POST',
+    body: { email },
+  });
+}

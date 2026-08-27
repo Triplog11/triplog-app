@@ -10,7 +10,8 @@ export const MISSION_TYPE = {
  * 내 미션 진행 현황 조회 (완료 여부 포함).
  * @param {{missionType?: string}} opts 생략 시 전체
  * @returns {missions: [{missionId, missionName, missionType, missionTarget, missionCondition,
- *           weekStart, weekEnd, rewardScore, rewardXp, completed, completedAt}]}
+ *           weekStart, weekEnd, rewardScore, rewardXp, completed, completedAt,
+ *           currentValue, targetValue}]}
  */
 export function fetchMyMissions({ missionType } = {}) {
   const params = new URLSearchParams();

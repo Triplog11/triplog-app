@@ -88,8 +88,8 @@ export async function authedRequest(path, options = {}) {
  * 인증이 필요한 multipart/form-data 요청 (이미지 업로드, 방문 인증 등).
  * FormData는 fetch가 boundary를 직접 세팅하도록 Content-Type을 넘기지 않는다.
  */
-export function authedMultipartRequest(path, formData, { method = 'POST' } = {}) {
-  return authedRequest(path, { method, formData });
+export function authedMultipartRequest(path, formData, { method = 'POST', headers } = {}) {
+  return authedRequest(path, { method, formData, headers });
 }
 
 /**
@@ -97,7 +97,9 @@ export function authedMultipartRequest(path, formData, { method = 'POST' } = {})
  * 에러 응답 포맷 {status, message}를 ApiError로 변환한다.
  * body는 JSON, formData는 multipart로 전송된다(둘 중 하나만 사용).
  */
-export async function request(path, { method = 'GET', body, token, formData } = {}) {
+export async function request(path, {
+  method = 'GET', body, token, formData, headers: extraHeaders,
+} = {}) {
   if (!BASE_URL) {
     throw new ApiError(0, 'API 서버 주소가 설정되지 않았어요. .env의 EXPO_PUBLIC_API_URL을 확인해 주세요.');
   }
@@ -105,7 +107,10 @@ export async function request(path, { method = 'GET', body, token, formData } = 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  const headers = {
+    ...(extraHeaders ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
   let fetchBody;
   if (formData !== undefined) {
     fetchBody = formData; // Content-Type은 fetch가 boundary와 함께 자동 설정

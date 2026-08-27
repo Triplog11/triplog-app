@@ -41,3 +41,18 @@ export function logoutRequest(accessToken, refreshToken) {
     body: { refreshToken },
   });
 }
+
+/**
+ * 이메일 자체 회원가입. 성공 후 oauthLogin({provider: 'LOCAL', email, password})로 로그인한다.
+ * @returns {isRegister: boolean}
+ */
+export function signup({
+  nickname, profileUrl, addressSi, addressDoGun, addressGu, email, password, isNotification,
+}) {
+  return request('/auth/signup', {
+    method: 'POST',
+    body: {
+      nickname, profileUrl, addressSi, addressDoGun, addressGu, email, password, isNotification,
+    },
+  });
+}

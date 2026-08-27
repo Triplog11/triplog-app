@@ -1,4 +1,5 @@
-import { authedMultipartRequest } from './client';
+import * as Crypto from 'expo-crypto';
+import { authedRequest, authedMultipartRequest } from './client';
 
 /**
  * 로컬 이미지 uri를 RN FormData 파일 파트로 변환한다.
@@ -11,23 +12,50 @@ function toFilePart(uri, index) {
 }
 
 /**
- * 방문 인증(리뷰) 등록 — multipart/form-data.
- * 백엔드는 `request`(JSON) 파트 + `files`(이미지, 선택) 파트를 받는다.
+ * 방문 인증(여행 기록) 등록 — multipart/form-data.
+ * 백엔드는 `request`(JSON) 파트 + `files`(이미지, 선택) 파트와
+ * 중복 제출 방지용 `Idempotency-Key` 헤더(필수)를 받는다.
  *
- * ⚠️ RN에서 @RequestPart("request") JSON 파트는 Content-Type이 명시되지 않으면
- * 서버가 거부할 수 있다. 디바이스 검증에서 400/415가 나오면 이 파트 전송 방식을
- * 조정해야 한다(백엔드 @RequestPart content-type 허용 또는 blob 전송).
- *
- * @param {{landmarkId, legalRegionCode, legalDistrictCode, reviewTitle,
- *          reviewContent, reviewScore, reviewPoint}} review
+ * @param {{tourismContentId: number, legalRegionCode: string, legalDistrictCode: string,
+ *          reviewTitle?: string, reviewContent?: string, reviewScore?: number}} review
+ *        reviewScore는 1.0~5.0, 소수점 첫째 자리까지
  * @param {string[]} [imageUris] 첨부 이미지 로컬 uri 배열
- * @returns {isVerified: boolean}
+ * @param {{idempotencyKey?: string}} [opts] 재시도 시 같은 키를 넘기면 중복 등록되지 않는다
+ * @returns {isVerified: boolean, rewards: [{policyId, description, xp, score}],
+ *           totalXp: number, totalScore: number}
  */
-export function submitReview(review, imageUris = []) {
+export function submitReview(review, imageUris = [], { idempotencyKey } = {}) {
   const formData = new FormData();
   formData.append('request', JSON.stringify(review));
   imageUris.forEach((uri, index) => {
     formData.append('files', toFilePart(uri, index));
   });
-  return authedMultipartRequest('/reviews', formData);
+  return authedMultipartRequest('/reviews', formData, {
+    headers: { 'Idempotency-Key': idempotencyKey ?? createIdempotencyKey() },
+  });
+}
+
+/** 방문 인증 1건당 1개 발급해 재시도에 재사용하는 멱등 키 */
+export function createIdempotencyKey() {
+  return Crypto.randomUUID();
+}
+
+/**
+ * 내 여행 기록(인증 내역) 목록 — 최신순 페이징.
+ * @returns {page, size, totalElements, totalPages,
+ *           items: [{reviewId, tourismContentId, contentTitle, reviewTitle, regionId,
+ *                    regionName, imageUrl, acquiredXp, acquiredScore, createdAt}]}
+ */
+export function fetchMyReviews({ page = 0, size = 20 } = {}) {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  return authedRequest(`/reviews?${params.toString()}`);
+}
+
+/**
+ * 여행 기록 상세.
+ * @returns {reviewId, landmarkId, landmarkName, regionId, regionName, imageUrl,
+ *           acquiredXp, acquiredScore, createdAt}
+ */
+export function fetchReviewDetail(reviewId) {
+  return authedRequest(`/reviews/${reviewId}/detail`);
 }
