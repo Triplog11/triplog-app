@@ -13,10 +13,23 @@ export default function AuthField({
   helper,
   action,
   style,
+  onFocus,
+  onBlur,
   ...inputProps
 }) {
+  const [focused, setFocused] = React.useState(false);
   const isError = helper?.state === 'error';
   const helperColor = isError ? theme.colors.error : theme.colors.success;
+
+  const handleFocus = (e) => {
+    setFocused(true);
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e) => {
+    setFocused(false);
+    onBlur?.(e);
+  };
 
   return (
     <View style={style}>
@@ -25,10 +38,16 @@ export default function AuthField({
       </CustomText>
       <View style={styles.row}>
         <TextInput
-          style={[styles.input, isError && styles.inputError]}
+          style={[
+            styles.input,
+            focused && styles.inputFocused,
+            isError && styles.inputError,
+          ]}
           placeholderTextColor={theme.colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           {...inputProps}
         />
         {action && (
@@ -77,6 +96,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Regular',
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  inputFocused: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.canvas,
   },
   inputError: {
     borderWidth: 2,

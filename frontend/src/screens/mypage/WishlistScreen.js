@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchBookmarks, deleteBookmark, BOOKMARK_TYPE } from '../../api/bookmarks';
+import { EmptyStateAssets } from '../../assets';
 
 /** 찜한 랜드마크 — 북마크 API 연동 */
 export default function WishlistScreen({ navigation }) {
@@ -77,6 +78,11 @@ export default function WishlistScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
+            <Image
+              source={EmptyStateAssets.collection}
+              style={styles.emptyImage}
+              resizeMode="contain"
+            />
             <CustomText variant="Body/Medium" color={theme.colors.textSecondary} style={styles.emptyText}>
               아직 찜한 곳이 없어요. 마음에 드는 랜드마크를 찜해 보세요!
             </CustomText>
@@ -186,8 +192,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   empty: {
-    paddingTop: 80,
+    paddingTop: 60,
     paddingHorizontal: 30,
+    alignItems: 'center',
+    gap: 16,
+  },
+  emptyImage: {
+    width: 140,
+    height: 94,
   },
   emptyText: {
     textAlign: 'center',

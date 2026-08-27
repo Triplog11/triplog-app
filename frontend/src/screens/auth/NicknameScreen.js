@@ -21,6 +21,7 @@ const NICKNAME_MAX = 12;
 export default function NicknameScreen({ navigation }) {
   const { completeSignup, temporaryToken, status } = useAuth();
   const [nickname, setNickname] = useState('');
+  const [nicknameFocused, setNicknameFocused] = useState(false);
   const [nicknameCheck, setNicknameCheck] = useState({ state: 'idle', message: '' });
   const [addressDoGun, setAddressDoGun] = useState('');
   const [addressSi, setAddressSi] = useState('');
@@ -106,11 +107,18 @@ export default function NicknameScreen({ navigation }) {
           </CustomText>
           <View style={styles.nicknameRow}>
             <TextInput
-              style={[styles.input, styles.nicknameInput]}
+              style={[
+                styles.input,
+                styles.nicknameInput,
+                nicknameFocused && styles.inputFocused,
+                nicknameCheck.state === 'unavailable' && styles.inputError,
+              ]}
               placeholder={`한글, 영문, 숫자 조합 ${NICKNAME_MIN}~${NICKNAME_MAX}자`}
               placeholderTextColor={theme.colors.textMuted}
               value={nickname}
               onChangeText={handleNicknameChange}
+              onFocus={() => setNicknameFocused(true)}
+              onBlur={() => setNicknameFocused(false)}
               maxLength={NICKNAME_MAX}
             />
             <TouchableOpacity
@@ -236,6 +244,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Regular',
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  inputFocused: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.canvas,
+  },
+  inputError: {
+    borderWidth: 2,
+    borderColor: theme.colors.error,
   },
   helperText: {
     marginTop: 8,
