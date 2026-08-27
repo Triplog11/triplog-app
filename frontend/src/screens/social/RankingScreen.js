@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: theme.spacing.lg,
-    paddingBottom: 24,
+    paddingBottom: 96,
   },
   list: {
     gap: theme.spacing.sm,

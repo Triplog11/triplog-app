@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomText from './CustomText';
 import theme from '../../theme/theme';
 import { PROVINCE_CODES } from '../../utils/provinces';
+import { getDistrictsByProvince } from '../../utils/koreaDistricts';
 import { fetchProvinceMap } from '../../api/regions';
 
 const PROVINCE_LIST = Object.keys(PROVINCE_CODES);
@@ -89,18 +90,21 @@ export default function RegionPicker({
     setSelectedProvince(province);
     setSearchKeyword('');
     setStep('district');
-    setLoadingDistricts(true);
+    
+    // 로컬 데이터셋으로 즉시 시군구 목록 로드 (비로그인 상태 401 방지)
+    const localItems = getDistrictsByProvince(province);
+    setDistricts(localItems);
 
     try {
       const code = PROVINCE_CODES[province]?.[0];
-      if (!code) throw new Error('지역 코드를 찾을 수 없습니다.');
-      const res = await fetchProvinceMap(code);
-      const items = res?.regions ?? [];
-      setDistricts(items);
+      if (code) {
+        const res = await fetchProvinceMap(code);
+        if (res?.regions && res.regions.length > 0) {
+          setDistricts(res.regions);
+        }
+      }
     } catch (err) {
-      setDistricts([]);
-    } finally {
-      setLoadingDistricts(false);
+      // 비로그인 상태(401) 또는 네트워크 실패 시 로컬 데이터셋 유지
     }
   };
 
@@ -197,18 +201,32 @@ export default function RegionPicker({
                 data={filteredProvinces}
                 keyExtractor={(item) => item}
                 contentContainerStyle={styles.listContent}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.itemRow}
-                    onPress={() => handleSelectProvince(item)}
-                    activeOpacity={0.7}
-                  >
-                    <CustomText variant="Body/Medium" color={theme.colors.text}>
-                      {item}
-                    </CustomText>
-                    <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
-                  </TouchableOpacity>
-                )}
+                renderItem={({ item }) => {
+                  const isSelected =
+                    selectedProvince === item ||
+                    (!selectedProvince &&
+                      (value?.addressDoGun === item || value?.addressSi === item));
+                  return (
+                    <TouchableOpacity
+                      style={[styles.itemRow, isSelected && styles.itemRowSelected]}
+                      onPress={() => handleSelectProvince(item)}
+                      activeOpacity={0.7}
+                    >
+                      <CustomText
+                        variant="Body/Medium"
+                        color={isSelected ? theme.colors.primary : theme.colors.text}
+                        style={isSelected ? styles.bold : undefined}
+                      >
+                        {item}
+                      </CustomText>
+                      <Ionicons
+                        name={isSelected ? 'checkmark-circle' : 'chevron-forward'}
+                        size={isSelected ? 18 : 16}
+                        color={isSelected ? theme.colors.primary : theme.colors.textMuted}
+                      />
+                    </TouchableOpacity>
+                  );
+                }}
               />
             ) : loadingDistricts ? (
               <View style={styles.centerLoading}>
@@ -226,18 +244,32 @@ export default function RegionPicker({
                     </CustomText>
                   </View>
                 }
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.itemRow}
-                    onPress={() => handleSelectDistrict(item)}
-                    activeOpacity={0.7}
-                  >
-                    <CustomText variant="Body/Medium" color={theme.colors.text}>
-                      {item.regionName}
-                    </CustomText>
-                    <Ionicons name="checkmark" size={16} color={theme.colors.primary} />
-                  </TouchableOpacity>
-                )}
+                renderItem={({ item }) => {
+                  const isSelected =
+                    value?.addressGu === item.regionName ||
+                    (selectedProvince &&
+                      (value?.addressDoGun === selectedProvince ||
+                        value?.addressSi === selectedProvince) &&
+                      value?.addressGu === item.regionName);
+                  return (
+                    <TouchableOpacity
+                      style={[styles.itemRow, isSelected && styles.itemRowSelected]}
+                      onPress={() => handleSelectDistrict(item)}
+                      activeOpacity={0.7}
+                    >
+                      <CustomText
+                        variant="Body/Medium"
+                        color={isSelected ? theme.colors.primary : theme.colors.text}
+                        style={isSelected ? styles.bold : undefined}
+                      >
+                        {item.regionName}
+                      </CustomText>
+                      {isSelected ? (
+                        <Ionicons name="checkmark-circle" size={18} color={theme.colors.primary} />
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                }}
               />
             )}
           </View>
@@ -327,8 +359,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: theme.rounded.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.surfaceDim,
+  },
+  itemRowSelected: {
+    backgroundColor: theme.colors.primarySoft,
+  },
+  bold: {
+    fontWeight: 'bold',
   },
   centerLoading: {
     flex: 1,
