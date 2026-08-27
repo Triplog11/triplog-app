@@ -29,6 +29,10 @@ export default function MissionStrip() {
   const completedCount = missions.filter((m) => m.completed).length;
   const next = missions.find((m) => !m.completed);
   const allDone = completedCount === total;
+  const current = Number(next?.currentValue ?? 0);
+  const target = Number(next?.targetValue ?? 0);
+  const hasProgress = !allDone && target > 0;
+  const ratio = hasProgress ? Math.min(1, current / target) : 0;
 
   return (
     <View style={styles.strip}>
@@ -51,6 +55,16 @@ export default function MissionStrip() {
         >
           {allDone ? '이번 주 미션을 모두 끝냈어요!' : next?.missionName}
         </CustomText>
+        {hasProgress && (
+          <View style={styles.progressRow}>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${Math.round(ratio * 100)}%` }]} />
+            </View>
+            <CustomText variant="Caption" color={theme.colors.textSecondary} style={styles.progressText}>
+              {current}/{target}
+            </CustomText>
+          </View>
+        )}
       </View>
       {!allDone && next?.rewardXp != null && (
         <View style={styles.rewardPill}>
@@ -89,6 +103,28 @@ const styles = StyleSheet.create({
   },
   name: {
     fontWeight: 'bold',
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 3,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.canvas,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: theme.colors.primary,
+  },
+  progressText: {
+    fontWeight: '600',
+    fontSize: 10,
   },
   rewardPill: {
     backgroundColor: theme.colors.canvas,

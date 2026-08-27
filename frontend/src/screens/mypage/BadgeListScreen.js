@@ -8,9 +8,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { fetchBadges } from '../../api/badges';
+import { fetchBadges, setRepresentativeBadge } from '../../api/badges';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
+import InlineToast from './components/InlineToast';
 
 const PAGE_SIZE = 20;
 const FILTERS = [
@@ -27,8 +28,28 @@ export default function BadgeListScreen({ navigation }) {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const filter = FILTERS.find((f) => f.key === filterKey);
+  const dismissToast = useCallback(() => setToast(null), []);
+
+  /** 대표 뱃지 설정 — 획득 뱃지만 가능, 낙관적 갱신 후 실패 시 롤백 */
+  const handleSetRepresentative = async (badge) => {
+    if (badge.representative || updatingId != null) return;
+    const previous = badges;
+    setUpdatingId(badge.badgeId);
+    setBadges((prev) => prev.map((b) => ({ ...b, representative: b.badgeId === badge.badgeId })));
+    try {
+      await setRepresentativeBadge(badge.badgeId);
+      setToast(`'${badge.badgeName}' 뱃지를 대표로 설정했어요`);
+    } catch (error) {
+      setBadges(previous);
+      setToast(error?.message ?? '대표 뱃지 설정에 실패했어요. 다시 시도해 주세요.');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const load = useCallback(
     async (nextPage, replace) => {
@@ -71,8 +92,22 @@ export default function BadgeListScreen({ navigation }) {
 
   const renderBadge = ({ item }) => {
     const acquired = filter.key === 'acquired' ? true : !!item.acquired;
+    const representative = !!item.representative;
     return (
-      <View style={[styles.badgeCard, !acquired && styles.lockedCard]}>
+      <TouchableOpacity
+        style={[styles.badgeCard, !acquired && styles.lockedCard, representative && styles.representativeCard]}
+        onLongPress={acquired ? () => handleSetRepresentative(item) : undefined}
+        delayLongPress={350}
+        activeOpacity={acquired ? 0.85 : 1}
+        disabled={!acquired}
+      >
+        {representative && (
+          <View style={styles.repPill}>
+            <CustomText variant="Caption" color={theme.colors.white} style={styles.statusText}>
+              대표
+            </CustomText>
+          </View>
+        )}
         <View style={styles.iconWrapper}>
           {item.badgeUrl ? (
             <Image
@@ -105,7 +140,20 @@ export default function BadgeListScreen({ navigation }) {
             {acquired ? '획득 완료' : '잠김'}
           </CustomText>
         </View>
-      </View>
+        {acquired && !representative && (
+          <TouchableOpacity
+            style={styles.repBtn}
+            onPress={() => handleSetRepresentative(item)}
+            activeOpacity={0.7}
+            disabled={updatingId != null}
+            hitSlop={6}
+          >
+            <CustomText variant="Caption" color={theme.colors.primary} style={styles.statusText}>
+              대표 뱃지로 설정
+            </CustomText>
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
     );
   };
 
@@ -181,6 +229,7 @@ export default function BadgeListScreen({ navigation }) {
           }
         />
       )}
+      <InlineToast message={toast} onDismiss={dismissToast} />
     </SafeAreaView>
   );
 }
@@ -264,6 +313,22 @@ const styles = StyleSheet.create({
   },
   lockedCard: {
     opacity: 0.55,
+  },
+  representativeCard: {
+    borderColor: theme.colors.primary,
+  },
+  repPill: {
+    position: 'absolute',
+    top: theme.spacing.sm,
+    left: theme.spacing.sm,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.rounded.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+  },
+  repBtn: {
+    marginTop: theme.spacing.sm,
+    paddingVertical: 2,
   },
   iconWrapper: {
     width: 64,

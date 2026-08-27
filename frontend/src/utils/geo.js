@@ -60,3 +60,35 @@ export function resolveRegionName(place) {
   );
   return match ? match.canonical : null;
 }
+
+const EARTH_RADIUS_M = 6371000;
+
+/**
+ * 두 좌표 사이 거리(m) — Haversine.
+ * @param from {lat, lng}
+ * @param to {lat, lng}
+ */
+export function distanceInMeters(from, to) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(to.lat - from.lat);
+  const dLng = toRad(to.lng - from.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(EARTH_RADIUS_M * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+/** 거리 표시 — 좌표를 모르면 `--m` (DESIGN.md §14) */
+export function formatDistance(meters) {
+  if (meters == null) return '--m';
+  if (meters < 1000) return `${meters}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+}
+
+/** 랜드마크 DTO에서 좌표 추출 — 백엔드가 아직 위경도를 내려주지 않아 대부분 null */
+export function getLandmarkCoords(landmark) {
+  const lat = landmark?.latitude ?? landmark?.lat;
+  const lng = landmark?.longitude ?? landmark?.lng;
+  if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+  return { lat, lng };
+}

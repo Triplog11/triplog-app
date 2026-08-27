@@ -8,10 +8,11 @@ import PhotoPlaceholder from './PhotoPlaceholder';
 
 /**
  * 도감 그리드의 랜드마크 카드 한 장.
- * 획득: 사진 + 등급 보더/뱃지 + 획득일 / 미획득: ??? + 자물쇠 (DESIGN.md §14 잠금 카드)
+ * card: {name, region?, grade?, imageUrl?, obtained, date?}
+ * 획득: 사진(cardUrl) + 등급 보더/뱃지 + 획득일 / 미획득: ??? + 자물쇠 (DESIGN.md §14 잠금 카드)
  */
 export default function LandmarkCardItem({ card, wishlisted, onPress }) {
-  // 백엔드 랜드마크에는 등급이 없다 → grade는 있을 때만 사용(목 카드 하위호환)
+  // 지역 상세의 랜드마크 목록에는 등급이 없다 → grade는 있을 때만 사용
   const grade = card.grade ? GRADE_CONFIG[card.grade] : null;
   const { obtained } = card;
 
@@ -23,7 +24,11 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
     >
       <View style={styles.thumbWrap}>
         {obtained ? (
-          <PhotoPlaceholder tint={grade?.soft ?? theme.colors.primarySoft} icon="camera-outline" />
+          <PhotoPlaceholder
+            uri={card.imageUrl}
+            tint={grade?.soft ?? theme.colors.primarySoft}
+            icon="camera-outline"
+          />
         ) : (
           <View style={styles.lockedThumb}>
             <Ionicons name="lock-closed" size={24} color={theme.colors.textMuted} />
@@ -32,7 +37,7 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
         {grade && (
           <View style={[styles.gradeBadge, { backgroundColor: grade.soft }]}>
             <CustomText variant="Caption" color={grade.color} style={styles.gradeText}>
-              {card.grade}
+              {grade.label}
             </CustomText>
           </View>
         )}
@@ -53,7 +58,7 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
           {obtained ? card.name : '???'}
         </CustomText>
         <CustomText variant="Caption" color={theme.colors.textSecondary} numberOfLines={1}>
-          {obtained ? card.region : '미발견 지역'}
+          {obtained ? card.region ?? card.landmarkName ?? ' ' : '미발견 지역'}
         </CustomText>
         <View style={styles.metaRow}>
           <Ionicons

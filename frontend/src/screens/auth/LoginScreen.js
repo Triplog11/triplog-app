@@ -99,6 +99,20 @@ export default function LoginScreen({ navigation }) {
           )}
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={[styles.socialBtn, styles.emailBtn, busy && styles.btnBusy]}
+          onPress={() => navigation.navigate('EmailLogin')}
+          disabled={busy}
+          activeOpacity={0.8}
+        >
+          <View style={styles.iconSlot}>
+            <Ionicons name="mail-outline" size={18} color={theme.colors.primary} />
+          </View>
+          <CustomText variant="UI/Button" color={theme.colors.primary} style={styles.btnLabel}>
+            이메일로 계속하기
+          </CustomText>
+        </TouchableOpacity>
+
         <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.notice}>
           로그인하면 이용약관과 개인정보 처리방침에 동의하게 됩니다.
         </CustomText>
@@ -159,6 +173,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.canvas,
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  emailBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
   },
   btnBusy: {
     opacity: 0.6,

@@ -274,7 +274,7 @@ function ProvinceMap({ regionName }) {
   );
 }
 
-/** 상세 뷰 하단 정보 카드 — 지역명 + 수집 진행률 + 탐험 CTA */
+/** 상세 뷰 하단 정보 카드 — 지역명 + 시·군·구 방문 진행률 + 탐험 CTA (regions: {name, collected, total}) */
 function ProvinceInfoCard({ regionName, regions, onExplore }) {
   const region = regions.find((r) => r.name === regionName);
   const collected = region?.collected ?? 0;
@@ -288,7 +288,7 @@ function ProvinceInfoCard({ regionName, regions, onExplore }) {
         <View style={styles.infoCardTitleCol}>
           <Text style={styles.infoCardName}>{regionName}</Text>
           <Text style={styles.infoCardMeta}>
-            랜드마크 카드 {collected}/{total}장 수집 · {pct}%
+            시·군·구 {collected}/{total}곳 방문 · {pct}%
           </Text>
         </View>
         <View style={[styles.infoCardBadge, { backgroundColor: accent }]}>
