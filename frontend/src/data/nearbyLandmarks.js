@@ -5,9 +5,9 @@
 export const NEARBY_LANDMARKS = [
   { id: 101, name: '국립중앙과학관', region: '대전 유성구', grade: 'Rare', lat: 36.3757, lng: 127.3767, radiusM: 500, point: 80, xp: 40, visited: false },
   { id: 102, name: '대전시립미술관', region: '대전 서구', grade: 'Common', lat: 36.3684, lng: 127.3877, radiusM: 500, point: 50, xp: 25, visited: false },
-  { id: 103, name: '한밭수목원', region: '대전 서구', grade: 'Rare', lat: 36.3676, lng: 127.3884, radiusM: 500, point: 70, xp: 35, visited: true },
+  { id: 103, name: '한밭수목원', region: '대전 서구', grade: 'Rare', lat: 36.3676, lng: 127.3884, radiusM: 500, point: 70, xp: 35, visited: false },
   { id: 104, name: '엑스포과학공원', region: '대전 유성구', grade: 'Epic', lat: 36.3742, lng: 127.3863, radiusM: 500, point: 120, xp: 60, visited: false },
-  { id: 105, name: '성심당 본점', region: '대전 중구', grade: 'Epic', lat: 36.3277, lng: 127.4278, radiusM: 300, point: 120, xp: 60, visited: true },
+  { id: 105, name: '성심당 본점', region: '대전 중구', grade: 'Epic', lat: 36.3277, lng: 127.4278, radiusM: 300, point: 120, xp: 60, visited: false },
   { id: 106, name: '장태산 자연휴양림', region: '대전 서구', grade: 'Legendary', lat: 36.2286, lng: 127.3313, radiusM: 800, point: 200, xp: 100, visited: false },
 ];
 

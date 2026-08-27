@@ -18,6 +18,10 @@ export default function VerifyHistoryScreen() {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
+          <View>
+          <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.sampleNote}>
+            지금은 예시 데이터예요. 곧 실제 기록으로 채워져요!
+          </CustomText>
           <View style={styles.summary}>
             <View style={styles.summaryItem}>
               <CustomText variant="Caption" color={theme.colors.textSecondary}>총 인증</CustomText>
@@ -32,6 +36,7 @@ export default function VerifyHistoryScreen() {
                 {totalXp} XP
               </CustomText>
             </View>
+          </View>
           </View>
         }
         ListEmptyComponent={
@@ -77,6 +82,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,
+  },
+  sampleNote: {
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
   },
   list: {
     padding: theme.spacing.lg,

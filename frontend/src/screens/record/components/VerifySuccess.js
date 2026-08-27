@@ -101,7 +101,7 @@ export default function VerifySuccess({ landmark, onGoCollection, onDone }) {
           <Pressable style={styles.popupCard} onPress={() => {}}>
             <View style={styles.newBadge}>
               <CustomText variant="Caption" color={theme.colors.primary} style={styles.bold}>
-                NEW CARD!
+                새 카드 획득!
               </CustomText>
             </View>
             <Animated.View

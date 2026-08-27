@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, Text, StatusBar, Platform, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import KoreaMap from '../../components/map/KoreaMap';
 import Fab from '../../components/common/Fab';
 import LocationPermissionModal from './components/LocationPermissionModal';
+import MissionStrip from './components/MissionStrip';
 import theme from '../../theme/theme';
 import { REGIONS, getNationalStats } from '../../data/regions';
 import { fetchNationwideMap } from '../../api/regions';
@@ -46,6 +47,8 @@ export default function HomeScreen({ navigation }) {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [compassOn, setCompassOn] = useState(false);
+  // 광역 드릴다운 중에는 나침반 FAB가 하단 지역 카드와 겹치므로 숨긴다
+  const [inProvinceView, setInProvinceView] = useState(false);
 
   const stopCompass = useCallback(() => {
     headingSub.current?.remove();
@@ -166,16 +169,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      {navigation.canGoBack() && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-          accessibilityLabel="뒤로 가기"
-        >
-          <Feather name="arrow-left" size={22} color={theme.colors.text} />
-        </TouchableOpacity>
-      )}
+      <MissionStrip />
 
       <KoreaMap
         ref={mapRef}
@@ -185,15 +179,16 @@ export default function HomeScreen({ navigation }) {
         userCoords={userCoords}
         compassActive={compassOn}
         onUserGesture={handleMapGesture}
+        onProvinceChange={(name) => setInProvinceView(!!name)}
       />
 
-      <Fab
+      {!inProvinceView && <Fab
         icon={compassOn ? 'navigation' : 'compass'}
         accessibilityLabel={compassOn ? '나침반 모드 끄기' : '내 방향으로 지도 회전'}
         onPress={handleCompassPress}
         style={styles.fab}
         active={compassOn}
-      />
+      />}
 
       <LocationPermissionModal
         visible={showPermissionModal}
@@ -266,19 +261,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 20,
-  },
-  backBtn: {
-    position: 'absolute',
-    left: 16,
-    top: Platform.OS === 'ios' ? 60 : 44,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.white,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
   },
 });

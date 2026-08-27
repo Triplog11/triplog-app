@@ -28,7 +28,7 @@ export default function ReviewWrite({ landmark, onSkip, onSubmit }) {
               <Ionicons
                 name={rating >= star ? 'star' : 'star-outline'}
                 size={34}
-                color={rating >= star ? theme.colors.warning : theme.colors.border}
+                color={rating >= star ? theme.colors.warning : theme.colors.textMuted}
               />
             </TouchableOpacity>
           ))}
