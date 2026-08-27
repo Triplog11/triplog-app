@@ -201,18 +201,32 @@ export default function RegionPicker({
                 data={filteredProvinces}
                 keyExtractor={(item) => item}
                 contentContainerStyle={styles.listContent}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.itemRow}
-                    onPress={() => handleSelectProvince(item)}
-                    activeOpacity={0.7}
-                  >
-                    <CustomText variant="Body/Medium" color={theme.colors.text}>
-                      {item}
-                    </CustomText>
-                    <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
-                  </TouchableOpacity>
-                )}
+                renderItem={({ item }) => {
+                  const isSelected =
+                    selectedProvince === item ||
+                    (!selectedProvince &&
+                      (value?.addressDoGun === item || value?.addressSi === item));
+                  return (
+                    <TouchableOpacity
+                      style={[styles.itemRow, isSelected && styles.itemRowSelected]}
+                      onPress={() => handleSelectProvince(item)}
+                      activeOpacity={0.7}
+                    >
+                      <CustomText
+                        variant="Body/Medium"
+                        color={isSelected ? theme.colors.primary : theme.colors.text}
+                        style={isSelected ? styles.bold : undefined}
+                      >
+                        {item}
+                      </CustomText>
+                      <Ionicons
+                        name={isSelected ? 'checkmark-circle' : 'chevron-forward'}
+                        size={isSelected ? 18 : 16}
+                        color={isSelected ? theme.colors.primary : theme.colors.textMuted}
+                      />
+                    </TouchableOpacity>
+                  );
+                }}
               />
             ) : loadingDistricts ? (
               <View style={styles.centerLoading}>
@@ -230,18 +244,32 @@ export default function RegionPicker({
                     </CustomText>
                   </View>
                 }
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.itemRow}
-                    onPress={() => handleSelectDistrict(item)}
-                    activeOpacity={0.7}
-                  >
-                    <CustomText variant="Body/Medium" color={theme.colors.text}>
-                      {item.regionName}
-                    </CustomText>
-                    <Ionicons name="checkmark" size={16} color={theme.colors.primary} />
-                  </TouchableOpacity>
-                )}
+                renderItem={({ item }) => {
+                  const isSelected =
+                    value?.addressGu === item.regionName ||
+                    (selectedProvince &&
+                      (value?.addressDoGun === selectedProvince ||
+                        value?.addressSi === selectedProvince) &&
+                      value?.addressGu === item.regionName);
+                  return (
+                    <TouchableOpacity
+                      style={[styles.itemRow, isSelected && styles.itemRowSelected]}
+                      onPress={() => handleSelectDistrict(item)}
+                      activeOpacity={0.7}
+                    >
+                      <CustomText
+                        variant="Body/Medium"
+                        color={isSelected ? theme.colors.primary : theme.colors.text}
+                        style={isSelected ? styles.bold : undefined}
+                      >
+                        {item.regionName}
+                      </CustomText>
+                      {isSelected ? (
+                        <Ionicons name="checkmark-circle" size={18} color={theme.colors.primary} />
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                }}
               />
             )}
           </View>
@@ -331,8 +359,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: theme.rounded.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.surfaceDim,
+  },
+  itemRowSelected: {
+    backgroundColor: theme.colors.primarySoft,
+  },
+  bold: {
+    fontWeight: 'bold',
   },
   centerLoading: {
     flex: 1,
