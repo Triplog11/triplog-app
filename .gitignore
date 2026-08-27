@@ -12,4 +12,6 @@ _design_refs/
 *.local.md
 frontend/scratch/
 .cursor/
+frontend/assets/_unused/
+frontend/assets/google-services.json
 

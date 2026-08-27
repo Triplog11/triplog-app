@@ -1,85 +1,107 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
+import StarRating from './StarRating';
+import SubmitButton from './SubmitButton';
 
-const MAX_LENGTH = 300;
+const TITLE_MAX = 40;
+const CONTENT_MAX = 300;
 
-/** 인증 후 방문 후기 작성 (선택) */
-export default function ReviewWrite({ landmark, onSkip, onSubmit }) {
+/**
+ * 4단계 — 방문 기록 작성. 제목·별점은 필수, 본문은 선택.
+ * (사진 첨부는 expo-image-picker 미설치 상태라 이번 플로우에서 제외)
+ *
+ * @param submitting 전송 중 — 버튼 3-dot 표시, 입력 잠금
+ * @param errorMessage 마지막 전송 실패 메시지 (같은 버튼으로 재시도)
+ * @param onSubmit ({reviewTitle, reviewContent, reviewScore})
+ */
+export default function ReviewWrite({ landmark, submitting, errorMessage, onSubmit }) {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
   const [rating, setRating] = useState(0);
-  const [text, setText] = useState('');
+
+  const canSubmit = title.trim().length > 0 && rating >= 1;
+
+  const handleSubmit = () => {
+    if (!canSubmit || submitting) return;
+    onSubmit({
+      reviewTitle: title.trim(),
+      reviewContent: content.trim(),
+      reviewScore: Number(rating.toFixed(1)),
+    });
+  };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={80}
+    >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <CustomText variant="Heading/H4" color={theme.colors.text} style={styles.title}>
-          이번 방문은 어땠나요?
+          방문 기록을 작성해 주십시오
         </CustomText>
         <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.subtitle}>
-          {landmark.name} · 기록은 나중에 남겨도 괜찮아요
+          {landmark.landmarkName}
+          {landmark.acquired ? ' · 이미 획득한 랜드마크라 보상이 지급되지 않습니다' : ''}
         </CustomText>
 
-        {/* 별점 */}
-        <View style={styles.starRow}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <TouchableOpacity key={star} onPress={() => setRating(star)} hitSlop={6} activeOpacity={0.7}>
-              <Ionicons
-                name={rating >= star ? 'star' : 'star-outline'}
-                size={34}
-                color={rating >= star ? theme.colors.warning : theme.colors.border}
-              />
-            </TouchableOpacity>
-          ))}
+        <View style={styles.starBlock}>
+          <StarRating value={rating} onChange={setRating} />
         </View>
 
-        {/* 후기 */}
         <View style={styles.inputBox}>
           <TextInput
-            style={styles.input}
-            placeholder="어떤 점이 좋았는지 자유롭게 적어 주세요."
+            style={styles.titleInput}
+            placeholder="기록 제목"
             placeholderTextColor={theme.colors.textMuted}
-            value={text}
-            onChangeText={setText}
-            multiline
-            maxLength={MAX_LENGTH}
-            textAlignVertical="top"
+            value={title}
+            onChangeText={setTitle}
+            maxLength={TITLE_MAX}
+            editable={!submitting}
+            returnKeyType="next"
           />
-          <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.counter}>
-            {text.length}/{MAX_LENGTH}
-          </CustomText>
         </View>
 
-        {/* 사진 첨부 (준비 중) */}
-        <View style={styles.photoRow}>
-          <View style={styles.photoSlot}>
-            <Ionicons name="camera-outline" size={22} color={theme.colors.textMuted} />
-            <CustomText variant="Caption" color={theme.colors.textMuted}>사진 첨부</CustomText>
-          </View>
-          <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.photoHint}>
-            사진 업로드는 곧 지원될 예정이에요.
+        <View style={styles.inputBox}>
+          <TextInput
+            style={styles.contentInput}
+            placeholder="어떤 점이 기억에 남았는지 작성해 주십시오. (선택)"
+            placeholderTextColor={theme.colors.textMuted}
+            value={content}
+            onChangeText={setContent}
+            multiline
+            maxLength={CONTENT_MAX}
+            textAlignVertical="top"
+            editable={!submitting}
+          />
+          <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.counter}>
+            {content.length}/{CONTENT_MAX}
           </CustomText>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.submitBtn}
-          onPress={() => onSubmit({ rating, text: text.trim() })}
-          activeOpacity={0.9}
-        >
-          <CustomText variant="UI/Button" color="#FFFFFF" style={styles.bold}>
-            기록 남기기
+        {errorMessage ? (
+          <CustomText variant="Body/Small" color={theme.colors.error} style={styles.hint}>
+            {errorMessage}
           </CustomText>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.skipBtn} onPress={onSkip} activeOpacity={0.8}>
-          <CustomText variant="UI/Button" color={theme.colors.textSecondary} style={styles.bold}>
-            나중에 하기
-          </CustomText>
-        </TouchableOpacity>
+        ) : (
+          !canSubmit && (
+            <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.hint}>
+              제목과 별점을 입력하면 인증을 완료할 수 있습니다
+            </CustomText>
+          )
+        )}
+        <SubmitButton
+          label={errorMessage ? '다시 시도' : '인증하기'}
+          onPress={handleSubmit}
+          disabled={!canSubmit}
+          loading={submitting}
+        />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -89,30 +111,31 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: theme.spacing.lg,
+    gap: theme.spacing.base,
   },
   title: {
     fontWeight: 'bold',
   },
   subtitle: {
-    marginTop: 6,
+    marginTop: -theme.spacing.sm,
   },
-  bold: {
-    fontWeight: 'bold',
-  },
-  starRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 10,
-    marginVertical: theme.spacing.xl,
+  starBlock: {
+    marginVertical: theme.spacing.sm,
   },
   inputBox: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.canvas,
     borderRadius: theme.rounded.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.spacing.base,
   },
-  input: {
+  titleInput: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontFamily: 'Pretendard-Bold',
+    padding: 0,
+  },
+  contentInput: {
     minHeight: 120,
     color: theme.colors.text,
     fontSize: 14,
@@ -124,40 +147,13 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginTop: 6,
   },
-  photoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.base,
-    marginTop: theme.spacing.base,
-  },
-  photoSlot: {
-    width: 76,
-    height: 76,
-    borderRadius: theme.rounded.card,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 3,
-  },
-  photoHint: {
-    flex: 1,
-  },
   footer: {
     padding: theme.spacing.lg,
+    // 탭바의 가운데 인증 플로팅 버튼과 겹치지 않도록 하단 여백 확보
+    paddingBottom: 104,
     gap: theme.spacing.sm,
   },
-  submitBtn: {
-    height: 56,
-    borderRadius: theme.rounded.cta,
-    backgroundColor: theme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  skipBtn: {
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
+  hint: {
+    textAlign: 'center',
   },
 });

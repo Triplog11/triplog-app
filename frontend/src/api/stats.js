@@ -1,23 +1,22 @@
 import { authedRequest } from './client';
 
-/** 랭킹 타입 */
+/** 랭킹 타입 (백엔드는 TOTAL/MONTHLY만 지원) */
 export const RANKING_TYPE = {
   TOTAL: 'TOTAL',
   MONTHLY: 'MONTHLY',
-  QUARTER: 'QUARTER',
 };
 
 /**
  * 내 랭킹 정보 조회.
- * @returns {nickname, profileUrl, totalRank, monthlyRank, quarterRank,
- *           overallScore, monthScore, quarterScore, level, tier, nextTier, requiredScore}
+ * @returns {nickname, profileUrl, totalRank, monthlyRank,
+ *           overallScore, monthScore, level, tier, nextTier, requiredScore}
  */
 export function fetchMyRanking() {
   return authedRequest('/stats/rankings/me');
 }
 
 /**
- * 전체 랭킹 목록 조회.
+ * 전체 랭킹 목록 조회. 비어 있으면 rankings: [] (200).
  * @param {{rankingType?: string, page?: number, size?: number}} opts
  * @returns {rankingType, page, size, totalElements, totalPages,
  *           rankings: [{rank, usersId, nickname, profileUrl, score, level, tier}]}

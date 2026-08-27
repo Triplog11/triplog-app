@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, Text, StatusBar, Platform, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { StyleSheet, View, Text, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import KoreaMap from '../../components/map/KoreaMap';
 import Fab from '../../components/common/Fab';
 import LocationPermissionModal from './components/LocationPermissionModal';
+import MissionStrip from './components/MissionStrip';
 import theme from '../../theme/theme';
-import { REGIONS, getNationalStats } from '../../data/regions';
 import { fetchNationwideMap } from '../../api/regions';
+import { buildProvinceStats } from '../../utils/provinces';
 import { resolveRegionName, formatPlaceLabel } from '../../utils/geo';
 
 /**
@@ -17,12 +18,11 @@ import { resolveRegionName, formatPlaceLabel } from '../../utils/geo';
  * - 나침반 버튼: 탭하면 기기 방향(폰 y축 위쪽)에 맞춰 지도 회전, 다시 탭하면 북쪽 복귀
  */
 export default function HomeScreen({ navigation }) {
-  const fallbackStats = getNationalStats();
   const [mapStats, setMapStats] = useState(null);
   const mapRef = useRef(null);
   const headingSub = useRef(null);
 
-  // 헤더 통계(전국 달성률/방문 지역 수)를 실 API로 채운다. 실패 시 목데이터로 폴백.
+  // 헤더 통계(전국 달성률/방문 지역 수)와 시·도별 방문 수를 실 API로 채운다. 로딩/실패 시 '--'.
   useEffect(() => {
     let mounted = true;
     fetchNationwideMap()
@@ -35,10 +35,9 @@ export default function HomeScreen({ navigation }) {
 
   // overallCompletionRate가 0~1 비율인지 0~100 퍼센트인지 불확실 → 방어적으로 정규화
   const rawRate = mapStats?.overallCompletionRate;
-  const percent =
-    rawRate != null ? Math.round(rawRate <= 1 ? rawRate * 100 : rawRate) : fallbackStats.percent;
-  const collected =
-    mapStats?.visitedRegionCount != null ? mapStats.visitedRegionCount : fallbackStats.collected;
+  const percent = rawRate != null ? Math.round(rawRate <= 1 ? rawRate * 100 : rawRate) : '--';
+  const collected = mapStats?.visitedRegionCount ?? '--';
+  const provinceStats = useMemo(() => buildProvinceStats(mapStats?.regions), [mapStats]);
 
   const [userRegion, setUserRegion] = useState(null);
   const [userCoords, setUserCoords] = useState(null);
@@ -46,6 +45,8 @@ export default function HomeScreen({ navigation }) {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [compassOn, setCompassOn] = useState(false);
+  // 광역 드릴다운 중에는 나침반 FAB가 하단 지역 카드와 겹치므로 숨긴다
+  const [inProvinceView, setInProvinceView] = useState(false);
 
   const stopCompass = useCallback(() => {
     headingSub.current?.remove();
@@ -166,34 +167,26 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      {navigation.canGoBack() && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-          accessibilityLabel="뒤로 가기"
-        >
-          <Feather name="arrow-left" size={22} color={theme.colors.text} />
-        </TouchableOpacity>
-      )}
+      <MissionStrip />
 
       <KoreaMap
         ref={mapRef}
-        regions={REGIONS}
+        regions={provinceStats}
         onExplore={handleExplore}
         userRegion={userRegion}
         userCoords={userCoords}
         compassActive={compassOn}
         onUserGesture={handleMapGesture}
+        onProvinceChange={(name) => setInProvinceView(!!name)}
       />
 
-      <Fab
+      {!inProvinceView && <Fab
         icon={compassOn ? 'navigation' : 'compass'}
         accessibilityLabel={compassOn ? '나침반 모드 끄기' : '내 방향으로 지도 회전'}
         onPress={handleCompassPress}
         style={styles.fab}
         active={compassOn}
-      />
+      />}
 
       <LocationPermissionModal
         visible={showPermissionModal}
@@ -266,19 +259,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 20,
-  },
-  backBtn: {
-    position: 'absolute',
-    left: 16,
-    top: Platform.OS === 'ios' ? 60 : 44,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.white,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
   },
 });

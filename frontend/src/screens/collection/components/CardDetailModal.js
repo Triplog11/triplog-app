@@ -1,36 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Modal, Pressable, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, Modal, Pressable, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
-import { GRADE_CONFIG } from '../../../data/collection';
+import { GRADE_CONFIG, tierToGrade, formatAcquiredDate } from '../../../data/collection';
 import { fetchLandmarkDetail } from '../../../api/landmarks';
+import { CardAssets } from '../../../assets';
 import PhotoPlaceholder from './PhotoPlaceholder';
 
 const MAX_STARS = 4;
 
-/** ISO 날짜 문자열을 'YYYY.MM.DD'로 (런타임 파싱, 실패 시 원본) */
-function formatDate(iso) {
-  if (!iso) return null;
-  return typeof iso === 'string' && iso.length >= 10 ? iso.slice(0, 10).replace(/-/g, '.') : iso;
-}
-
 /**
  * 카드 상세 바텀시트.
- * - 목 카드(등급 있음)와 실 랜드마크(landmarkId 있음, 등급 없음) 모두 지원한다.
- * - landmarkId가 있으면 GET /landmarks/{id}로 획득일·방문횟수를 보강한다.
+ * - card: {landmarkId?, name, region?, grade?, cardTier?, imageUrl?, obtained, date?}
+ * - landmarkId가 있으면 GET /landmarks/{id}로 카드명·등급·이미지·획득일·방문횟수를 보강한다.
  * - 미획득 카드는 정보를 가리고 "방문 인증하러 가기" CTA를 노출한다.
  */
 export default function CardDetailModal({ card, onClose, onVerifyPress }) {
   const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setDetail(null);
     if (!card?.landmarkId) return;
     let mounted = true;
+    setLoading(true);
     fetchLandmarkDetail(card.landmarkId)
       .then((result) => mounted && setDetail(result ?? null))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => mounted && setLoading(false));
     return () => {
       mounted = false;
     };
@@ -38,10 +36,14 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
 
   if (!card) return null;
 
-  const grade = card.grade ? GRADE_CONFIG[card.grade] : null;
-  const { obtained } = card;
+  const gradeKey = tierToGrade(detail?.cardTier) ?? card.grade ?? tierToGrade(card.cardTier) ?? null;
+  const grade = gradeKey ? GRADE_CONFIG[gradeKey] : null;
+  const frameSource = gradeKey ? CardAssets.frames[gradeKey.toUpperCase()] : null;
+  const obtained = detail?.acquired ?? card.obtained;
+  const name = detail?.cardName ?? card.name;
+  const imageUrl = detail?.cardUrl ?? card.imageUrl ?? null;
   const region = detail?.regionName ?? card.region;
-  const date = formatDate(detail?.acquiredAt ?? card.date);
+  const date = formatAcquiredDate(detail?.acquiredAt) ?? card.date ?? null;
   const visitCount = detail?.visitCount;
 
   return (
@@ -56,17 +58,35 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
           <View style={styles.hero}>
             {obtained ? (
               <>
-                <PhotoPlaceholder tint={grade?.soft ?? theme.colors.primarySoft} icon="camera-outline" size={44} />
+                <PhotoPlaceholder
+                  uri={imageUrl}
+                  tint={grade?.soft ?? theme.colors.primarySoft}
+                  icon="camera-outline"
+                  size={44}
+                />
+                {imageUrl ? <View style={styles.heroShade} /> : null}
+                {frameSource && (
+                  <Image
+                    source={frameSource}
+                    style={StyleSheet.absoluteFillObject}
+                    resizeMode="stretch"
+                    pointerEvents="none"
+                  />
+                )}
                 <View style={styles.heroTextWrap}>
                   {grade && (
                     <View style={[styles.gradePill, { backgroundColor: theme.colors.canvas }]}>
                       <CustomText variant="Caption" color={grade.color} style={styles.gradePillText}>
-                        {card.grade}
+                        {grade.label}
                       </CustomText>
                     </View>
                   )}
-                  <CustomText variant="Heading/H3" color={theme.colors.text} style={styles.heroName}>
-                    {card.name}
+                  <CustomText
+                    variant="Heading/H3"
+                    color={imageUrl ? '#FFFFFF' : theme.colors.text}
+                    style={styles.heroName}
+                  >
+                    {name}
                   </CustomText>
                 </View>
               </>
@@ -81,7 +101,8 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
           </View>
 
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            {/* 별점 + 희귀도 (등급 있는 목 카드 전용) + 수집 상태 */}
+            {loading && <ActivityIndicator size="small" color={theme.colors.primary} />}
+            {/* 별점 + 희귀도 (등급 있을 때) + 수집 상태 */}
             <View style={styles.ratingRow}>
               {grade ? (
                 <View style={styles.starRow}>
@@ -143,12 +164,12 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
               <Ionicons name="sparkles" size={14} color={theme.colors.primary} style={styles.descIcon} />
               <CustomText variant="Body/Small" color={theme.colors.text} style={styles.descText}>
                 {obtained
-                  ? card.description ?? '방문 인증을 완료한 랜드마크예요.'
-                  : '이 랜드마크를 방문하면 카드 정보가 공개됩니다.'}
+                  ? `${detail?.landmarkName ?? card.landmarkName ?? name}에서 방문 인증을 완료한 랜드마크 카드예요.`
+                  : '이 랜드마크를 방문하면 카드 정보가 공개돼요.'}
               </CustomText>
             </View>
 
-            {/* 등급 설명 (등급 있는 목 카드 전용) */}
+            {/* 등급 설명 (등급 있을 때) */}
             {grade && (
               <View style={[styles.rarityBox, { backgroundColor: grade.soft }]}>
                 <CustomText variant="Body/Small" color={grade.color} style={styles.rarityText}>
@@ -198,6 +219,10 @@ const styles = StyleSheet.create({
   },
   hero: {
     height: 200,
+  },
+  heroShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   heroTextWrap: {
     position: 'absolute',

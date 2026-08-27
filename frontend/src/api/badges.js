@@ -23,3 +23,11 @@ export function fetchBadges({ badgeType, isAcquired, page = 0, size = 30 } = {})
 export function fetchBadgeDetail(badgeId) {
   return authedRequest(`/badges/${badgeId}`);
 }
+
+/**
+ * 대표 뱃지 설정.
+ * @returns {badgeId, badgeName, badgeUrl}
+ */
+export function setRepresentativeBadge(badgeId) {
+  return authedRequest(`/badges/${badgeId}/representative`, { method: 'PATCH' });
+}

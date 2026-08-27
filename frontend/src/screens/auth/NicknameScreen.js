@@ -13,6 +13,7 @@ import { useAuth, AUTH_STATUS } from '../../context/AuthContext';
 import { checkNickname } from '../../api/users';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
+import RegionPicker from '../../components/common/RegionPicker';
 
 const NICKNAME_MIN = 2;
 const NICKNAME_MAX = 12;
@@ -146,28 +147,17 @@ export default function NicknameScreen({ navigation }) {
           <CustomText variant="Label/Medium" color={theme.colors.textSecondary} style={[styles.label, styles.sectionGap]}>
             거주 지역
           </CustomText>
-          <View style={styles.addressRow}>
-            <TextInput
-              style={[styles.input, styles.addressInput]}
-              placeholder="도 (예: 경기도, 없으면 비워두세요)"
-              placeholderTextColor={theme.colors.textMuted}
-              value={addressDoGun}
-              onChangeText={setAddressDoGun}
-            />
-            <TextInput
-              style={[styles.input, styles.addressInput]}
-              placeholder="시 (예: 수원시)"
-              placeholderTextColor={theme.colors.textMuted}
-              value={addressSi}
-              onChangeText={setAddressSi}
-            />
-          </View>
-          <TextInput
-            style={[styles.input, styles.addressBottomInput]}
-            placeholder="구/군 (예: 팔달구)"
-            placeholderTextColor={theme.colors.textMuted}
-            value={addressGu}
-            onChangeText={setAddressGu}
+          <RegionPicker
+            value={{
+              addressDoGun,
+              addressSi,
+              addressGu,
+            }}
+            onSelect={(selected) => {
+              setAddressDoGun(selected.addressDoGun);
+              setAddressSi(selected.addressSi);
+              setAddressGu(selected.addressGu);
+            }}
           />
 
           <View style={styles.notificationRow}>

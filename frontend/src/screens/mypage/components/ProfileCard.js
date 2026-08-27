@@ -1,33 +1,68 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
 
 /**
- * 마이페이지 상단 프로필 카드.
+ * 마이페이지 상단 프로필 카드 — GET /users/mypage 요약 기반.
  * 레이아웃: 서팍 피그마 마이페이지 V1.0.0 (색상은 DESIGN.md 토큰으로 치환)
+ * @param {object|null} summary  fetchMyPage 응답 (미도착 시 null → '--' 표기)
  */
-export default function ProfileCard({ user, rank, onEditPress }) {
-  const nickname = user?.nickname ?? '여행자';
-  const level = user?.level ?? 1;
-  const tierLabel = user?.tier ? `${user.tier} Rank` : rank.tierLabel;
+export default function ProfileCard({
+  summary, fallbackNickname, onEditPress, onAppellationPress, onBadgePress,
+}) {
+  const nickname = summary?.nickname ?? fallbackNickname ?? '여행자';
+  const level = summary?.level != null ? `Lv.${summary.level}` : 'Lv.--';
+  const tierLabel = summary?.tier ? `${summary.tier} Rank` : '—';
+  const score = summary?.overallScore != null ? `${summary.overallScore.toLocaleString()}점` : '--점';
+  const monthScore = summary?.monthScore != null ? `${summary.monthScore.toLocaleString()}점` : '--점';
+  const appellation = summary?.representativeAppellation ?? null;
+  const badge = summary?.representativeBadge ?? null;
+  const profileUrl = summary?.profileUrl ?? null;
 
   return (
     <View style={styles.card}>
       <TouchableOpacity style={styles.editBtn} onPress={onEditPress} activeOpacity={0.8} hitSlop={8}>
-        <Ionicons name="pencil" size={16} color="#FFFFFF" />
+        <Ionicons name="pencil" size={16} color={theme.colors.white} />
       </TouchableOpacity>
 
-      <View style={styles.avatar}>
-        <Ionicons name="person" size={40} color={theme.colors.primary} />
+      <View style={styles.avatarRow}>
+        <View style={styles.avatar}>
+          {profileUrl ? (
+            <Image source={{ uri: profileUrl }} style={styles.avatarImage} />
+          ) : (
+            <Ionicons name="person" size={40} color={theme.colors.primary} />
+          )}
+        </View>
+        {/* 대표 뱃지 — 아바타 우하단, 탭하면 뱃지 보관함 */}
+        <TouchableOpacity
+          style={styles.badgeSlot}
+          onPress={onBadgePress}
+          activeOpacity={0.8}
+          hitSlop={6}
+          accessibilityLabel={badge ? `대표 뱃지 ${badge.badgeName}` : '대표 뱃지 설정'}
+        >
+          {badge?.badgeUrl ? (
+            <Image source={{ uri: badge.badgeUrl }} style={styles.badgeImage} resizeMode="contain" />
+          ) : (
+            <Ionicons name={badge ? 'ribbon' : 'ribbon-outline'} size={16} color={theme.colors.primary} />
+          )}
+        </TouchableOpacity>
       </View>
 
-      <CustomText variant="Heading/H2" color="#FFFFFF" style={styles.nickname}>
-        {nickname}
-      </CustomText>
-      <CustomText variant="Body/Small" color="rgba(255,255,255,0.85)" style={styles.level}>
-        Lv.{level}
+      <View style={styles.nameRow}>
+        <CustomText variant="Heading/H2" color={theme.colors.white} style={styles.nickname}>
+          {nickname}
+        </CustomText>
+        <TouchableOpacity style={styles.appellationChip} onPress={onAppellationPress} activeOpacity={0.8}>
+          <CustomText variant="Caption" color={theme.colors.white} style={styles.appellationText}>
+            {appellation?.appellationName ?? '칭호 고르기'}
+          </CustomText>
+        </TouchableOpacity>
+      </View>
+      <CustomText variant="Body/Small" color={styles.subtle.color} style={styles.level}>
+        {level}
       </CustomText>
 
       <View style={styles.bottomRow}>
@@ -37,11 +72,11 @@ export default function ProfileCard({ user, rank, onEditPress }) {
           </CustomText>
         </View>
         <View style={styles.scoreGroup}>
-          <CustomText variant="Caption" color="rgba(255,255,255,0.85)">
-            월간 {rank.monthlyRank}위
+          <CustomText variant="Caption" color={styles.subtle.color}>
+            이번 달 {monthScore}
           </CustomText>
-          <CustomText variant="Heading/H4" color="#FFFFFF" style={styles.score}>
-            {rank.totalScore.toLocaleString()}점
+          <CustomText variant="Heading/H4" color={theme.colors.white} style={styles.score}>
+            {score}
           </CustomText>
         </View>
       </View>
@@ -56,6 +91,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     alignItems: 'center',
   },
+  subtle: {
+    color: 'rgba(255,255,255,0.85)',
+  },
   editBtn: {
     position: 'absolute',
     top: theme.spacing.base,
@@ -67,17 +105,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  avatarRow: {
+    marginTop: theme.spacing.base,
+  },
   avatar: {
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.white,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 88,
+    height: 88,
+  },
+  badgeSlot: {
+    position: 'absolute',
+    right: -4,
+    bottom: -4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.white,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  badgeImage: {
+    width: 22,
+    height: 22,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
     marginTop: theme.spacing.base,
   },
   nickname: {
-    marginTop: theme.spacing.base,
+    fontWeight: 'bold',
+  },
+  appellationChip: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: theme.rounded.pill,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 3,
+  },
+  appellationText: {
     fontWeight: 'bold',
   },
   level: {
@@ -92,7 +169,7 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.lg,
   },
   tierChip: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.white,
     borderRadius: theme.rounded.pill,
     paddingHorizontal: 14,
     paddingVertical: 7,

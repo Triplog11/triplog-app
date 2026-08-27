@@ -1,17 +1,39 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../../../theme/theme';
+import { CardAssets } from '../../../assets';
 
 /**
- * 사진 자리 표시 — 랜드마크 사진 API가 아직 없어 사용.
- * 실제 이미지가 들어오면 <Image>로 교체한다.
+ * 카드/지역 사진 슬롯.
+ * uri가 있으면 실제 이미지를, 없거나 로드에 실패하면 기본 랜드마크 카드 이미지를 보여준다.
  */
-export default function PhotoPlaceholder({ tint, icon = 'image-outline', size = 26, style }) {
+export default function PhotoPlaceholder({ uri, tint, icon = 'image-outline', size = 26, style }) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [uri]);
+
+  if (uri && !failed) {
+    return (
+      <Image
+        source={{ uri }}
+        style={[styles.box, style]}
+        resizeMode="cover"
+        onError={() => setFailed(true)}
+        accessibilityIgnoresInvertColors
+      />
+    );
+  }
+
   return (
-    <View style={[styles.box, tint ? { backgroundColor: tint } : null, style]}>
-      <Ionicons name={icon} size={size} color={theme.colors.textMuted} />
-    </View>
+    <Image
+      source={CardAssets.defaultCard}
+      style={[styles.box, style]}
+      resizeMode="cover"
+      accessibilityIgnoresInvertColors
+    />
   );
 }
 

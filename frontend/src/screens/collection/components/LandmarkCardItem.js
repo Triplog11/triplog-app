@@ -1,18 +1,22 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
-import { GRADE_CONFIG } from '../../../data/collection';
+import { GRADE_CONFIG, tierToGrade } from '../../../data/collection';
+import { CardAssets } from '../../../assets';
 import PhotoPlaceholder from './PhotoPlaceholder';
 
 /**
  * 도감 그리드의 랜드마크 카드 한 장.
- * 획득: 사진 + 등급 보더/뱃지 + 획득일 / 미획득: ??? + 자물쇠 (DESIGN.md §14 잠금 카드)
+ * card: {name, region?, grade?, cardTier?, imageUrl?, obtained, date?}
+ * 획득: 사진(cardUrl) + 등급 보더/프레임/뱃지 + 획득일 / 미획득: ??? + 자물쇠
  */
 export default function LandmarkCardItem({ card, wishlisted, onPress }) {
-  // 백엔드 랜드마크에는 등급이 없다 → grade는 있을 때만 사용(목 카드 하위호환)
-  const grade = card.grade ? GRADE_CONFIG[card.grade] : null;
+  // 지역 상세의 랜드마크 목록에는 등급이 없다 → grade는 있을 때만 사용
+  const gradeKey = card.grade ?? tierToGrade(card.cardTier);
+  const grade = gradeKey ? GRADE_CONFIG[gradeKey] : null;
+  const frameSource = gradeKey ? CardAssets.frames[gradeKey.toUpperCase()] : null;
   const { obtained } = card;
 
   return (
@@ -23,7 +27,21 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
     >
       <View style={styles.thumbWrap}>
         {obtained ? (
-          <PhotoPlaceholder tint={grade?.soft ?? theme.colors.primarySoft} icon="camera-outline" />
+          <>
+            <PhotoPlaceholder
+              uri={card.imageUrl}
+              tint={grade?.soft ?? theme.colors.primarySoft}
+              icon="camera-outline"
+            />
+            {frameSource && (
+              <Image
+                source={frameSource}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="stretch"
+                pointerEvents="none"
+              />
+            )}
+          </>
         ) : (
           <View style={styles.lockedThumb}>
             <Ionicons name="lock-closed" size={24} color={theme.colors.textMuted} />
@@ -32,7 +50,7 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
         {grade && (
           <View style={[styles.gradeBadge, { backgroundColor: grade.soft }]}>
             <CustomText variant="Caption" color={grade.color} style={styles.gradeText}>
-              {card.grade}
+              {grade.label}
             </CustomText>
           </View>
         )}
@@ -53,7 +71,7 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
           {obtained ? card.name : '???'}
         </CustomText>
         <CustomText variant="Caption" color={theme.colors.textSecondary} numberOfLines={1}>
-          {obtained ? card.region : '미발견 지역'}
+          {obtained ? card.region ?? card.landmarkName ?? ' ' : '미발견 지역'}
         </CustomText>
         <View style={styles.metaRow}>
           <Ionicons

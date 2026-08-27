@@ -1,20 +1,17 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
-import { LANDMARK_CARDS, GRADE_CONFIG, GRADE_ORDER } from '../../data/collection';
 import { fetchNationwideMap } from '../../api/regions';
-import LandmarkCardItem from './components/LandmarkCardItem';
 import CardDetailModal from './components/CardDetailModal';
-import DaejeonMapTab from './components/DaejeonMapTab';
+import MyCardsTab from './components/MyCardsTab';
 import PhotoPlaceholder from './components/PhotoPlaceholder';
 
 const SUB_TABS = [
   { key: 'region', label: '지역 도감', icon: 'location-outline' },
   { key: 'card', label: '카드 목록', icon: 'book-outline' },
-  { key: 'map', label: '지도', icon: 'globe-outline' },
 ];
 
 const REGION_FILTERS = [
@@ -23,7 +20,7 @@ const REGION_FILTERS = [
   { key: 'unvisited', label: '미방문' },
 ];
 
-/** 도감 — 지역 도감 / 카드 목록 / 지도 3개 서브탭 (프로토타입 2 레이아웃, 목데이터) */
+/** 도감 — 지역 도감 / 카드 목록 2개 서브탭 (실 API). 전국 지도는 홈 탭이 담당한다. */
 export default function CollectionScreen({ navigation }) {
   const [subTab, setSubTab] = useState('region');
   const [selectedCard, setSelectedCard] = useState(null);
@@ -73,10 +70,7 @@ export default function CollectionScreen({ navigation }) {
           }
         />
       )}
-      {subTab === 'card' && <CardGridTab onSelectCard={setSelectedCard} />}
-      {subTab === 'map' && (
-        <DaejeonMapTab onRegionPress={() => navigation.navigate('Home', { screen: 'NationwideMap' })} />
-      )}
+      {subTab === 'card' && <MyCardsTab onSelectCard={setSelectedCard} />}
 
       <CardDetailModal card={selectedCard} onClose={() => setSelectedCard(null)} onVerifyPress={openVerify} />
     </SafeAreaView>
@@ -247,82 +241,6 @@ function RegionTab({ onSelectRegion }) {
   );
 }
 
-/** 카드 목록 탭 — 등급 필터 + 2열 카드 그리드 */
-function CardGridTab({ onSelectCard }) {
-  const [gradeFilter, setGradeFilter] = useState('All');
-
-  const cards = useMemo(
-    () => (gradeFilter === 'All' ? LANDMARK_CARDS : LANDMARK_CARDS.filter((c) => c.grade === gradeFilter)),
-    [gradeFilter],
-  );
-  const collectedCount = LANDMARK_CARDS.filter((c) => c.obtained).length;
-
-  return (
-    <FlatList
-      data={cards}
-      keyExtractor={(item) => String(item.id)}
-      numColumns={2}
-      columnWrapperStyle={styles.cardColumnWrap}
-      contentContainerStyle={styles.cardListContent}
-      showsVerticalScrollIndicator={false}
-      renderItem={({ item }) => (
-        <LandmarkCardItem card={item} wishlisted={false} onPress={() => onSelectCard(item)} />
-      )}
-      ListHeaderComponent={
-        <View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.gradeFilterRow}>
-            {['All', ...GRADE_ORDER].map((g) => {
-              const active = gradeFilter === g;
-              const config = g === 'All' ? null : GRADE_CONFIG[g];
-              return (
-                <TouchableOpacity
-                  key={g}
-                  style={[
-                    styles.gradeChip,
-                    config && !active && { backgroundColor: config.soft },
-                    active && styles.gradeChipActive,
-                  ]}
-                  onPress={() => setGradeFilter(g)}
-                  activeOpacity={0.8}
-                >
-                  <CustomText
-                    variant="Label/Medium"
-                    color={active ? '#FFFFFF' : config ? config.color : theme.colors.textSecondary}
-                    style={styles.bold}
-                  >
-                    {g === 'All' ? '전체' : g}
-                  </CustomText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-          <View style={styles.cardStatsRow}>
-            <CustomText variant="Body/Small" color={theme.colors.textSecondary}>
-              <CustomText variant="Body/Small" color={theme.colors.primary} style={styles.bold}>
-                {collectedCount}
-              </CustomText>
-              {' '}/ {LANDMARK_CARDS.length}장 수집
-            </CustomText>
-            <View style={styles.gradeCountRow}>
-              {GRADE_ORDER.map((g) => {
-                const config = GRADE_CONFIG[g];
-                const count = LANDMARK_CARDS.filter((c) => c.grade === g && c.obtained).length;
-                return (
-                  <View key={g} style={[styles.gradeCountPill, { backgroundColor: config.soft }]}>
-                    <CustomText variant="Caption" color={config.color} style={styles.gradeCountText}>
-                      {g[0]}{count}
-                    </CustomText>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        </View>
-      }
-    />
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -470,47 +388,5 @@ const styles = StyleSheet.create({
   regionRight: {
     alignItems: 'flex-end',
     gap: 4,
-  },
-  // 카드 목록 탭
-  cardListContent: {
-    padding: theme.spacing.lg,
-    paddingBottom: 40,
-  },
-  cardColumnWrap: {
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
-  },
-  gradeFilterRow: {
-    gap: 6,
-    paddingBottom: theme.spacing.sm,
-  },
-  gradeChip: {
-    height: 32,
-    borderRadius: theme.rounded.pill,
-    paddingHorizontal: 14,
-    backgroundColor: theme.colors.surfaceDim,
-    justifyContent: 'center',
-  },
-  gradeChipActive: {
-    backgroundColor: theme.colors.primary,
-  },
-  cardStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  gradeCountRow: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  gradeCountPill: {
-    borderRadius: theme.rounded.pill,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  gradeCountText: {
-    fontWeight: 'bold',
-    fontSize: 10,
   },
 });

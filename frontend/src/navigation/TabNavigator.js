@@ -6,14 +6,12 @@ import theme from '../theme/theme';
 import TripLogTabBar from '../components/navigation/TripLogTabBar';
 
 // Screens
-import HomeDashboardScreen from '../screens/home/HomeDashboardScreen';
 import HomeScreen from '../screens/home/HomeScreen';
 import HistoryScreen from '../screens/home/HistoryScreen';
-import RegionDetailScreen from '../screens/home/RegionDetailScreen';
+import ProvinceRegionListScreen from '../screens/home/ProvinceRegionListScreen';
 import CollectionScreen from '../screens/collection/CollectionScreen';
 import RegionCollectionScreen from '../screens/collection/RegionCollectionScreen';
 import VisitCertScreen from '../screens/record/VisitCertScreen';
-import CommunityScreen from '../screens/social/CommunityScreen';
 import RankingScreen from '../screens/social/RankingScreen';
 import MyPageScreen from '../screens/mypage/MyPageScreen';
 import BadgeListScreen from '../screens/mypage/BadgeListScreen';
@@ -23,6 +21,9 @@ import NotificationSettingsScreen from '../screens/mypage/NotificationSettingsSc
 import TravelLogScreen from '../screens/mypage/TravelLogScreen';
 import VerifyHistoryScreen from '../screens/mypage/VerifyHistoryScreen';
 import WishlistScreen from '../screens/mypage/WishlistScreen';
+import AppellationScreen from '../screens/mypage/AppellationScreen';
+import EventListScreen from '../screens/mypage/EventListScreen';
+import EventDetailScreen from '../screens/mypage/EventDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -31,10 +32,9 @@ const Stack = createNativeStackNavigator();
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
-      <Stack.Screen name="HomeMain" component={HomeDashboardScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="NationwideMap" component={HomeScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="RegionDetail" component={RegionDetailScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="History" component={HistoryScreen} options={{ title: '인증 히스토리' }} />
+      <Stack.Screen name="HomeMain" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="RegionDetail" component={ProvinceRegionListScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="History" component={HistoryScreen} options={{ title: '활동 내역' }} />
     </Stack.Navigator>
   );
 }
@@ -60,7 +60,6 @@ function RankingStack() {
   return (
     <Stack.Navigator screenOptions={stackOptions}>
       <Stack.Screen name="RankingMain" component={RankingScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Community" component={CommunityScreen} options={{ title: '여행 피드 커뮤니티' }} />
     </Stack.Navigator>
   );
 }
@@ -76,6 +75,10 @@ function MyPageStack() {
       <Stack.Screen name="TravelLog" component={TravelLogScreen} options={{ title: '여행 기록' }} />
       <Stack.Screen name="VerifyHistory" component={VerifyHistoryScreen} options={{ title: '인증 내역' }} />
       <Stack.Screen name="Wishlist" component={WishlistScreen} options={{ title: '찜한 랜드마크' }} />
+      <Stack.Screen name="Appellation" component={AppellationScreen} options={{ title: '칭호' }} />
+      <Stack.Screen name="EventList" component={EventListScreen} options={{ title: '이벤트' }} />
+      <Stack.Screen name="EventDetail" component={EventDetailScreen} options={({ route }) => ({ title: route.params?.title ?? '이벤트' })} />
+      <Stack.Screen name="ActivityHistory" component={HistoryScreen} options={{ title: '활동 내역' }} />
     </Stack.Navigator>
   );
 }
