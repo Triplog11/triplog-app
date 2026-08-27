@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomText from './CustomText';
 import theme from '../../theme/theme';
 import { PROVINCE_CODES } from '../../utils/provinces';
+import { getDistrictsByProvince } from '../../utils/koreaDistricts';
 import { fetchProvinceMap } from '../../api/regions';
 
 const PROVINCE_LIST = Object.keys(PROVINCE_CODES);
@@ -89,18 +90,21 @@ export default function RegionPicker({
     setSelectedProvince(province);
     setSearchKeyword('');
     setStep('district');
-    setLoadingDistricts(true);
+    
+    // 로컬 데이터셋으로 즉시 시군구 목록 로드 (비로그인 상태 401 방지)
+    const localItems = getDistrictsByProvince(province);
+    setDistricts(localItems);
 
     try {
       const code = PROVINCE_CODES[province]?.[0];
-      if (!code) throw new Error('지역 코드를 찾을 수 없습니다.');
-      const res = await fetchProvinceMap(code);
-      const items = res?.regions ?? [];
-      setDistricts(items);
+      if (code) {
+        const res = await fetchProvinceMap(code);
+        if (res?.regions && res.regions.length > 0) {
+          setDistricts(res.regions);
+        }
+      }
     } catch (err) {
-      setDistricts([]);
-    } finally {
-      setLoadingDistricts(false);
+      // 비로그인 상태(401) 또는 네트워크 실패 시 로컬 데이터셋 유지
     }
   };
 
