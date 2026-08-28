@@ -43,14 +43,14 @@ class SelectedContentSeedReaderTest {
 
         // Then
         assertThat(seeds.landmarkContentIds())
-                .hasSize(102)
-                .contains("127642", "126508", "129263");
+                .hasSize(109)
+                .contains("127642", "126508", "129263", "1796079", "1013246", "126237");
         assertThat(seeds.getLandmarkSeed("127642").cardTier())
                 .isEqualTo(triplog.backend.landmark.entity.CardTier.LEGENDARY);
         assertThat(seeds.attractionContentIds())
-                .hasSize(208)
-                .contains("130182", "126509", "322836");
-        assertThat(seeds.allContentIds()).hasSize(310);
+                .hasSize(211)
+                .contains("130182", "126509", "322836", "2014285", "264432", "1802913");
+        assertThat(seeds.allContentIds()).hasSize(320);
         assertThat(seeds.allContentIds()).doesNotHaveDuplicates();
     }
 
