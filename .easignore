@@ -1,0 +1,10 @@
+# EAS Build Ignore Rules
+
+# Exclude backend from React Native / Expo EAS bundle
+backend/
+../backend/
+docs/
+scripts/
+dist-check/
+.gradle/
+*.lock

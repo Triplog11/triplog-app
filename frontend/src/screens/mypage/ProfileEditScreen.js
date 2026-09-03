@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { checkNickname, updateProfile } from '../../api/users';
 import CustomText from '../../components/common/CustomText';
+import RegionPicker from '../../components/common/RegionPicker';
 import theme from '../../theme/theme';
 
 const NICKNAME_MIN = 2;
@@ -35,6 +36,8 @@ export default function ProfileEditScreen({ navigation }) {
   const nicknameChanged = trimmedNickname !== (user?.nickname ?? '');
   const addressEntered = !!(addressSi.trim() || addressDoGun.trim() || addressGu.trim());
 
+  const [nicknameFocused, setNicknameFocused] = useState(false);
+
   // 닉네임을 바꾼 경우에만 중복확인 필요
   const canSubmit =
     !submitting &&
@@ -44,6 +47,12 @@ export default function ProfileEditScreen({ navigation }) {
   const handleNicknameChange = (text) => {
     setNickname(text);
     setNicknameCheck({ state: 'idle', message: '' });
+  };
+
+  const handleSelectRegion = (addr) => {
+    setAddressDoGun(addr.addressDoGun ?? '');
+    setAddressSi(addr.addressSi ?? '');
+    setAddressGu(addr.addressGu ?? '');
   };
 
   const handleCheckNickname = async () => {
@@ -73,7 +82,7 @@ export default function ProfileEditScreen({ navigation }) {
 
       const result = await updateProfile(changes);
       await updateUser({ nickname: result?.nickname ?? trimmedNickname });
-      Alert.alert('프로필', '프로필이 수정됐어요.', [
+      Alert.alert('프로필', '프로필이 수정되었어요.', [
         { text: '확인', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
@@ -92,11 +101,17 @@ export default function ProfileEditScreen({ navigation }) {
           </CustomText>
           <View style={styles.nicknameRow}>
             <TextInput
-              style={[styles.input, styles.nicknameInput]}
+              style={[
+                styles.input,
+                styles.nicknameInput,
+                nicknameFocused && styles.inputFocused,
+              ]}
               placeholder={`한글, 영문, 숫자 조합 ${NICKNAME_MIN}~${NICKNAME_MAX}자`}
               placeholderTextColor={theme.colors.textMuted}
               value={nickname}
               onChangeText={handleNicknameChange}
+              onFocus={() => setNicknameFocused(true)}
+              onBlur={() => setNicknameFocused(false)}
               maxLength={NICKNAME_MAX}
             />
             <TouchableOpacity
@@ -134,30 +149,12 @@ export default function ProfileEditScreen({ navigation }) {
             color={theme.colors.textSecondary}
             style={[styles.label, styles.sectionGap]}
           >
-            거주 지역 (변경할 때만 입력)
+            거주 지역 (변경할 때만 선택)
           </CustomText>
-          <View style={styles.addressRow}>
-            <TextInput
-              style={[styles.input, styles.addressInput]}
-              placeholder="도 (예: 경기도)"
-              placeholderTextColor={theme.colors.textMuted}
-              value={addressDoGun}
-              onChangeText={setAddressDoGun}
-            />
-            <TextInput
-              style={[styles.input, styles.addressInput]}
-              placeholder="시 (예: 수원시)"
-              placeholderTextColor={theme.colors.textMuted}
-              value={addressSi}
-              onChangeText={setAddressSi}
-            />
-          </View>
-          <TextInput
-            style={[styles.input, styles.addressBottomInput]}
-            placeholder="구/군 (예: 팔달구)"
-            placeholderTextColor={theme.colors.textMuted}
-            value={addressGu}
-            onChangeText={setAddressGu}
+          <RegionPicker
+            value={{ addressDoGun, addressSi, addressGu }}
+            onSelect={handleSelectRegion}
+            placeholder="거주 지역을 선택해 주세요"
           />
         </View>
       </ScrollView>
@@ -212,6 +209,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+  inputFocused: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.canvas,
+  },
   helperText: {
     marginTop: 8,
   },
@@ -235,16 +236,6 @@ const styles = StyleSheet.create({
   },
   checkBtnText: {
     fontWeight: 'bold',
-  },
-  addressRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  addressInput: {
-    flex: 1,
-  },
-  addressBottomInput: {
-    marginTop: 8,
   },
   footer: {
     padding: 24,

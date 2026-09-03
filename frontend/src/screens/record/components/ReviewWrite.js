@@ -20,6 +20,8 @@ export default function ReviewWrite({ landmark, submitting, errorMessage, onSubm
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [rating, setRating] = useState(0);
+  const [titleFocused, setTitleFocused] = useState(false);
+  const [contentFocused, setContentFocused] = useState(false);
 
   const canSubmit = title.trim().length > 0 && rating >= 1;
 
@@ -51,26 +53,30 @@ export default function ReviewWrite({ landmark, submitting, errorMessage, onSubm
           <StarRating value={rating} onChange={setRating} />
         </View>
 
-        <View style={styles.inputBox}>
+        <View style={[styles.inputBox, titleFocused && styles.inputBoxFocused]}>
           <TextInput
             style={styles.titleInput}
             placeholder="기록 제목"
             placeholderTextColor={theme.colors.textMuted}
             value={title}
             onChangeText={setTitle}
+            onFocus={() => setTitleFocused(true)}
+            onBlur={() => setTitleFocused(false)}
             maxLength={TITLE_MAX}
             editable={!submitting}
             returnKeyType="next"
           />
         </View>
 
-        <View style={styles.inputBox}>
+        <View style={[styles.inputBox, contentFocused && styles.inputBoxFocused]}>
           <TextInput
             style={styles.contentInput}
             placeholder="어떤 점이 기억에 남았는지 작성해 주십시오. (선택)"
             placeholderTextColor={theme.colors.textMuted}
             value={content}
             onChangeText={setContent}
+            onFocus={() => setContentFocused(true)}
+            onBlur={() => setContentFocused(false)}
             multiline
             maxLength={CONTENT_MAX}
             textAlignVertical="top"
@@ -128,6 +134,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.spacing.base,
+  },
+  inputBoxFocused: {
+    borderColor: theme.colors.primary,
   },
   titleInput: {
     color: theme.colors.text,
