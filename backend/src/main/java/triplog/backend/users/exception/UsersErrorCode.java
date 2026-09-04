@@ -33,7 +33,13 @@ public enum UsersErrorCode implements BaseErrorCode {
     /**
      * 페이지 번호 또는 크기가 올바르지 않은 경우 사용합니다.
      */
-    INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "페이지 번호와 크기를 확인해주세요.");
+    INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "페이지 번호와 크기를 확인해주세요."),
+
+    /** 회원 탈퇴 대상 사용자를 찾을 수 없는 경우 사용합니다. */
+    WITHDRAWAL_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다."),
+
+    /** 회원 탈퇴 요청의 이메일 또는 리프레시 토큰이 인증 사용자와 일치하지 않는 경우 사용합니다. */
+    INVALID_WITHDRAWAL_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
 
 
     /**

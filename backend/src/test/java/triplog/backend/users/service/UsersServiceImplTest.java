@@ -8,11 +8,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import triplog.backend.stats.service.StatsService;
+import triplog.backend.common.auth.repository.RefreshTokenRepository;
+import triplog.backend.common.auth.entity.RefreshToken;
+import triplog.backend.users.dto.request.UsersRequest.WithdrawalRequest;
+import triplog.backend.users.dto.response.UsersResponse.WithdrawalResponse;
 import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.repository.UsersRepository;
 import java.util.Optional;
+import java.time.Clock;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -39,6 +44,9 @@ class UsersServiceImplTest {
     @Mock
     private StatsService statsService;
 
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+
     private UsersServiceImpl usersService;
 
     /**
@@ -46,7 +54,12 @@ class UsersServiceImplTest {
      */
     @BeforeEach
     void setUp() {
-        usersService = new UsersServiceImpl(usersRepository, statsService);
+        usersService = new UsersServiceImpl(
+                usersRepository,
+                statsService,
+                refreshTokenRepository,
+                Clock.systemUTC()
+        );
     }
 
     /**
@@ -395,6 +408,38 @@ class UsersServiceImplTest {
         // then
         assertThat(result.getAvailable()).isFalse();
         assertThat(result.getMessage()).isEqualTo("중복된 이메일입니다.");
+    }
+
+    /**
+     * 회원 탈퇴 시 삭제 전파가 없는 종속 데이터와 사용자, 리프레시 토큰을 모두 삭제하는지 검증합니다.
+     */
+    @Test
+    @DisplayName("회원 탈퇴 시 종속 데이터와 사용자 및 리프레시 토큰을 삭제한다")
+    void withdraw() {
+        String usersId = "550e8400-e29b-41d4-a716-446655440000";
+        String refreshTokenValue = "refresh-token";
+        Users users = new Users(LOCAL, NICKNAME, PROFILE_URL, EMAIL, PASSWORD);
+        RefreshToken refreshToken = new RefreshToken(usersId, refreshTokenValue);
+        given(usersRepository.findById(usersId)).willReturn(Optional.of(users));
+        given(refreshTokenRepository.findByRefreshToken(refreshTokenValue))
+                .willReturn(Optional.of(refreshToken));
+
+        WithdrawalResponse result = usersService.withdraw(
+                usersId,
+                new WithdrawalRequest(refreshTokenValue, EMAIL)
+        );
+
+        verify(usersRepository).deleteStatsByUsersId(usersId);
+        verify(usersRepository).deleteBadgesByUsersId(usersId);
+        verify(usersRepository).deleteRegionVisitLogsByUsersId(usersId);
+        verify(usersRepository).deleteLandmarkVisitLogsByUsersId(usersId);
+        verify(usersRepository).deleteAttractionVisitLogsByUsersId(usersId);
+        verify(usersRepository).delete(users);
+        verify(usersRepository).flush();
+        verify(refreshTokenRepository).deleteById(usersId);
+        assertThat(result.getDeleted()).isTrue();
+        assertThat(result.getEmail()).isEqualTo(EMAIL);
+        assertThat(result.getDeletedAt()).isNotBlank();
     }
 }
 
