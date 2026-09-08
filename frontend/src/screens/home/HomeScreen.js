@@ -11,6 +11,7 @@ import MissionStrip from './components/MissionStrip';
 import theme from '../../theme/theme';
 import { fetchNationwideMap, fetchProvinceMap } from '../../api/regions';
 import { buildProvinceStats, PROVINCE_CODES } from '../../utils/provinces';
+import { formatPercent } from '../../utils/percent';
 import { resolveRegionName, formatPlaceLabel } from '../../utils/geo';
 
 /**
@@ -34,9 +35,8 @@ export default function HomeScreen({ navigation }) {
     };
   }, []);
 
-  // overallCompletionRate가 0~1 비율인지 0~100 퍼센트인지 불확실 → 방어적으로 정규화
-  const rawRate = mapStats?.overallCompletionRate;
-  const percent = rawRate != null ? Math.round(rawRate <= 1 ? rawRate * 100 : rawRate) : '--';
+  // 0~1 비율과 0~100 퍼센트를 모두 받아 정규화하고, 1% 미만은 0으로 뭉개지 않는다
+  const percent = formatPercent(mapStats?.overallCompletionRate);
   const collected = mapStats?.visitedRegionCount ?? '--';
   const provinceStats = useMemo(() => buildProvinceStats(mapStats?.regions), [mapStats]);
 
