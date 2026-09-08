@@ -108,3 +108,52 @@ describe('provinces utils', () => {
     });
   });
 });
+
+describe('전남광주통합특별시(코드 12) 분리', () => {
+  // 서버는 광주와 전남을 하나의 시·도(코드 12)로 내려주지만 지도는 둘을 따로 그린다.
+  const merged = [
+    { regionName: '전남광주통합특별시 동구', legalRegionCode: '12', legalDistrictCode: '210', visited: true },
+    { regionName: '전남광주통합특별시 서구', legalRegionCode: '12', legalDistrictCode: '240', visited: false },
+    { regionName: '전남광주통합특별시 남구', legalRegionCode: '12', legalDistrictCode: '270', visited: false },
+    { regionName: '전남광주통합특별시 북구', legalRegionCode: '12', legalDistrictCode: '300', visited: false },
+    { regionName: '전남광주통합특별시 광산구', legalRegionCode: '12', legalDistrictCode: '330', visited: false },
+    { regionName: '전남광주통합특별시 목포시', legalRegionCode: '12', legalDistrictCode: '110', visited: true },
+    { regionName: '전남광주통합특별시 여수시', legalRegionCode: '12', legalDistrictCode: '130', visited: true },
+    { regionName: '전남광주통합특별시 담양군', legalRegionCode: '12', legalDistrictCode: '710', visited: false },
+  ];
+
+  it('광주광역시는 구역 코드가 자치구인 것만 가져온다', () => {
+    const own = filterProvinceRegions(merged, '광주광역시');
+    expect(own.map((r) => r.regionName)).toEqual([
+      '전남광주통합특별시 동구',
+      '전남광주통합특별시 서구',
+      '전남광주통합특별시 남구',
+      '전남광주통합특별시 북구',
+      '전남광주통합특별시 광산구',
+    ]);
+  });
+
+  it('전라남도는 자치구를 뺀 나머지를 가져온다', () => {
+    const own = filterProvinceRegions(merged, '전라남도');
+    expect(own.map((r) => r.regionName)).toEqual([
+      '전남광주통합특별시 목포시',
+      '전남광주통합특별시 여수시',
+      '전남광주통합특별시 담양군',
+    ]);
+  });
+
+  it('한 지역이 두 시·도에 동시에 속하지 않는다', () => {
+    const gwangju = filterProvinceRegions(merged, '광주광역시');
+    const jeonnam = filterProvinceRegions(merged, '전라남도');
+    expect(gwangju.length + jeonnam.length).toBe(merged.length);
+    expect(gwangju.some((g) => jeonnam.includes(g))).toBe(false);
+  });
+
+  it('통합 코드에서도 시·도별 방문 수가 따로 집계된다', () => {
+    const stats = buildProvinceStats(merged);
+    const gwangju = stats.find((s) => s.name === '광주광역시');
+    const jeonnam = stats.find((s) => s.name === '전라남도');
+    expect(gwangju).toEqual({ name: '광주광역시', collected: 1, total: 5 });
+    expect(jeonnam).toEqual({ name: '전라남도', collected: 2, total: 3 });
+  });
+});
