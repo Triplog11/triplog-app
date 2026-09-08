@@ -140,10 +140,27 @@ export default function MyPageScreen({ navigation }) {
         <MenuGroup>
           <MenuRow icon="notifications-outline" label="알림 설정" onPress={() => navigation.navigate('NotificationSettings')} />
           <MenuRow icon="help-circle-outline" label="도움말 / 문의" onPress={notifyComingSoon} />
-          <MenuRow icon="shield-checkmark-outline" label="이용약관 및 개인정보 처리방침" onPress={notifyComingSoon} />
+          <MenuRow
+            icon="document-text-outline"
+            label="서비스 이용약관"
+            onPress={() => navigation.navigate('LegalDocument', { document: 'terms', title: '서비스 이용약관' })}
+          />
+          <MenuRow
+            icon="shield-checkmark-outline"
+            label="개인정보 처리방침"
+            onPress={() => navigation.navigate('LegalDocument', { document: 'privacy', title: '개인정보 처리방침' })}
+          />
           {/* 버전 정보 — 우측 표시, 클릭 인터랙션 없음 (피그마 디스크립션 #4) */}
           <MenuRow icon="information-circle-outline" label="버전 정보" value={APP_VERSION} />
-          <MenuRow icon="log-out-outline" label="로그아웃" labelColor={theme.colors.primary} onPress={handleLogout} last />
+          <MenuRow icon="log-out-outline" label="로그아웃" labelColor={theme.colors.primary} onPress={handleLogout} />
+          {/* 스토어 정책상 앱 안에서 계정을 삭제할 수 있는 경로를 반드시 제공해야 한다 */}
+          <MenuRow
+            icon="person-remove-outline"
+            label="회원 탈퇴"
+            labelColor={theme.colors.textMuted}
+            onPress={() => navigation.navigate('Withdraw')}
+            last
+          />
         </MenuGroup>
       </ScrollView>
 

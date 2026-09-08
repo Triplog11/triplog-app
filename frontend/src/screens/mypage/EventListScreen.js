@@ -8,6 +8,7 @@ import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchEvents } from '../../api/events';
 import { EmptyStateAssets, EventAssets } from '../../assets';
+import { optimizeImageUrl } from '../../utils/imageUrl';
 import usePagedList from './hooks/usePagedList';
 import ListStateView from './components/ListStateView';
 import { formatDate, getEventStatus, EVENT_STATUS_LABEL } from './utils/format';
@@ -74,7 +75,7 @@ function EventCard({ event, onPress }) {
     <TouchableOpacity style={[styles.card, ended && styles.cardEnded]} onPress={onPress} activeOpacity={0.85}>
       {event.eventImageUrl && !imageError ? (
         <Image
-          source={{ uri: event.eventImageUrl }}
+          source={{ uri: optimizeImageUrl(event.eventImageUrl, 'hero') }}
           style={styles.image}
           resizeMode="cover"
           onError={() => setImageError(true)}

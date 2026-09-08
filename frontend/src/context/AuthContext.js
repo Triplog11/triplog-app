@@ -111,12 +111,18 @@ export function AuthProvider({ children }) {
     await applyLoginSuccess(response);
   }, [temporaryToken, applyLoginSuccess]);
 
-  const logout = useCallback(async () => {
+  /**
+   * 로그아웃. 회원 탈퇴 직후처럼 서버 세션이 이미 사라진 경우에는
+   * skipServer를 켜서 불필요한 서버 요청과 실패 로그를 건너뛴다.
+   */
+  const logout = useCallback(async ({ skipServer = false } = {}) => {
     try {
-      await unregisterPushToken();
-      const tokens = await getTokens();
-      if (tokens) {
-        await logoutRequest(tokens.accessToken, tokens.refreshToken);
+      if (!skipServer) {
+        await unregisterPushToken();
+        const tokens = await getTokens();
+        if (tokens) {
+          await logoutRequest(tokens.accessToken, tokens.refreshToken);
+        }
       }
     } catch (error) {
       // 서버 로그아웃이 실패해도 로컬 세션은 정리한다

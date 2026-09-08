@@ -97,9 +97,10 @@ export default function BadgeListScreen({ navigation }) {
     return (
       <TouchableOpacity
         style={[styles.badgeCard, !acquired && styles.lockedCard, representative && styles.representativeCard]}
+        onPress={acquired ? () => handleSetRepresentative(item) : undefined}
         onLongPress={acquired ? () => handleSetRepresentative(item) : undefined}
         delayLongPress={350}
-        activeOpacity={acquired ? 0.85 : 1}
+        activeOpacity={acquired ? 0.8 : 1}
         disabled={!acquired}
       >
         {representative && (

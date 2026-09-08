@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchNationwideMap } from '../../api/regions';
+import { formatPercent, toPercentValue } from '../../utils/percent';
 import CardDetailModal from './components/CardDetailModal';
 import MyCardsTab from './components/MyCardsTab';
 import PhotoPlaceholder from './components/PhotoPlaceholder';
@@ -78,11 +79,6 @@ export default function CollectionScreen({ navigation }) {
 }
 
 /** completionRate가 0~1 비율인지 0~100 퍼센트인지 불확실 → 방어적 정규화 */
-function toPercent(rate) {
-  if (rate == null) return 0;
-  return Math.round(rate <= 1 ? rate * 100 : rate);
-}
-
 /** 지역 도감 탭 — 전국 지도 API 기반 전체 현황 + 시·군·구 리스트 */
 function RegionTab({ onSelectRegion }) {
   const [filter, setFilter] = useState('all');
@@ -150,7 +146,7 @@ function RegionTab({ onSelectRegion }) {
         </CustomText>
       </View>
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${toPercent(summary?.overallCompletionRate)}%` }]} />
+        <View style={[styles.progressFill, { width: `${toPercentValue(summary?.overallCompletionRate)}%` }]} />
       </View>
       <View style={styles.filterRow}>
         {REGION_FILTERS.map((f) => {
@@ -177,7 +173,7 @@ function RegionTab({ onSelectRegion }) {
   );
 
   const renderRegion = ({ item }) => {
-    const percent = toPercent(item.completionRate);
+    const percent = formatPercent(item.completionRate);
     const complete = item.completed || percent === 100;
     return (
       <TouchableOpacity

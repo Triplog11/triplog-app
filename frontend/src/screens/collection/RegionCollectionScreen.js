@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchRegionDetail } from '../../api/regions';
+import { tierToGrade } from '../../data/collection';
 import LandmarkCardItem from './components/LandmarkCardItem';
 import CardDetailModal from './components/CardDetailModal';
 import PhotoPlaceholder from './components/PhotoPlaceholder';
@@ -40,15 +41,19 @@ export default function RegionCollectionScreen({ route, navigation }) {
     navigation.navigate('Record');
   };
 
-  // 실 랜드마크 → 카드 카드 형태로 어댑트 (등급 없음)
+  // 실 랜드마크 → 카드 형태로 어댑트.
+  // GET /regions/{id}의 landmarks.items에는 cardUrl·cardTier가 아직 없어서 보통 null이 된다.
+  // 서버가 필드를 채워주면 그대로 이미지와 등급 프레임이 표시되도록 값을 통과시킨다.
   const items = region?.landmarks?.items ?? [];
   const cards = items.map((lm) => ({
     id: lm.landmarkId,
     landmarkId: lm.landmarkId,
-    name: lm.landmarkName,
+    name: lm.cardName ?? lm.landmarkName,
+    landmarkName: lm.landmarkName,
     obtained: lm.acquired,
     region: region?.regionName ?? regionName,
-    grade: null,
+    imageUrl: lm.cardUrl ?? null,
+    grade: tierToGrade(lm.cardTier),
   }));
   const total = cards.length;
   const collected = cards.filter((c) => c.obtained).length;
@@ -60,7 +65,7 @@ export default function RegionCollectionScreen({ route, navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* 히어로 */}
       <View style={styles.hero}>
-        <PhotoPlaceholder icon="map-outline" size={40} />
+        <PhotoPlaceholder />
         <View style={styles.heroOverlay} />
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
           <Ionicons name="chevron-back" size={18} color="#FFFFFF" />

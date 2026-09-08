@@ -58,6 +58,19 @@ export const theme = {
     textTertiary: '#ADB1B5',
   },
 
+  /**
+   * 지도 방문률 색상 스케일 — 미방문 회색에서 하늘색을 거쳐 primary 파랑까지.
+   * 지도 도형과 하단 범례 막대가 이 배열 하나만 바라보므로 두 색이 어긋나지 않는다.
+   * at: 방문률(0~1), color: 그 지점의 색. 사이 구간은 선형 보간한다.
+   */
+  mapScale: [
+    { at: 0, color: '#E8EAEC' },
+    { at: 0.25, color: '#C9E0FA' },
+    { at: 0.5, color: '#96C6F7' },
+    { at: 0.75, color: '#62A8F9' },
+    { at: 1, color: '#368FFF' },
+  ],
+
   typography: {
     fontFamily: {
       light: 'Pretendard-Light',

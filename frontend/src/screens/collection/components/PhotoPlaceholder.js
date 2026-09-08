@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Image } from 'react-native';
 import theme from '../../../theme/theme';
 import { CardAssets } from '../../../assets';
+import { optimizeImageUrl } from '../../../utils/imageUrl';
 
 /**
  * 카드/지역 사진 슬롯.
  * uri가 있으면 실제 이미지를, 없거나 로드에 실패하면 기본 랜드마크 카드 이미지를 보여준다.
+ * variant는 표시 용도로, Cloudinary 이미지를 어느 폭으로 내려받을지 결정한다.
+ *
+ * @param {{uri?: string|null, variant?: 'thumb'|'card'|'hero', style?: object}} props
  */
-export default function PhotoPlaceholder({ uri, tint, icon = 'image-outline', size = 26, style }) {
+export default function PhotoPlaceholder({ uri, variant = 'card', style }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -18,7 +21,7 @@ export default function PhotoPlaceholder({ uri, tint, icon = 'image-outline', si
   if (uri && !failed) {
     return (
       <Image
-        source={{ uri }}
+        source={{ uri: optimizeImageUrl(uri, variant) }}
         style={[styles.box, style]}
         resizeMode="cover"
         onError={() => setFailed(true)}

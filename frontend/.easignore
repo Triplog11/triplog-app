@@ -1,0 +1,10 @@
+# EAS Build Ignore Rules
+../backend/
+backend/
+../docs/
+docs/
+../scripts/
+scripts/
+dist-check/
+.gradle/
+*.lock

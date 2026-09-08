@@ -28,11 +28,7 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
       <View style={styles.thumbWrap}>
         {obtained ? (
           <>
-            <PhotoPlaceholder
-              uri={card.imageUrl}
-              tint={grade?.soft ?? theme.colors.primarySoft}
-              icon="camera-outline"
-            />
+            <PhotoPlaceholder uri={card.imageUrl} variant="card" />
             {frameSource && (
               <Image
                 source={frameSource}

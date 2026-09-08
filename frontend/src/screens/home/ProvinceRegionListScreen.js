@@ -5,14 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchNationwideMap } from '../../api/regions';
+import { formatPercent } from '../../utils/percent';
 import { filterProvinceRegions } from '../../utils/provinces';
 
 /** completionRate가 0~1 비율인지 0~100 퍼센트인지 불확실 → 방어적 정규화 */
-function toPercent(rate) {
-  if (rate == null) return 0;
-  return Math.round(rate <= 1 ? rate * 100 : rate);
-}
-
 /**
  * 홈 지도 "탐험하기" → 해당 시·도의 시·군·구 목록 (실 API).
  * 행을 누르면 도감의 지역 상세(랜드마크 카드)로 이어진다.
@@ -47,7 +43,7 @@ export default function ProvinceRegionListScreen({ route, navigation }) {
   };
 
   const renderRegion = ({ item }) => {
-    const percent = toPercent(item.completionRate);
+    const percent = formatPercent(item.completionRate);
     const complete = item.completed || percent === 100;
     return (
       <TouchableOpacity style={styles.row} onPress={() => openRegion(item)} activeOpacity={0.85}>

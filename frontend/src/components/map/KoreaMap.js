@@ -21,7 +21,13 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import PressableScale from '../common/PressableScale';
+import MapLegend, { MAP_LEGEND_HEIGHT } from './MapLegend';
 import theme from '../../theme/theme';
+import {
+  averageCompletionRate,
+  countRatioColor,
+  visitRateColor,
+} from '../../utils/mapColor';
 import { MAP_PATHS } from './mapPaths';
 import { KOREA_PROVINCES } from './koreaProvinces';
 import { NEIGHBOR_COUNTRIES } from './neighborCountries';
@@ -76,27 +82,6 @@ const REGION_LABELS = KOREA_PROVINCES.regions.map((region) => {
   };
 });
 
-/** 17개 시·도 지역별 컬러 — visited는 진한 톤, base는 미방문 연한 톤 */
-const REGION_COLORS = {
-  서울특별시: { visited: '#FF6B81', base: '#FFD6DC' },
-  인천광역시: { visited: '#4FC3F7', base: '#D3EFFC' },
-  경기도: { visited: '#F48FB1', base: '#FBDCE7' },
-  강원특별자치도: { visited: '#9CCC65', base: '#E2F0D3' },
-  충청북도: { visited: '#FFC94D', base: '#FFEFC9' },
-  충청남도: { visited: '#FF8FA3', base: '#FFDCE3' },
-  대전광역시: { visited: '#FFAB40', base: '#FFE7C7' },
-  세종특별자치시: { visited: '#81C784', base: '#DFF2E0' },
-  전라북도: { visited: '#FFD166', base: '#FFF0CC' },
-  전라남도: { visited: '#FFB37D', base: '#FFE3CC' },
-  광주광역시: { visited: '#BA68C8', base: '#EFDFF4' },
-  경상북도: { visited: '#B39DDB', base: '#E8E1F5' },
-  대구광역시: { visited: '#FF8A65', base: '#FFE0D6' },
-  경상남도: { visited: '#7FB8F0', base: '#D9E9FA' },
-  울산광역시: { visited: '#FFCA28', base: '#FFF1C6' },
-  부산광역시: { visited: '#EF5350', base: '#FBD9D8' },
-  제주특별자치도: { visited: '#FF9E6D', base: '#FFE3D4' },
-};
-
 /** 상세 지도(mapPaths) 키 매핑 */
 const PROVINCE_MAP_KEYS = {
   서울특별시: '서울특별시',
@@ -119,9 +104,10 @@ const PROVINCE_MAP_KEYS = {
   경기도: 'gyeonggi',
 };
 
-function isVisited(regions, regionName) {
-  const region = regions.find((r) => r.name === regionName);
-  return region ? region.collected > 0 : false;
+/** 시·도의 방문률 색 — 방문한 시·군·구 비율(collected/total)을 스케일에 태운다 */
+function provinceFill(regions, regionName) {
+  const region = regions?.find((r) => r.name === regionName);
+  return countRatioColor(region?.collected ?? 0, region?.total ?? 0);
 }
 
 /** 현재 위치 마커 — 파란 점 + 1.5초 주기로 은은히 맥동하는 헤일로 */
@@ -152,7 +138,7 @@ function UserLocationMarker({ cx, cy, unit }) {
   );
 }
 
-/** 전국 지도 — 17개 시·도 실측 지형, 지역별 색상, 탭 시 상세 지도로 드릴다운 */
+/** 전국 지도 — 17개 시·도 실측 지형, 방문률 단계 색상, 탭 시 상세 지도로 드릴다운 */
 function NationalMap({ regions, onSelectProvince, userCenter, highlightRegion }) {
   return (
     <Svg
@@ -162,17 +148,12 @@ function NationalMap({ regions, onSelectProvince, userCenter, highlightRegion })
       preserveAspectRatio="xMidYMid meet"
     >
       {KOREA_PROVINCES.regions.map((region) => {
-        const colors = REGION_COLORS[region.name] || {
-          visited: theme.colors.mapLandActive,
-          base: theme.colors.mapLand,
-        };
-        const visited = isVisited(regions, region.name);
         const highlighted = highlightRegion === region.name;
         return (
           <Path
             key={region.name}
             d={region.d}
-            fill={visited ? colors.visited : colors.base}
+            fill={provinceFill(regions, region.name)}
             fillRule="evenodd"
             stroke={highlighted ? theme.colors.primary : theme.colors.white}
             strokeWidth={highlighted ? 3 : 1.2}
@@ -246,14 +227,18 @@ function SeaBackground({ stageSize }) {
   );
 }
 
-/** 시·도 상세 지도 — 해당 지역의 팔레트 색으로 채움/라인 렌더 */
-function ProvinceMap({ regionName }) {
+/**
+ * 시·도 상세 지도 — 전국 지도와 같은 방문률 스케일로 채운다.
+ * mapPaths의 도형에는 시·군·구 식별자가 없어서 도형마다 다른 방문률을 칠할 수 없다.
+ * 그래서 provinceDetail로 받은 시·군·구 completionRate의 평균을 시·도 전체 색으로 쓰고,
+ * 그 데이터가 없으면 전국 지도와 같은 collected/total 비율로 되돌린다.
+ */
+function ProvinceMap({ regionName, regions, provinceDetail }) {
   const key = PROVINCE_MAP_KEYS[regionName];
   const mapData = key ? MAP_PATHS[key] : null;
-  const colors = REGION_COLORS[regionName] || {
-    visited: theme.colors.mapLandActive,
-    base: theme.colors.mapLand,
-  };
+  const detailRate = averageCompletionRate(provinceDetail?.regions);
+  const fill =
+    detailRate != null ? visitRateColor(detailRate) : provinceFill(regions, regionName);
 
   if (!mapData) {
     return <Text style={styles.emptyText}>지도를 준비 중이에요.</Text>;
@@ -265,8 +250,8 @@ function ProvinceMap({ regionName }) {
         <Path
           key={`p-${index}`}
           d={shape.d}
-          fill={shape.outline ? 'none' : colors.base}
-          stroke={shape.outline ? colors.visited : theme.colors.white}
+          fill={shape.outline ? 'none' : fill}
+          stroke={shape.outline ? theme.colors.mapOutline : theme.colors.white}
           strokeWidth={shape.outline ? 1.4 : 1}
         />
       ))}
@@ -280,7 +265,6 @@ function ProvinceInfoCard({ regionName, regions, onExplore }) {
   const collected = region?.collected ?? 0;
   const total = region?.total ?? 0;
   const pct = total > 0 ? Math.min(100, Math.round((collected / total) * 100)) : 0;
-  const accent = REGION_COLORS[regionName]?.visited || theme.colors.primary;
 
   return (
     <Animated.View entering={FadeIn.duration(theme.motion.standard)} style={styles.infoCard}>
@@ -291,7 +275,7 @@ function ProvinceInfoCard({ regionName, regions, onExplore }) {
             시·군·구 {collected}/{total}곳 방문 · {pct}%
           </Text>
         </View>
-        <View style={[styles.infoCardBadge, { backgroundColor: accent }]}>
+        <View style={styles.infoCardBadge}>
           <Text style={styles.infoCardBadgeText}>{SHORT_NAMES[regionName] || regionName}</Text>
         </View>
       </View>
@@ -330,7 +314,16 @@ function MapToolbar({ onBack }) {
  * - ref: showProvince / showNational / setHeading / resetHeading
  */
 const KoreaMap = forwardRef(function KoreaMap(
-  { regions, onExplore, userRegion, userCoords, compassActive, onUserGesture, onProvinceChange },
+  {
+    regions,
+    provinceDetail,
+    onExplore,
+    userRegion,
+    userCoords,
+    compassActive,
+    onUserGesture,
+    onProvinceChange,
+  },
   ref
 ) {
   const [province, setProvince] = useState(null);
@@ -632,7 +625,11 @@ const KoreaMap = forwardRef(function KoreaMap(
             style={[styles.stage, zoomStyle]}
           >
             {province ? (
-              <ProvinceMap regionName={province} />
+              <ProvinceMap
+                regionName={province}
+                regions={regions}
+                provinceDetail={provinceDetail}
+              />
             ) : (
               <>
                 <SeaBackground stageSize={stageSize} />
@@ -664,6 +661,8 @@ const KoreaMap = forwardRef(function KoreaMap(
           </Animated.View>
         </Animated.View>
       </GestureDetector>
+
+      <MapLegend />
 
       {province && !transitionTo && (
         <ProvinceInfoCard
@@ -747,7 +746,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 20,
     right: 20,
-    bottom: 16,
+    // 지도 하단 범례를 가리지 않도록 범례 높이만큼 띄운다
+    bottom: MAP_LEGEND_HEIGHT + theme.spacing.base,
     backgroundColor: theme.colors.white,
     borderRadius: theme.rounded.lg,
     borderWidth: 1,
@@ -782,6 +782,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: theme.rounded.full,
+    backgroundColor: theme.colors.primary,
   },
   infoCardBadgeText: {
     fontFamily: theme.typography.fontFamily.bold,

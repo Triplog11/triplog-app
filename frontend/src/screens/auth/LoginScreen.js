@@ -113,9 +113,33 @@ export default function LoginScreen({ navigation }) {
           </CustomText>
         </TouchableOpacity>
 
-        <CustomText variant="Caption" color={theme.colors.textMuted} style={styles.notice}>
-          로그인하면 이용약관과 개인정보 처리방침에 동의하게 됩니다.
-        </CustomText>
+        <View style={styles.noticeRow}>
+          <CustomText variant="Caption" color={theme.colors.textMuted}>
+            로그인하면{' '}
+          </CustomText>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('LegalDocument', { document: 'terms', title: '서비스 이용약관' })}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          >
+            <CustomText variant="Caption" color={theme.colors.textSecondary} style={styles.noticeLink}>
+              이용약관
+            </CustomText>
+          </TouchableOpacity>
+          <CustomText variant="Caption" color={theme.colors.textMuted}>
+            과{' '}
+          </CustomText>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('LegalDocument', { document: 'privacy', title: '개인정보 처리방침' })}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          >
+            <CustomText variant="Caption" color={theme.colors.textSecondary} style={styles.noticeLink}>
+              개인정보 처리방침
+            </CustomText>
+          </TouchableOpacity>
+          <CustomText variant="Caption" color={theme.colors.textMuted}>
+            에 동의하게 됩니다.
+          </CustomText>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -196,5 +220,16 @@ const styles = StyleSheet.create({
   notice: {
     textAlign: 'center',
     marginTop: theme.spacing.xs,
+  },
+  noticeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    paddingHorizontal: 16,
+  },
+  noticeLink: {
+    textDecorationLine: 'underline',
   },
 });
