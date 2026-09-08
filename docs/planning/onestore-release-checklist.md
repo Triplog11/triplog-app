@@ -1,7 +1,7 @@
 # 원스토어 배포 준비 체크리스트
 
 작성일: 2026년 9월 8일
-대상 버전: 1.0.0 (versionCode 1)
+대상 버전: 1.0.0 (versionCode 2)
 
 ---
 
@@ -12,7 +12,7 @@
 | 앱 이름 | 트립로그 (TripLog) |
 | 패키지명 | `store.triplog11.app` |
 | 버전 | 1.0.0 |
-| versionCode | 1 |
+| versionCode | 2 |
 | 최소 지원 | Android 7.0 이상 (Expo 54 기본값) |
 | 카테고리 | 여행 |
 | 연령 등급 | 전체 이용가 |
@@ -25,7 +25,7 @@
 
 ### 2.1 반드시 갖춰야 하는 항목
 
-- [x] `versionCode` 지정 (`frontend/app.json`)
+- [x] `versionCode` 지정 (`frontend/app.json`) — `production`/`onestore` 프로파일의 `autoIncrement` 가 빌드할 때마다 자동으로 올립니다.
 - [x] 프로덕션 빌드 프로파일 구성 (`frontend/eas.json` 의 `production`, `onestore`)
 - [x] 개인정보 처리방침 문서 작성 (`docs/legal/privacy-policy.md`)
 - [x] 서비스 이용약관 문서 작성 (`docs/legal/terms-of-service.md`)
