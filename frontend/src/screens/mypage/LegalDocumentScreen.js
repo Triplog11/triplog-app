@@ -92,6 +92,13 @@ export default function LegalDocumentScreen({ route }) {
       {document.sections.map((section) => (
         <Section key={section.heading} section={section} />
       ))}
+
+      <View style={styles.webNotice}>
+        <CustomText variant="Body/Small" color={theme.colors.textMuted}>
+          {`같은 내용을 웹에서도 확인하실 수 있습니다.
+${document.webUrl}`}
+        </CustomText>
+      </View>
     </ScrollView>
   );
 }
@@ -144,5 +151,11 @@ const styles = StyleSheet.create({
   bulletText: {
     flex: 1,
     lineHeight: 21,
+  },
+  webNotice: {
+    marginTop: theme.spacing.xl,
+    padding: theme.spacing.base,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.rounded.card,
   },
 });

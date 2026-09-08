@@ -4,6 +4,7 @@
  */
 export const PRIVACY_POLICY = {
   title: '개인정보 처리방침',
+  webUrl: 'https://triplog11.github.io/triplog-legal/privacy.html',
   effectiveDate: '시행일 2026년 9월 8일',
   intro:
     '트립로그는 이용자의 개인정보를 소중하게 생각하며 「개인정보 보호법」을 비롯한 관계 법령을 준수합니다. '

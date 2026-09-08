@@ -4,6 +4,7 @@
  */
 export const TERMS_OF_SERVICE = {
   title: '서비스 이용약관',
+  webUrl: 'https://triplog11.github.io/triplog-legal/terms.html',
   effectiveDate: '시행일 2026년 9월 8일',
   intro:
     '본 약관은 트립로그가 제공하는 여행 기록 및 관광지 방문 인증 서비스의 이용 조건과 절차, '

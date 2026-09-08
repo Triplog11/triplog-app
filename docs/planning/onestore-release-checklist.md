@@ -29,7 +29,7 @@
 - [x] 프로덕션 빌드 프로파일 구성 (`frontend/eas.json` 의 `production`, `onestore`)
 - [x] 개인정보 처리방침 문서 작성 (`docs/legal/privacy-policy.md`)
 - [x] 서비스 이용약관 문서 작성 (`docs/legal/terms-of-service.md`)
-- [ ] **개인정보 처리방침을 공개 URL로 게시** — 아래 4절 참고
+- [x] **개인정보 처리방침 공개 URL 게시** — https://triplog11.github.io/triplog-legal/privacy.html
 - [x] 회원 탈퇴 화면 구현 (마이 탭 → 회원 탈퇴)
 - [ ] **회원 탈퇴 API 배포** — 백엔드 PR #130 머지 필요. 화면은 `DELETE /users/me` 명세에 맞춰 두었으므로 배포되면 바로 동작합니다.
 - [ ] 개인정보 처리방침의 운영 이메일 주소 기입
@@ -101,19 +101,17 @@
 
 ---
 
-## 4. 개인정보 처리방침 공개 URL 마련
+## 4. 개인정보 처리방침 공개 URL
 
-원스토어는 개인정보 처리방침을 웹에서 접근할 수 있는 URL로 제출하도록 요구합니다. 다음 세 가지 중 하나를 택하면 됩니다.
+원스토어 제출 양식에 아래 주소를 그대로 입력하면 됩니다.
 
-| 방법 | 장점 | 단점 |
-|---|---|---|
-| GitHub Pages | 저장소에 이미 문서가 있어 추가 비용이 없고 갱신이 쉽습니다. | 저장소가 비공개인 경우 별도 공개 저장소가 필요합니다. |
-| 노션 공개 페이지 | 팀이 이미 노션을 쓰고 있어 접근이 쉽습니다. | 주소가 길고 노션 브랜딩이 노출됩니다. |
-| 기존 서버에 정적 페이지 추가 | 도메인(triplog11.store)을 그대로 쓸 수 있어 가장 깔끔합니다. | 백엔드에 정적 리소스 경로를 추가해야 합니다. |
+| 문서 | 주소 |
+|---|---|
+| 개인정보 처리방침 | https://triplog11.github.io/triplog-legal/privacy.html |
+| 서비스 이용약관 | https://triplog11.github.io/triplog-legal/terms.html |
+| 안내 페이지 | https://triplog11.github.io/triplog-legal/ |
 
-**권장**: `https://triplog11.store/privacy` 와 `https://triplog11.store/terms` 로 게시하는 방법입니다. 이미 도메인과 인증서가 준비되어 있으므로 백엔드에 정적 HTML 두 개만 추가하면 됩니다. 백엔드 담당자에게 요청이 필요합니다.
-
----
+`Triplog11/triplog-legal` 공개 저장소를 GitHub Pages 로 게시한 것입니다. 문서 원문은 앱 저장소의 `docs/legal/` 이며, 내용을 고칠 때는 두 곳을 함께 갱신해야 합니다. 변환은 `scripts/build-legal-site.py` 로 다시 만들 수 있습니다.
 
 ## 5. 빌드와 제출 절차
 
