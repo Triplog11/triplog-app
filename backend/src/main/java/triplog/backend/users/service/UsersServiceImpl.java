@@ -4,20 +4,29 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import triplog.backend.common.auth.entity.RefreshToken;
+import triplog.backend.common.auth.repository.RefreshTokenRepository;
 import triplog.backend.stats.service.StatsProfileInfo;
 import triplog.backend.stats.service.StatsService;
 import triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest;
+import triplog.backend.users.dto.request.UsersRequest.WithdrawalRequest;
 import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.ProfileUpdateResponse;
+import triplog.backend.users.dto.response.UsersResponse.WithdrawalResponse;
 import triplog.backend.users.entity.LoginType;
 import triplog.backend.users.entity.Users;
 import triplog.backend.users.exception.UsersException;
 import triplog.backend.users.repository.UsersRepository;
 import java.util.Optional;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import static triplog.backend.users.exception.UsersErrorCode.NICKNAME_DUPLICATED;
 import static triplog.backend.users.exception.UsersErrorCode.EMAIL_DUPLICATED;
 import static triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND;
+import static triplog.backend.users.exception.UsersErrorCode.INVALID_WITHDRAWAL_REQUEST;
+import static triplog.backend.users.exception.UsersErrorCode.WITHDRAWAL_USER_NOT_FOUND;
 
 /**
  * {@link UsersService}의 구현 클래스입니다.
@@ -31,11 +40,16 @@ import static triplog.backend.users.exception.UsersErrorCode.USER_NOT_FOUND;
 @Transactional(readOnly = true)
 public class UsersServiceImpl implements UsersService {
 
+    private static final DateTimeFormatter RESPONSE_DATE_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
     private static final String DEFAULT_PROFILE_URL =
             "https://res.cloudinary.com/pvswis5a/image/upload/v1784864852/basic-profile_dcuxor.png";
 
     private final UsersRepository usersRepository;
     private final StatsService statsService;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final Clock clock;
 
     /**
      * 사용자 ID로 사용자를 조회합니다.
@@ -177,5 +191,49 @@ public class UsersServiceImpl implements UsersService {
                 stats.addressGu(),
                 users.getProfileUrl()
         );
+    }
+
+    /**
+     * 요청 정보가 인증된 사용자와 일치하는지 확인한 뒤 계정과 관련 데이터를 삭제합니다.
+     *
+     * @param usersId 액세스 토큰으로 인증된 사용자 ID
+     * @param request 회원 탈퇴 요청
+     * @return 회원 탈퇴 처리 결과
+     * @throws UsersException 사용자가 없거나 이메일 또는 리프레시 토큰이 일치하지 않는 경우
+     */
+    @Override
+    @Transactional
+    public WithdrawalResponse withdraw(String usersId, WithdrawalRequest request) {
+        Users users = usersRepository.findById(usersId)
+                .orElseThrow(() -> new UsersException(WITHDRAWAL_USER_NOT_FOUND));
+
+        if (!users.getEmail().equals(request.getEmail())) {
+            throw new UsersException(INVALID_WITHDRAWAL_REQUEST);
+        }
+
+        RefreshToken refreshToken = refreshTokenRepository.findByRefreshToken(request.getRefreshToken())
+                .filter(token -> usersId.equals(token.getUsersId()))
+                .orElseThrow(() -> new UsersException(INVALID_WITHDRAWAL_REQUEST));
+
+        deleteNonCascadingRelations(usersId);
+        usersRepository.delete(users);
+        usersRepository.flush();
+        refreshTokenRepository.deleteById(refreshToken.getUsersId());
+
+        String deletedAt = LocalDateTime.now(clock).format(RESPONSE_DATE_TIME_FORMAT);
+        return new WithdrawalResponse(true, users.getEmail(), deletedAt);
+    }
+
+    /**
+     * 외래 키에 삭제 전파가 설정되지 않은 사용자 종속 데이터를 먼저 삭제합니다.
+     *
+     * @param usersId 탈퇴할 사용자 ID
+     */
+    private void deleteNonCascadingRelations(String usersId) {
+        usersRepository.deleteStatsByUsersId(usersId);
+        usersRepository.deleteBadgesByUsersId(usersId);
+        usersRepository.deleteRegionVisitLogsByUsersId(usersId);
+        usersRepository.deleteLandmarkVisitLogsByUsersId(usersId);
+        usersRepository.deleteAttractionVisitLogsByUsersId(usersId);
     }
 }

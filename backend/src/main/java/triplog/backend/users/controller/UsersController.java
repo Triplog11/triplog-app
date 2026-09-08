@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,10 +25,12 @@ import triplog.backend.common.exception.ErrorResponse;
 import triplog.backend.users.dto.request.UsersRequest.EmailCheckRequest;
 import triplog.backend.users.dto.request.UsersRequest.NicknameCheckRequest;
 import triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest;
+import triplog.backend.users.dto.request.UsersRequest.WithdrawalRequest;
 import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.MyPageInfoResponse;
 import triplog.backend.users.dto.response.UsersResponse.ProfileUpdateResponse;
+import triplog.backend.users.dto.response.UsersResponse.WithdrawalResponse;
 import triplog.backend.users.service.MyPageFacadeService;
 import triplog.backend.users.service.UsersService;
 
@@ -45,6 +48,49 @@ public class UsersController {
 
     private final UsersService usersService;
     private final MyPageFacadeService myPageFacadeService;
+
+    /**
+     * 로그인한 사용자의 회원 탈퇴 요청을 처리합니다.
+     *
+     * @param userDetails JWT 인증 사용자 정보
+     * @param request 회원 탈퇴 확인 정보
+     * @return 회원 탈퇴 처리 결과
+     */
+    @DeleteMapping("/me")
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "인증된 사용자의 이메일과 리프레시 토큰을 확인하고 계정 및 관련 데이터를 삭제합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "회원 탈퇴에 성공했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = WithdrawalResponse.class),
+                            examples = @ExampleObject(value = """
+                                    {
+                                      "deleted": true,
+                                      "email": "test@test.com",
+                                      "deletedAt": "2026-06-25T10:50:00"
+                                    }
+                                    """))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요한 기능입니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "사용자 정보를 찾을 수 없습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<WithdrawalResponse> withdraw(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody WithdrawalRequest request
+    ) {
+        return ResponseEntity.ok(usersService.withdraw(userDetails.getUsername(), request));
+    }
 
     /**
      * 로그인 사용자의 마이페이지 정보를 조회합니다.

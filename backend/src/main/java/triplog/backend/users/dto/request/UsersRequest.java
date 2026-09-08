@@ -82,4 +82,23 @@ public class UsersRequest {
         private String profileUrl;
     }
 
+    /**
+     * 회원 탈퇴 시 계정과 현재 로그인 세션을 확인하기 위한 요청 DTO입니다.
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "회원 탈퇴 요청")
+    public static class WithdrawalRequest {
+
+        @NotBlank(message = "리프레시 토큰은 필수입니다.")
+        @Schema(description = "현재 로그인 세션의 리프레시 토큰", example = "refresh-token-value")
+        private String refreshToken;
+
+        @NotBlank(message = "이메일은 필수입니다.")
+        @Email(message = "이메일 형식이 올바르지 않습니다.")
+        @Schema(description = "탈퇴할 계정의 이메일", example = "test@gmail.com")
+        private String email;
+    }
+
 }

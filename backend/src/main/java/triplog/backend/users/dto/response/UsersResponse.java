@@ -280,6 +280,24 @@ public class UsersResponse {
         private String profileUrl;
     }
   
+    /**
+     * 회원 탈퇴 처리 결과를 전달하는 응답 DTO입니다.
+     */
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "회원 탈퇴 응답")
+    public static class WithdrawalResponse {
+
+        @Schema(description = "탈퇴 처리 여부", example = "true")
+        private Boolean deleted;
+
+        @Schema(description = "탈퇴한 계정의 이메일", example = "test@test.com")
+        private String email;
+
+        @Schema(description = "탈퇴 처리 일시", example = "2026-06-25T10:50:00")
+        private String deletedAt;
+    }
+
    /**
      * 이메일 중복 확인 응답 DTO입니다.
      */

@@ -2,9 +2,11 @@ package triplog.backend.users.service;
 
 import triplog.backend.users.entity.LoginType;
 import triplog.backend.users.dto.request.UsersRequest.ProfileUpdateRequest;
+import triplog.backend.users.dto.request.UsersRequest.WithdrawalRequest;
 import triplog.backend.users.dto.response.UsersResponse.EmailCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.NicknameCheckResponse;
 import triplog.backend.users.dto.response.UsersResponse.ProfileUpdateResponse;
+import triplog.backend.users.dto.response.UsersResponse.WithdrawalResponse;
 import triplog.backend.users.entity.Users;
 import java.util.Optional;
 
@@ -79,4 +81,13 @@ public interface UsersService {
      * @return 수정 후 사용자 프로필 응답 정보
      */
     ProfileUpdateResponse updateProfile(String usersId, ProfileUpdateRequest request);
+
+    /**
+     * 인증된 사용자의 이메일과 리프레시 토큰을 확인하고 계정을 삭제합니다.
+     *
+     * @param usersId 액세스 토큰으로 인증된 사용자 ID
+     * @param request 회원 탈퇴 요청
+     * @return 회원 탈퇴 결과
+     */
+    WithdrawalResponse withdraw(String usersId, WithdrawalRequest request);
 }

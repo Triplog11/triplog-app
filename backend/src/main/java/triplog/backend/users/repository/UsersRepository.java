@@ -65,4 +65,49 @@ public interface UsersRepository extends JpaRepository<Users, String> {
             @Param("nickname") String nickname,
             @Param("profileUrl") String profileUrl
     );
+
+    /**
+     * 회원 탈퇴 대상 사용자의 통계 정보를 삭제합니다.
+     *
+     * @param usersId 탈퇴할 사용자 ID
+     */
+    @Modifying
+    @Query(value = "delete from stats where users_id = :usersId", nativeQuery = true)
+    void deleteStatsByUsersId(@Param("usersId") String usersId);
+
+    /**
+     * 회원 탈퇴 대상 사용자의 획득 배지 정보를 삭제합니다.
+     *
+     * @param usersId 탈퇴할 사용자 ID
+     */
+    @Modifying
+    @Query(value = "delete from users_badge where users_id = :usersId", nativeQuery = true)
+    void deleteBadgesByUsersId(@Param("usersId") String usersId);
+
+    /**
+     * 회원 탈퇴 대상 사용자의 지역 방문 로그를 삭제합니다.
+     *
+     * @param usersId 탈퇴할 사용자 ID
+     */
+    @Modifying
+    @Query(value = "delete from region_visit_log where users_id = :usersId", nativeQuery = true)
+    void deleteRegionVisitLogsByUsersId(@Param("usersId") String usersId);
+
+    /**
+     * 회원 탈퇴 대상 사용자의 랜드마크 방문 로그를 삭제합니다.
+     *
+     * @param usersId 탈퇴할 사용자 ID
+     */
+    @Modifying
+    @Query(value = "delete from landmark_visit_log where users_id = :usersId", nativeQuery = true)
+    void deleteLandmarkVisitLogsByUsersId(@Param("usersId") String usersId);
+
+    /**
+     * 회원 탈퇴 대상 사용자의 관광지 방문 로그를 삭제합니다.
+     *
+     * @param usersId 탈퇴할 사용자 ID
+     */
+    @Modifying
+    @Query(value = "delete from attraction_visit_log where users_id = :usersId", nativeQuery = true)
+    void deleteAttractionVisitLogsByUsersId(@Param("usersId") String usersId);
 }
