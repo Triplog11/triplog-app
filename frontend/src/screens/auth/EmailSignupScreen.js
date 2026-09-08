@@ -43,7 +43,7 @@ const INITIAL_FORM = {
 };
 
 /** 이메일 회원가입 — 계정 화면이므로 합니다 체 (DESIGN §10) */
-export default function EmailSignupScreen() {
+export default function EmailSignupScreen({ navigation }) {
   const { signInWithProvider } = useAuth();
   const [form, setForm] = useState(INITIAL_FORM);
   const [agreement, setAgreement] = useState(EMPTY_AGREEMENT);
@@ -225,7 +225,11 @@ export default function EmailSignupScreen() {
           </View>
 
           <View style={styles.field}>
-            <TermsAgreement agreement={agreement} onChange={setAgreement} />
+            <TermsAgreement
+              agreement={agreement}
+              onChange={setAgreement}
+              onViewDocument={(params) => navigation.navigate('LegalDocument', params)}
+            />
           </View>
         </ScrollView>
 

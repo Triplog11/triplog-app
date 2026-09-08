@@ -21,6 +21,8 @@ import NotificationSettingsScreen from '../screens/mypage/NotificationSettingsSc
 import TravelLogScreen from '../screens/mypage/TravelLogScreen';
 import VerifyHistoryScreen from '../screens/mypage/VerifyHistoryScreen';
 import WishlistScreen from '../screens/mypage/WishlistScreen';
+import LegalDocumentScreen from '../screens/mypage/LegalDocumentScreen';
+import WithdrawScreen from '../screens/mypage/WithdrawScreen';
 import AppellationScreen from '../screens/mypage/AppellationScreen';
 import EventListScreen from '../screens/mypage/EventListScreen';
 import EventDetailScreen from '../screens/mypage/EventDetailScreen';
@@ -75,6 +77,12 @@ function MyPageStack() {
       <Stack.Screen name="TravelLog" component={TravelLogScreen} options={{ title: '여행 기록' }} />
       <Stack.Screen name="VerifyHistory" component={VerifyHistoryScreen} options={{ title: '인증 내역' }} />
       <Stack.Screen name="Wishlist" component={WishlistScreen} options={{ title: '찜한 랜드마크' }} />
+      <Stack.Screen
+        name="LegalDocument"
+        component={LegalDocumentScreen}
+        options={({ route }) => ({ title: route.params?.title ?? '약관' })}
+      />
+      <Stack.Screen name="Withdraw" component={WithdrawScreen} options={{ title: '회원 탈퇴' }} />
       <Stack.Screen name="Appellation" component={AppellationScreen} options={{ title: '칭호' }} />
       <Stack.Screen name="EventList" component={EventListScreen} options={{ title: '이벤트' }} />
       <Stack.Screen name="EventDetail" component={EventDetailScreen} options={({ route }) => ({ title: route.params?.title ?? '이벤트' })} />

@@ -5,6 +5,7 @@ import TermsScreen from '../screens/auth/TermsScreen';
 import NicknameScreen from '../screens/auth/NicknameScreen';
 import EmailLoginScreen from '../screens/auth/EmailLoginScreen';
 import EmailSignupScreen from '../screens/auth/EmailSignupScreen';
+import LegalDocumentScreen from '../screens/mypage/LegalDocumentScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -42,6 +43,12 @@ export default function AuthNavigator() {
         name="EmailSignup"
         component={EmailSignupScreen}
         options={{ title: '회원가입' }}
+      />
+      {/* 가입 전에도 약관 전문을 확인할 수 있어야 하므로 인증 스택에도 등록한다 */}
+      <Stack.Screen
+        name="LegalDocument"
+        component={LegalDocumentScreen}
+        options={({ route }) => ({ title: route.params?.title ?? '약관' })}
       />
     </Stack.Navigator>
   );
