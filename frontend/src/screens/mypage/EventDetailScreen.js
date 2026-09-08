@@ -5,6 +5,7 @@ import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchEventDetail } from '../../api/events';
 import { EventAssets } from '../../assets';
+import { optimizeImageUrl } from '../../utils/imageUrl';
 import ListStateView from './components/ListStateView';
 import { formatDate, getEventStatus, EVENT_STATUS_LABEL } from './utils/format';
 
@@ -56,7 +57,9 @@ export default function EventDetailScreen({ route }) {
   const status = getEventStatus(event.eventStart, event.eventEnd);
   const ended = status === 'ended';
   const fallbackBanner = EventAssets.banners[Math.abs(Number(eventId) || 0) % 2];
-  const heroSource = event.eventImageUrl1 && !imgError0 ? { uri: event.eventImageUrl1 } : fallbackBanner;
+  const heroSource = event.eventImageUrl1 && !imgError0
+    ? { uri: optimizeImageUrl(event.eventImageUrl1, 'hero') }
+    : fallbackBanner;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -95,7 +98,7 @@ export default function EventDetailScreen({ route }) {
 
         {event.eventImageUrl2 && !imgError1 ? (
           <Image
-            source={{ uri: event.eventImageUrl2 }}
+            source={{ uri: optimizeImageUrl(event.eventImageUrl2, 'hero') }}
             style={styles.secondary}
             resizeMode="cover"
             onError={() => setImgError1(true)}

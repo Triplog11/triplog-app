@@ -58,12 +58,7 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
           <View style={styles.hero}>
             {obtained ? (
               <>
-                <PhotoPlaceholder
-                  uri={imageUrl}
-                  tint={grade?.soft ?? theme.colors.primarySoft}
-                  icon="camera-outline"
-                  size={44}
-                />
+                <PhotoPlaceholder uri={imageUrl} variant="hero" />
                 {imageUrl ? <View style={styles.heroShade} /> : null}
                 {frameSource && (
                   <Image

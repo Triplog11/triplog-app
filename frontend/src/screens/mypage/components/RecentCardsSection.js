@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
 import { GRADE_CONFIG } from '../../../data/collection';
+import PhotoPlaceholder from '../../collection/components/PhotoPlaceholder';
 import { formatDate } from '../utils/format';
 
 /** 백엔드 cardTier 문자열(대소문자 무관)을 GRADE_CONFIG 키로 정규화 */
@@ -54,13 +55,9 @@ function CardTile({ item }) {
   const grade = gradeKey ? GRADE_CONFIG[gradeKey] : null;
   return (
     <View style={styles.tile}>
-      {item.cardUrl ? (
-        <Image source={{ uri: item.cardUrl }} style={styles.thumb} resizeMode="cover" />
-      ) : (
-        <View style={[styles.thumb, styles.thumbPlaceholder]}>
-          <Ionicons name="image-outline" size={24} color={theme.colors.textMuted} />
-        </View>
-      )}
+      <View style={styles.thumb}>
+        <PhotoPlaceholder uri={item.cardUrl} variant="thumb" />
+      </View>
       {grade && (
         <View style={[styles.gradePill, { backgroundColor: grade.color }]}>
           <CustomText variant="Caption" color={theme.colors.white} style={styles.gradeText}>
@@ -127,10 +124,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     backgroundColor: theme.colors.surfaceDim,
     marginBottom: theme.spacing.sm,
-  },
-  thumbPlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden',
   },
   gradePill: {
     position: 'absolute',
