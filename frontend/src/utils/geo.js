@@ -1,3 +1,5 @@
+import { filterProvinceRegions } from './provinces';
+
 /**
  * 역지오코딩 결과 → TripLog 표준 시·도 이름 매핑 (KR/EN 토큰 모두 대응)
  */
@@ -91,4 +93,121 @@ export function getLandmarkCoords(landmark) {
   const lng = landmark?.longitude ?? landmark?.lng;
   if (typeof lat !== 'number' || typeof lng !== 'number') return null;
   return { lat, lng };
+}
+
+/* ── 현재 위치 → 시·군·구 매칭 ─────────────────────────────── */
+
+const PROVINCE_SUFFIX = /(특별자치시|특별자치도|특별시|광역시|도)$/;
+const DISTRICT_SUFFIX = /(시|군|구)$/;
+
+/** 행정구역 이름 정규화 — 공백을 없애고 소문자로 통일한다(영문 표기도 같은 규칙). */
+function normalizeAdminName(name) {
+  return String(name ?? '').replace(/\s+/g, '').toLowerCase();
+}
+
+/** 붙여 쓴 지역 이름을 시·군·구 단위로 나눈다. '성남시분당구' → ['성남시', '분당구'] */
+function splitAdminTokens(normalized) {
+  return normalized.match(/.+?[시군구]/g) ?? [normalized];
+}
+
+/**
+ * 지역 이름에서 비교용 키를 만든다.
+ * 앞에 붙은 시·도 이름은 떼어 내어, '대전광역시 유성구'와 '유성구'가 같은 값으로 비교되게 한다.
+ */
+function regionMatchKeys(regionName) {
+  const raw = String(regionName ?? '').trim();
+  const words = raw.split(/\s+/).filter(Boolean);
+  const hasProvincePrefix = words.length > 1 && PROVINCE_SUFFIX.test(words[0]);
+  const core = normalizeAdminName((hasProvincePrefix ? words.slice(1) : words).join(''));
+  return { full: normalizeAdminName(raw), core, tokens: splitAdminTokens(core) };
+}
+
+/**
+ * 후보 이름과 지역 이름의 일치 정도.
+ * 3 = 이름이 그대로 일치, 2 = 접미사(시·군·구)를 뗀 형태가 일치, 0 = 불일치.
+ */
+function regionMatchTier(candidate, keys) {
+  if (candidate.value === keys.full || candidate.value === keys.core) return 3;
+  if (keys.tokens.includes(candidate.value)) return 3;
+  if (candidate.stem.length < 2) return 0;
+  const stemMatched = keys.tokens.some((token) => token.replace(DISTRICT_SUFFIX, '') === candidate.stem);
+  return stemMatched ? 2 : 0;
+}
+
+/** 후보 이름 하나로 지역을 찾는다. 같은 순위의 지역이 둘 이상이면 확정하지 않고 null을 돌려준다. */
+function findRegionByName(candidateName, regions) {
+  const value = normalizeAdminName(candidateName);
+  if (value.length < 2) return null;
+  const candidate = { value, stem: value.replace(DISTRICT_SUFFIX, '') };
+
+  const best = regions.reduce(
+    (acc, region) => {
+      const tier = regionMatchTier(candidate, regionMatchKeys(region.regionName));
+      if (tier === 0 || tier < acc.tier) return acc;
+      if (tier > acc.tier) return { tier, matches: [region] };
+      return { tier: acc.tier, matches: [...acc.matches, region] };
+    },
+    { tier: 0, matches: [] },
+  );
+  return best.matches.length === 1 ? best.matches[0] : null;
+}
+
+/**
+ * 역지오코딩 결과를 전국 지역 목록의 시·군·구와 맞춘다.
+ *
+ * 표기가 서로 달라도 찾을 수 있도록 다음 순서로 확인한다.
+ *  1) resolveRegionName으로 시·도를 먼저 정하고, 그 시·도의 지역만 후보로 남긴다(같은 이름의 '중구' 구분).
+ *  2) 상세 주소 필드(district → subregion → city → name) 순서로 이름을 대조한다.
+ *  3) 이름이 그대로 일치하지 않으면 접미사(시·군·구)를 뗀 형태로 다시 대조한다.
+ * 같은 순위로 여러 지역이 걸리면 그 후보는 건너뛰어, 엉뚱한 지역으로 인증되지 않게 한다.
+ * 기기 언어가 영문이면 시·군·구 이름을 대조할 수 없으므로 null을 돌려주고, 호출부는 지역 직접 선택으로 안내한다.
+ *
+ * @param place expo-location reverseGeocodeAsync 결과 한 건
+ * @param regions fetchNationwideMap()이 돌려준 regions 배열
+ * @returns 매칭된 지역 객체 또는 null
+ */
+export function matchRegionByPlace(place, regions) {
+  const list = Array.isArray(regions) ? regions : [];
+  if (!place || list.length === 0) return null;
+
+  const province = resolveRegionName(place);
+  const scoped = province ? filterProvinceRegions(list, province) : [];
+  const pool = scoped.length > 0 ? scoped : list;
+
+  const candidates = [place.district, place.subregion, place.city, place.name];
+  const matched = candidates.reduce(
+    (found, candidate) => found ?? findRegionByName(candidate, pool),
+    null,
+  );
+  if (matched) return matched;
+
+  // 시·군·구 이름을 찾지 못해도 해당 시·도에 지역이 하나뿐이면(세종특별자치시) 그 지역으로 확정한다
+  return province && pool.length === 1 ? pool[0] : null;
+}
+
+/**
+ * 인증 후보 랜드마크를 정렬한다 — 인증 플로우의 유일한 정렬 지점.
+ *
+ * 백엔드가 랜드마크 좌표를 내려주지 않는 동안에는 이름순으로 정렬하고,
+ * 좌표(latitude/longitude)가 내려오기 시작하면 아래 계산이 그대로 거리순 정렬로 동작한다.
+ * 확장 지점: 반경 판정(예: 100m 이내만 노출)은 이 함수가 붙여 준 distanceM을 호출부에서 걸러 쓰면 된다.
+ *
+ * @param landmarks 랜드마크 배열 (원본은 변경하지 않는다)
+ * @param origin 현재 위치 {lat, lng} — 없으면 거리 계산을 건너뛴다
+ * @returns distanceM이 채워진 새 배열
+ */
+export function sortLandmarksByProximity(landmarks, origin) {
+  const measured = (landmarks ?? []).map((landmark) => {
+    const coords = getLandmarkCoords(landmark);
+    return { ...landmark, distanceM: origin && coords ? distanceInMeters(origin, coords) : null };
+  });
+  return measured.sort(compareByProximity);
+}
+
+/** 거리를 아는 랜드마크가 앞, 나머지는 이름순 */
+function compareByProximity(a, b) {
+  if (a.distanceM != null && b.distanceM != null) return a.distanceM - b.distanceM;
+  if (a.distanceM != null) return -1;
+  if (b.distanceM != null) return 1;
+  return String(a.landmarkName ?? '').localeCompare(String(b.landmarkName ?? ''), 'ko');
 }
