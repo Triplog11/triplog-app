@@ -4,12 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import KoreaMap from '../../components/map/KoreaMap';
+import { MAP_LEGEND_HEIGHT } from '../../components/map/MapLegend';
 import Fab from '../../components/common/Fab';
 import LocationPermissionModal from './components/LocationPermissionModal';
 import MissionStrip from './components/MissionStrip';
 import theme from '../../theme/theme';
-import { fetchNationwideMap } from '../../api/regions';
-import { buildProvinceStats } from '../../utils/provinces';
+import { fetchNationwideMap, fetchProvinceMap } from '../../api/regions';
+import { buildProvinceStats, PROVINCE_CODES } from '../../utils/provinces';
 import { resolveRegionName, formatPlaceLabel } from '../../utils/geo';
 
 /**
@@ -47,6 +48,26 @@ export default function HomeScreen({ navigation }) {
   const [compassOn, setCompassOn] = useState(false);
   // 광역 드릴다운 중에는 나침반 FAB가 하단 지역 카드와 겹치므로 숨긴다
   const [inProvinceView, setInProvinceView] = useState(false);
+  // 상세 지도 색상용 시·군·구 방문률 — 드릴다운할 때마다 해당 시·도만 조회한다
+  const [provinceDetail, setProvinceDetail] = useState(null);
+  const provinceRequestId = useRef(0);
+
+  // 빠르게 지역을 바꿔도 늦게 도착한 응답이 현재 화면을 덮지 않도록 요청 번호로 거른다
+  const handleProvinceChange = useCallback((name) => {
+    setInProvinceView(!!name);
+    setProvinceDetail(null);
+    const requestId = provinceRequestId.current + 1;
+    provinceRequestId.current = requestId;
+
+    const code = name ? PROVINCE_CODES[name]?.[0] : null;
+    if (!code) return;
+
+    fetchProvinceMap(code)
+      .then((result) => {
+        if (provinceRequestId.current === requestId) setProvinceDetail(result ?? null);
+      })
+      .catch((error) => console.warn('광역 지도 조회 실패:', error?.status, error?.message));
+  }, []);
 
   const stopCompass = useCallback(() => {
     headingSub.current?.remove();
@@ -172,12 +193,13 @@ export default function HomeScreen({ navigation }) {
       <KoreaMap
         ref={mapRef}
         regions={provinceStats}
+        provinceDetail={provinceDetail}
         onExplore={handleExplore}
         userRegion={userRegion}
         userCoords={userCoords}
         compassActive={compassOn}
         onUserGesture={handleMapGesture}
-        onProvinceChange={(name) => setInProvinceView(!!name)}
+        onProvinceChange={handleProvinceChange}
       />
 
       {!inProvinceView && <Fab
@@ -258,6 +280,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 16,
-    bottom: 20,
+    // 지도 하단 범례 위에 뜨도록 범례 높이만큼 올린다
+    bottom: MAP_LEGEND_HEIGHT + 20,
   },
 });

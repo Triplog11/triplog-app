@@ -1,6 +1,7 @@
 /**
  * 시·도 이름 ↔ 법정 시·도 코드(legalRegionCode 앞 2자리) 유틸.
- * 강원/전북은 특별자치도 개편으로 코드가 바뀌어 신·구 코드를 함께 둔다.
+ * 강원/전북은 특별자치도 개편으로 코드가 바뀌어 신·구 코드를 한 항목에 함께 둔다.
+ * 지도(KOREA_PROVINCES)가 인식하는 이름을 대표 이름으로 삼아 17개 시·도만 유지한다.
  */
 export const PROVINCE_CODES = {
   서울특별시: ['11'],
@@ -16,11 +17,19 @@ export const PROVINCE_CODES = {
   충청북도: ['43'],
   충청남도: ['44'],
   전라북도: ['52', '45'],
-  전북특별자치도: ['52', '45'],
   전라남도: ['46'],
   경상북도: ['47'],
   경상남도: ['48'],
   제주특별자치도: ['50'],
+};
+
+/**
+ * 개편 전후로 명칭이 달라진 시·도의 이름 목록.
+ * 코드 매칭이 실패했을 때 이름 접두 폴백이 옛 이름과 새 이름을 모두 인정하도록 한다.
+ */
+export const PROVINCE_NAME_ALIASES = {
+  강원특별자치도: ['강원특별자치도', '강원도'],
+  전라북도: ['전라북도', '전북특별자치도'],
 };
 
 /** 해당 시·도의 시·군·구만 골라낸다 — 코드 우선, 이름 접두 매칭 폴백 */
@@ -32,14 +41,17 @@ export function filterProvinceRegions(regions, provinceName) {
     );
     if (byCode.length > 0) return byCode;
   }
-  return regions.filter((r) => String(r.regionName ?? '').startsWith(provinceName));
+  const names = PROVINCE_NAME_ALIASES[provinceName] ?? [provinceName];
+  return regions.filter((r) =>
+    names.some((name) => String(r.regionName ?? '').startsWith(name))
+  );
 }
 
 /**
  * 전국 지도 API의 regions[]를 시·도별 방문/전체 수로 집계한다.
  * KoreaMap의 regions prop 형태({name, collected, total})를 그대로 만든다.
  * @param {Array<{regionName, legalRegionCode, visited}>} regions
- * @returns {Array<{name: string, collected: number, total: number}>}
+ * @returns {Array<{name: string, collected: number, total: number}>} 17개 시·도
  */
 export function buildProvinceStats(regions) {
   const list = regions ?? [];
