@@ -98,6 +98,8 @@ public class LandmarkController {
                                       "regionId": 101,
                                       "regionName": "수원시",
                                       "contentId": "TOUR-10001",
+                                      "latitude": 37.28512500,
+                                      "longitude": 127.01958000,
                                       "legalRegionCode": "41",
                                       "legalDistrictCode": "110",
                                       "cardName": "수원 화성",
