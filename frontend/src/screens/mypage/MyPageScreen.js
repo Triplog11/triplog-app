@@ -150,6 +150,11 @@ export default function MyPageScreen({ navigation }) {
             label="개인정보 처리방침"
             onPress={() => navigation.navigate('LegalDocument', { document: 'privacy', title: '개인정보 처리방침' })}
           />
+          <MenuRow
+            icon="location-outline"
+            label="위치기반서비스 이용약관"
+            onPress={() => navigation.navigate('LegalDocument', { document: 'location', title: '위치기반서비스 이용약관' })}
+          />
           {/* 버전 정보 — 우측 표시, 클릭 인터랙션 없음 (피그마 디스크립션 #4) */}
           <MenuRow icon="information-circle-outline" label="버전 정보" value={APP_VERSION} />
           <MenuRow icon="log-out-outline" label="로그아웃" labelColor={theme.colors.primary} onPress={handleLogout} />
