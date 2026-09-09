@@ -9,7 +9,9 @@ import triplog.backend.region.dto.response.RegionResponse.NationwideMapResponse;
 import triplog.backend.region.dto.response.RegionResponse.ProvinceMapResponse;
 import triplog.backend.region.dto.response.RegionResponse.RegionDetailResponse;
 import triplog.backend.region.dto.response.RegionResponse.RegionListResponse;
+import triplog.backend.landmark.entity.Card;
 import triplog.backend.landmark.entity.Landmark;
+import triplog.backend.landmark.service.CardService;
 import triplog.backend.landmark.service.LandmarkService;
 import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.region.entity.Region;
@@ -39,6 +41,7 @@ public class RegionServiceImpl implements RegionService {
     private final UsersRegionRepository usersRegionRepository;
     private final RegionVisitLogService regionVisitLogService;
     private final LandmarkService landmarkService;
+    private final CardService cardService;
     private final UsersCardLandmarkService usersCardLandmarkService;
     private final RegionConquestPolicyService regionConquestPolicyService;
 
@@ -264,10 +267,17 @@ public class RegionServiceImpl implements RegionService {
 
         List<Landmark> landmarks = landmarkService.findByRegionId(regionId);
 
+        Map<Long, Card> cardsByLandmarkId = cardService.findByLandmarkIds(
+                        landmarks.stream().map(Landmark::getLandmarkId).toList()
+                ).stream()
+                .collect(Collectors.toMap(card -> card.getLandmark().getLandmarkId(), card -> card));
+
         Set<Long> acquiredLandmarkIds = usersCardLandmarkService
                 .findAcquiredLandmarkIdsByUsersId(usersId);
 
-        return RegionDetailResponse.toDto(region, usersRegion, landmarks, acquiredLandmarkIds);
+        return RegionDetailResponse.toDto(
+                region, usersRegion, landmarks, acquiredLandmarkIds, cardsByLandmarkId
+        );
     }
 
     /**

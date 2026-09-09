@@ -157,6 +157,11 @@ public class ReviewController {
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
                                     value = "{\"status\":404,\"message\":\"관광 콘텐츠 정보를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "429", description = "이전 방문 인증 요청 후 5초가 지나지 않았습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = "{\"status\":429,\"message\":\"요청을 너무 많이 보냈습니다.\"}"))),
             @ApiResponse(responseCode = "500", description = "서버 내부 오류가 발생했습니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),

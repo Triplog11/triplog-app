@@ -5,6 +5,8 @@ import triplog.backend.landmark.entity.CardTier;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.exception.LandmarkException;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -39,4 +41,12 @@ public interface CardService {
      * @throws LandmarkException 연결된 카드가 없는 경우
      */
     Card findByLandmarkId(Long landmarkId);
+
+    /**
+     * 여러 랜드마크에 연결된 카드를 한 번에 조회합니다.
+     *
+     * @param landmarkIds 조회할 랜드마크 식별자 목록
+     * @return 랜드마크에 연결된 카드 목록
+     */
+    List<Card> findByLandmarkIds(Collection<Long> landmarkIds);
 }

@@ -11,6 +11,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import triplog.backend.landmark.entity.Landmark;
+import triplog.backend.landmark.entity.Card;
+import triplog.backend.landmark.entity.CardTier;
+import triplog.backend.landmark.service.CardService;
 import triplog.backend.landmark.service.LandmarkService;
 import triplog.backend.landmark.service.UsersCardLandmarkService;
 import triplog.backend.region.dto.response.RegionResponse.NationwideMapResponse;
@@ -23,6 +26,7 @@ import triplog.backend.region.exception.RegionException;
 import triplog.backend.region.repository.RegionRepository;
 import triplog.backend.region.repository.UsersRegionRepository;
 import triplog.backend.tourismcontent.entity.TourismContent;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,6 +59,9 @@ class RegionServiceImplTest {
     private LandmarkService landmarkService;
 
     @Mock
+    private CardService cardService;
+
+    @Mock
     private UsersCardLandmarkService usersCardLandmarkService;
 
     @Mock
@@ -72,6 +79,7 @@ class RegionServiceImplTest {
                 usersRegionRepository,
                 regionVisitLogService,
                 landmarkService,
+                cardService,
                 usersCardLandmarkService,
                 regionConquestPolicyService
         );
@@ -257,11 +265,20 @@ class RegionServiceImplTest {
         when(landmark.getLandmarkName()).thenReturn("수원 화성");
         when(landmark.getTourismContent()).thenReturn(tourismContent);
         when(tourismContent.getExternalContentId()).thenReturn("EXT-101");
+        when(tourismContent.getLatitude()).thenReturn(new BigDecimal("37.28512500"));
+        when(tourismContent.getLongitude()).thenReturn(new BigDecimal("127.01958000"));
+
+        Card card = mock(Card.class);
+        when(card.getLandmark()).thenReturn(landmark);
+        when(card.getCardUrl()).thenReturn("https://cdn.triplog.com/cards/101.png");
+        when(card.getCardTier()).thenReturn(CardTier.RARE);
+        when(card.getCardName()).thenReturn("수원 화성");
 
         given(regionRepository.findById(1L)).willReturn(Optional.of(region));
         given(usersRegionRepository.findByUsersIdAndRegionRegionId(USERS_ID, 1L))
                 .willReturn(Optional.of(usersRegion));
         given(landmarkService.findByRegionId(1L)).willReturn(List.of(landmark));
+        given(cardService.findByLandmarkIds(List.of(101L))).willReturn(List.of(card));
         given(usersCardLandmarkService.findAcquiredLandmarkIdsByUsersId(USERS_ID)).willReturn(Set.of(101L));
 
         // when
@@ -277,7 +294,15 @@ class RegionServiceImplTest {
         assertThat(response.getLandmarks().getItems()).hasSize(1);
         assertThat(response.getLandmarks().getItems().get(0).getLandmarkId()).isEqualTo(101L);
         assertThat(response.getLandmarks().getItems().get(0).getContentId()).isEqualTo("EXT-101");
+        assertThat(response.getLandmarks().getItems().get(0).getLatitude())
+                .isEqualByComparingTo("37.28512500");
+        assertThat(response.getLandmarks().getItems().get(0).getLongitude())
+                .isEqualByComparingTo("127.01958000");
         assertThat(response.getLandmarks().getItems().get(0).getAcquired()).isTrue();
+        assertThat(response.getLandmarks().getItems().get(0).getCardUrl())
+                .isEqualTo("https://cdn.triplog.com/cards/101.png");
+        assertThat(response.getLandmarks().getItems().get(0).getCardTier()).isEqualTo("RARE");
+        assertThat(response.getLandmarks().getItems().get(0).getCardName()).isEqualTo("수원 화성");
     }
 
     /**
@@ -293,6 +318,7 @@ class RegionServiceImplTest {
         given(usersRegionRepository.findByUsersIdAndRegionRegionId(USERS_ID, 1L))
                 .willReturn(Optional.empty());
         given(landmarkService.findByRegionId(1L)).willReturn(List.of());
+        given(cardService.findByLandmarkIds(List.of())).willReturn(List.of());
         given(usersCardLandmarkService.findAcquiredLandmarkIdsByUsersId(USERS_ID)).willReturn(Set.of());
 
         // when

@@ -22,6 +22,7 @@ import triplog.backend.landmark.repository.LandmarkRepository;
 import triplog.backend.landmark.repository.UsersCardLandmarkRepository;
 import triplog.backend.region.entity.Region;
 import triplog.backend.tourismcontent.entity.TourismContent;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -155,6 +156,8 @@ class LandmarkServiceImplTest {
         TourismContent tourismContent = mock(TourismContent.class);
         when(tourismContent.getRegion()).thenReturn(region);
         when(tourismContent.getExternalContentId()).thenReturn("EXT-101");
+        when(tourismContent.getLatitude()).thenReturn(new BigDecimal("37.28512500"));
+        when(tourismContent.getLongitude()).thenReturn(new BigDecimal("127.01958000"));
 
         Landmark landmark = mock(Landmark.class);
         when(landmark.getLandmarkId()).thenReturn(1L);
@@ -185,6 +188,8 @@ class LandmarkServiceImplTest {
         assertThat(response.getRegionId()).isEqualTo(1L);
         assertThat(response.getRegionName()).isEqualTo("수원시");
         assertThat(response.getContentId()).isEqualTo("EXT-101");
+        assertThat(response.getLatitude()).isEqualByComparingTo("37.28512500");
+        assertThat(response.getLongitude()).isEqualByComparingTo("127.01958000");
         assertThat(response.getLegalRegionCode()).isEqualTo("41");
         assertThat(response.getLegalDistrictCode()).isEqualTo("110");
         assertThat(response.getCardName()).isEqualTo("수원 화성");
@@ -212,6 +217,8 @@ class LandmarkServiceImplTest {
         TourismContent tourismContent = mock(TourismContent.class);
         when(tourismContent.getRegion()).thenReturn(region);
         when(tourismContent.getExternalContentId()).thenReturn("EXT-101");
+        when(tourismContent.getLatitude()).thenReturn(new BigDecimal("37.28512500"));
+        when(tourismContent.getLongitude()).thenReturn(new BigDecimal("127.01958000"));
 
         Landmark landmark = mock(Landmark.class);
         when(landmark.getLandmarkId()).thenReturn(1L);
@@ -232,6 +239,8 @@ class LandmarkServiceImplTest {
         LandmarkDetailResponse response = landmarkFacadeService.getLandmarkDetail(USERS_ID, 1L);
 
         // then
+        assertThat(response.getLatitude()).isEqualByComparingTo("37.28512500");
+        assertThat(response.getLongitude()).isEqualByComparingTo("127.01958000");
         assertThat(response.getCardTier()).isEqualTo("RARE");
         assertThat(response.getAcquired()).isFalse();
         assertThat(response.getAcquiredAt()).isNull();

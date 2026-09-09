@@ -10,6 +10,7 @@ import triplog.backend.landmark.entity.Card;
 import triplog.backend.landmark.entity.UsersCardLandmark;
 import triplog.backend.region.entity.Region;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -159,6 +160,12 @@ public class LandmarkResponse {
         @Schema(description = "Tour API 식별자", example = "TOUR-10001")
         private final String contentId;
 
+        @Schema(description = "위도", example = "37.28512500", nullable = true)
+        private final BigDecimal latitude;
+
+        @Schema(description = "경도", example = "127.01958000", nullable = true)
+        private final BigDecimal longitude;
+
         @Schema(description = "법정동 시도 코드", example = "41")
         private final String legalRegionCode;
 
@@ -191,6 +198,8 @@ public class LandmarkResponse {
          * @param regionId          지역 식별자
          * @param regionName        지역명
          * @param contentId         TourAPI 콘텐츠 식별자
+         * @param latitude          위도
+         * @param longitude         경도
          * @param legalRegionCode   법정동 시도 코드
          * @param legalDistrictCode 법정동 시군구 코드
          * @param cardName          카드 이름
@@ -206,6 +215,8 @@ public class LandmarkResponse {
                 Long regionId,
                 String regionName,
                 String contentId,
+                BigDecimal latitude,
+                BigDecimal longitude,
                 String legalRegionCode,
                 String legalDistrictCode,
                 String cardName,
@@ -220,6 +231,8 @@ public class LandmarkResponse {
             this.regionId = regionId;
             this.regionName = regionName;
             this.contentId = contentId;
+            this.latitude = latitude;
+            this.longitude = longitude;
             this.legalRegionCode = legalRegionCode;
             this.legalDistrictCode = legalDistrictCode;
             this.cardName = cardName;
@@ -231,7 +244,7 @@ public class LandmarkResponse {
         }
 
         /**
-         * Landmark 엔티티와 사용자 획득 정보를 기반으로 랜드마크 상세 응답을 생성합니다.
+         * Landmark 엔티티의 관광 콘텐츠 좌표와 사용자 획득 정보를 기반으로 랜드마크 상세 응답을 생성합니다.
          *
          * @param landmark          랜드마크 엔티티
          * @param card              랜드마크 카드 정보 (없으면 null)
@@ -254,6 +267,8 @@ public class LandmarkResponse {
                         region.getRegionId(),
                         region.getRegionName(),
                         landmark.getTourismContent().getExternalContentId(),
+                        landmark.getTourismContent().getLatitude(),
+                        landmark.getTourismContent().getLongitude(),
                         region.getLegalRegionCode(),
                         region.getLegalDistrictCode(),
                         cardName,
@@ -270,6 +285,8 @@ public class LandmarkResponse {
                     region.getRegionId(),
                     region.getRegionName(),
                     landmark.getTourismContent().getExternalContentId(),
+                    landmark.getTourismContent().getLatitude(),
+                    landmark.getTourismContent().getLongitude(),
                     region.getLegalRegionCode(),
                     region.getLegalDistrictCode(),
                     cardName,
