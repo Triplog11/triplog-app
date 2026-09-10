@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import triplog.backend.common.ratelimit.NicknameCheckRateLimitInterceptor;
+import triplog.backend.common.ratelimit.ReviewCreateRateLimitInterceptor;
 
 /**
  * Spring MVC 관련 설정을 담당하는 Configuration 클래스입니다.
@@ -16,6 +17,7 @@ import triplog.backend.common.ratelimit.NicknameCheckRateLimitInterceptor;
 public class WebConfig implements WebMvcConfigurer {
 
     private final NicknameCheckRateLimitInterceptor nicknameCheckRateLimitInterceptor;
+    private final ReviewCreateRateLimitInterceptor reviewCreateRateLimitInterceptor;
 
     /**
      * 애플리케이션에서 사용할 Interceptor를 등록합니다.
@@ -26,5 +28,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(nicknameCheckRateLimitInterceptor)
                 .addPathPatterns("/users/nickname/check", "/users/email/check");
+        registry.addInterceptor(reviewCreateRateLimitInterceptor)
+                .addPathPatterns("/reviews");
     }
 }

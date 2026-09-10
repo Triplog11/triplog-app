@@ -244,9 +244,14 @@ public class RegionController {
                                           "landmarkId": 301,
                                           "landmarkName": "수원화성",
                                           "contentId": "TOUR-10001",
+                                          "latitude": 37.28512500,
+                                          "longitude": 127.01958000,
                                           "legalRegionCode": "41",
                                           "legalDistrictCode": "110",
-                                          "acquired": false
+                                          "acquired": false,
+                                          "cardUrl": "https://cdn.triplog.com/cards/301.png",
+                                          "cardTier": "RARE",
+                                          "cardName": "수원 화성"
                                         }
                                       ]
                                     }

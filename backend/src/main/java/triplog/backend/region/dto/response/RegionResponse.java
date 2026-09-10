@@ -5,10 +5,12 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import triplog.backend.landmark.entity.Card;
 import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.entity.UsersRegion;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -282,11 +284,24 @@ public class RegionResponse {
         @Schema(description = "지역 랜드마크 목록")
         private final LandmarkListDto landmarks;
 
+        /**
+         * 지역과 방문 정보, 랜드마크 및 카드 정보를 지역 상세 조회 응답으로 변환합니다.
+         *
+         * @param region              지역 엔티티
+         * @param usersRegion         사용자 지역 방문 정보, 방문하지 않은 경우 {@code null}
+         * @param landmarks           지역에 속한 랜드마크 목록
+         * @param acquiredLandmarkIds 사용자가 획득한 랜드마크 식별자 집합
+         * @param cardsByLandmarkId   랜드마크 식별자를 키로 하는 카드 맵
+         * @return 지역 상세 조회 응답 DTO
+         */
         public static RegionDetailResponse toDto(Region region,
                                                  UsersRegion usersRegion,
                                                  List<Landmark> landmarks,
-                                                 Set<Long> acquiredLandmarkIds) {
-            LandmarkListDto landmarkListDto = LandmarkListDto.toDto(landmarks, region, acquiredLandmarkIds);
+                                                 Set<Long> acquiredLandmarkIds,
+                                                 Map<Long, Card> cardsByLandmarkId) {
+            LandmarkListDto landmarkListDto = LandmarkListDto.toDto(
+                    landmarks, region, acquiredLandmarkIds, cardsByLandmarkId
+            );
 
             if (usersRegion == null) {
                 return new RegionDetailResponse(
@@ -331,12 +346,16 @@ public class RegionResponse {
          * @param landmarks           랜드마크 엔티티 목록
          * @param region              지역 엔티티
          * @param acquiredLandmarkIds 사용자가 획득한 랜드마크 ID 집합
+         * @param cardsByLandmarkId   랜드마크 식별자를 키로 하는 카드 맵
          * @return 랜드마크 목록 DTO
          */
         public static LandmarkListDto toDto(List<Landmark> landmarks, Region region,
-                                            Set<Long> acquiredLandmarkIds) {
+                                            Set<Long> acquiredLandmarkIds,
+                                            Map<Long, Card> cardsByLandmarkId) {
             List<LandmarkItem> items = landmarks.stream()
-                    .map(landmark -> LandmarkItem.toDto(landmark, region, acquiredLandmarkIds))
+                    .map(landmark -> LandmarkItem.toDto(
+                            landmark, region, acquiredLandmarkIds, cardsByLandmarkId
+                    ))
                     .toList();
             return new LandmarkListDto(items);
         }
@@ -359,6 +378,12 @@ public class RegionResponse {
         @Schema(description = "Tour API 식별자", example = "TOUR-10001")
         private final String contentId;
 
+        @Schema(description = "위도", example = "37.28512500", nullable = true)
+        private final BigDecimal latitude;
+
+        @Schema(description = "경도", example = "127.01958000", nullable = true)
+        private final BigDecimal longitude;
+
         @Schema(description = "법정동 시도 코드", example = "41")
         private final String legalRegionCode;
 
@@ -368,15 +393,40 @@ public class RegionResponse {
         @Schema(description = "카드 획득 여부", example = "false")
         private final Boolean acquired;
 
+        @Schema(description = "카드 이미지 URL", example = "https://cdn.triplog.com/cards/301.png", nullable = true)
+        private final String cardUrl;
+
+        @Schema(description = "카드 등급", example = "RARE", nullable = true)
+        private final String cardTier;
+
+        @Schema(description = "카드 이름", example = "수원 화성", nullable = true)
+        private final String cardName;
+
+        /**
+         * 랜드마크의 관광 콘텐츠 좌표와 연결된 카드 정보를 지역 상세 조회의 랜드마크 항목으로 변환합니다.
+         *
+         * @param landmark            랜드마크 엔티티
+         * @param region              랜드마크가 속한 지역 엔티티
+         * @param acquiredLandmarkIds 사용자가 획득한 랜드마크 식별자 집합
+         * @param cardsByLandmarkId   랜드마크 식별자를 키로 하는 카드 맵
+         * @return 랜드마크 항목 DTO
+         */
         public static LandmarkItem toDto(Landmark landmark, Region region,
-                                         Set<Long> acquiredLandmarkIds) {
+                                         Set<Long> acquiredLandmarkIds,
+                                         Map<Long, Card> cardsByLandmarkId) {
+            Card card = cardsByLandmarkId.get(landmark.getLandmarkId());
             return new LandmarkItem(
                     landmark.getLandmarkId(),
                     landmark.getLandmarkName(),
                     landmark.getTourismContent().getExternalContentId(),
+                    landmark.getTourismContent().getLatitude(),
+                    landmark.getTourismContent().getLongitude(),
                     region.getLegalRegionCode(),
                     region.getLegalDistrictCode(),
-                    acquiredLandmarkIds.contains(landmark.getLandmarkId())
+                    acquiredLandmarkIds.contains(landmark.getLandmarkId()),
+                    card == null ? null : card.getCardUrl(),
+                    card == null ? null : card.getCardTier().name(),
+                    card == null ? null : card.getCardName()
             );
         }
     }

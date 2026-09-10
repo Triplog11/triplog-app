@@ -11,6 +11,8 @@ import triplog.backend.landmark.entity.Landmark;
 import triplog.backend.landmark.exception.LandmarkException;
 import triplog.backend.landmark.repository.CardRepository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import static triplog.backend.landmark.exception.LandmarkErrorCode.LANDMARK_CARD_NOT_FOUND;
@@ -72,6 +74,21 @@ public class CardServiceImpl implements CardService {
     public Card findByLandmarkId(Long landmarkId) {
         return findOptionalByLandmarkId(landmarkId)
                 .orElseThrow(() -> new LandmarkException(LANDMARK_CARD_NOT_FOUND));
+    }
+
+    /**
+     * 여러 랜드마크에 연결된 카드를 저장소에서 한 번에 조회합니다.
+     *
+     * @param landmarkIds 조회할 랜드마크 식별자 목록
+     * @return 랜드마크에 연결된 카드 목록
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<Card> findByLandmarkIds(Collection<Long> landmarkIds) {
+        if (landmarkIds.isEmpty()) {
+            return List.of();
+        }
+        return cardRepository.findByLandmarkLandmarkIdIn(landmarkIds);
     }
 
     /**
