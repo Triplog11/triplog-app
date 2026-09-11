@@ -189,7 +189,7 @@ index_body = """<h1>트립로그 약관 안내</h1>
 방문 인증 과정에서 단말기의 위치를 확인하지만, 이 좌표는 단말기 안에서 현재 행정구역(시·군·구)을
 판별하는 용도로만 잠시 사용되고 곧바로 폐기됩니다.</p>
 <h2>문의</h2>
-<p>서비스 이용과 개인정보 처리에 관한 문의는 트립로그 운영팀으로 연락해 주십시오.</p>
+<p>서비스 이용과 개인정보 처리에 관한 문의는 트립로그 운영팀(<a href="mailto:junsu4621@naver.com">junsu4621@naver.com</a>)으로 연락해 주십시오.</p>
 """
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(
     PAGE.format(title='약관 안내', style=STYLE, body=index_body))
