@@ -23,7 +23,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.INTERNET"
       ],
-      "versionCode": 2
+      "versionCode": 5
     },
     "web": {
       "favicon": "./assets/favicon.png"

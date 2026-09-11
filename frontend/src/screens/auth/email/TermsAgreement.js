@@ -6,9 +6,10 @@ import theme from '../../../theme/theme';
 export const TERMS_ITEMS = [
   { key: 'terms', label: '[필수] 서비스 이용약관 동의', document: 'terms', title: '서비스 이용약관' },
   { key: 'privacy', label: '[필수] 개인정보 수집 및 이용 동의', document: 'privacy', title: '개인정보 처리방침' },
+  { key: 'location', label: '[필수] 위치기반서비스 이용 동의', document: 'location', title: '위치기반서비스 이용약관' },
 ];
 
-export const EMPTY_AGREEMENT = { terms: false, privacy: false };
+export const EMPTY_AGREEMENT = { terms: false, privacy: false, location: false };
 
 export function isAllAgreed(agreement) {
   return TERMS_ITEMS.every((item) => agreement[item.key]);
