@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import theme from '../../theme/theme';
 import { SCALE_COLORS, SCALE_LOCATIONS } from '../../utils/mapColor';
@@ -8,12 +9,22 @@ import { SCALE_COLORS, SCALE_LOCATIONS } from '../../utils/mapColor';
 export const MAP_LEGEND_HEIGHT = 32;
 
 /**
+ * 탭 바가 차지하는 높이(TripLogTabBar 의 BAR_CONTENT_HEIGHT 와 같은 값).
+ * 지도는 화면 끝까지 그려지므로 범례를 이만큼 띄우지 않으면 탭 바에 가린다.
+ */
+const TAB_BAR_HEIGHT = 56;
+
+/**
  * 지도 하단 방문률 범례 — 왼쪽 "미방문", 오른쪽 "100%", 사이에 색 스케일 막대.
  * 막대 색은 지도가 쓰는 theme.mapScale을 그대로 받아 두 색이 항상 같다.
  */
 export default function MapLegend({ style }) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.row, style]} pointerEvents="none">
+    <View
+      style={[styles.row, { marginBottom: TAB_BAR_HEIGHT + insets.bottom }, style]}
+      pointerEvents="none"
+    >
       <Text style={styles.label}>미방문</Text>
       <LinearGradient
         colors={SCALE_COLORS}

@@ -4,11 +4,13 @@ import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { PRIVACY_POLICY } from '../../constants/legal/privacyPolicy';
 import { TERMS_OF_SERVICE } from '../../constants/legal/termsOfService';
+import { LOCATION_TERMS } from '../../constants/legal/locationTerms';
 
 /** 라우트 파라미터 document 값에 대응하는 문서 */
 const DOCUMENTS = {
   privacy: PRIVACY_POLICY,
   terms: TERMS_OF_SERVICE,
+  location: LOCATION_TERMS,
 };
 
 /** 문단 목록을 렌더링합니다. */

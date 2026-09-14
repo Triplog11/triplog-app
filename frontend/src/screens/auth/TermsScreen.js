@@ -7,35 +7,36 @@ export default function TermsScreen({ navigation }) {
   const [checkedAll, setCheckedAll] = useState(false);
   const [checkedTerms, setCheckedTerms] = useState(false);
   const [checkedPrivacy, setCheckedPrivacy] = useState(false);
+  // 위치기반서비스사업 신고에 따라 법령상 별도 동의가 필요하다
+  const [checkedLocation, setCheckedLocation] = useState(false);
 
   const handleToggleAll = () => {
     const nextVal = !checkedAll;
     setCheckedAll(nextVal);
     setCheckedTerms(nextVal);
     setCheckedPrivacy(nextVal);
+    setCheckedLocation(nextVal);
   };
 
   const handleToggleTerm = () => {
-    const nextTerms = !checkedTerms;
-    setCheckedTerms(nextTerms);
-    if (!nextTerms) {
-      setCheckedAll(false);
-    } else if (checkedPrivacy) {
-      setCheckedAll(true);
-    }
+    const next = !checkedTerms;
+    setCheckedTerms(next);
+    setCheckedAll(next && checkedPrivacy && checkedLocation);
   };
 
   const handleTogglePrivacy = () => {
-    const nextPrivacy = !checkedPrivacy;
-    setCheckedPrivacy(nextPrivacy);
-    if (!nextPrivacy) {
-      setCheckedAll(false);
-    } else if (checkedTerms) {
-      setCheckedAll(true);
-    }
+    const next = !checkedPrivacy;
+    setCheckedPrivacy(next);
+    setCheckedAll(next && checkedTerms && checkedLocation);
   };
 
-  const isNextDisabled = !checkedTerms || !checkedPrivacy;
+  const handleToggleLocation = () => {
+    const next = !checkedLocation;
+    setCheckedLocation(next);
+    setCheckedAll(next && checkedTerms && checkedPrivacy);
+  };
+
+  const isNextDisabled = !checkedTerms || !checkedPrivacy || !checkedLocation;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -104,6 +105,25 @@ export default function TermsScreen({ navigation }) {
           </TouchableOpacity>
           <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.termDescription}>
             소셜 로그인 연동, 경험치 보관 및 뱃지 발급 등 개인화된 서비스 제공을 위해 최소한의 이메일 및 닉네임 정보를 수집합니다.
+          </CustomText>
+        </View>
+
+        {/* 위치기반서비스 — 위치정보법에 따라 별도 동의를 받는다 */}
+        <View style={styles.termItem}>
+          <TouchableOpacity
+            style={styles.termTitleRow}
+            onPress={handleToggleLocation}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.circle, checkedLocation && styles.circleActive]}>
+              {checkedLocation && <CustomText variant="Label/Small" color="#FFFFFF">✓</CustomText>}
+            </View>
+            <CustomText variant="Heading/H5" color={theme.colors.text} style={styles.termTitle}>
+              [필수] 위치기반서비스 이용 동의
+            </CustomText>
+          </TouchableOpacity>
+          <CustomText variant="Body/Small" color={theme.colors.textSecondary} style={styles.termDescription}>
+            현재 위치로 주변 관광지를 찾고 방문을 인증하는 데 사용합니다. 위도·경도 좌표는 단말기 안에서만 쓰이며 서버로 전송하거나 저장하지 않습니다.
           </CustomText>
         </View>
       </ScrollView>

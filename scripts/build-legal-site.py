@@ -77,7 +77,7 @@ PAGE = """<!doctype html>
 </header>
 <main>
 <nav class="docs">
-  <a href="./">홈</a><a href="./privacy.html">개인정보 처리방침</a><a href="./terms.html">서비스 이용약관</a>
+  <a href="./">홈</a><a href="./privacy.html">개인정보 처리방침</a><a href="./terms.html">서비스 이용약관</a><a href="./location.html">위치기반서비스</a>
 </nav>
 {body}
 </main>
@@ -171,12 +171,14 @@ def build(src_name, out_name, title):
 os.makedirs(OUT, exist_ok=True)
 n1 = build('privacy-policy.md', 'privacy.html', '개인정보 처리방침')
 n2 = build('terms-of-service.md', 'terms.html', '서비스 이용약관')
+n3 = build('location-terms.md', 'location.html', '위치기반서비스 이용약관')
 
 index_body = """<h1>트립로그 약관 안내</h1>
 <p class="meta">트립로그(TripLog)의 개인정보 처리방침과 서비스 이용약관을 확인하실 수 있습니다.</p>
 <ul>
 <li><a href="./privacy.html">개인정보 처리방침</a> — 어떤 정보를 어떤 목적으로 수집하고 얼마나 보관하는지 안내합니다.</li>
 <li><a href="./terms.html">서비스 이용약관</a> — 서비스 이용 조건과 절차, 이용자와 운영자의 권리와 의무를 정합니다.</li>
+<li><a href="./location.html">위치기반서비스 이용약관</a> — 위치정보를 어떻게 쓰고 어떻게 동의를 철회할 수 있는지 안내합니다.</li>
 </ul>
 <hr>
 <h2>트립로그는 어떤 앱입니까</h2>
@@ -187,11 +189,11 @@ index_body = """<h1>트립로그 약관 안내</h1>
 방문 인증 과정에서 단말기의 위치를 확인하지만, 이 좌표는 단말기 안에서 현재 행정구역(시·군·구)을
 판별하는 용도로만 잠시 사용되고 곧바로 폐기됩니다.</p>
 <h2>문의</h2>
-<p>서비스 이용과 개인정보 처리에 관한 문의는 트립로그 운영팀으로 연락해 주십시오.</p>
+<p>서비스 이용과 개인정보 처리에 관한 문의는 트립로그 운영팀(<a href="mailto:junsu4621@naver.com">junsu4621@naver.com</a>)으로 연락해 주십시오.</p>
 """
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(
     PAGE.format(title='약관 안내', style=STYLE, body=index_body))
 open(os.path.join(OUT, '.nojekyll'), 'w').write('')
 
-print(f'생성 완료: privacy.html({n1:,}자) terms.html({n2:,}자) index.html')
+print(f'생성 완료: privacy.html({n1:,}자) terms.html({n2:,}자) location.html({n3:,}자) index.html')
 print('출력 위치:', OUT)
