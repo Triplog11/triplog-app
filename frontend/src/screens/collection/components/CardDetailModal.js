@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Modal, Pressable, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { StyleSheet, View, Modal, Pressable, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
 import { GRADE_CONFIG, tierToGrade, formatAcquiredDate } from '../../../data/collection';
 import { fetchLandmarkDetail } from '../../../api/landmarks';
-import { CardAssets } from '../../../assets';
 import PhotoPlaceholder from './PhotoPlaceholder';
+import useLandmarkBookmark from '../hooks/useLandmarkBookmark';
 
 const MAX_STARS = 4;
 
@@ -19,6 +19,7 @@ const MAX_STARS = 4;
 export default function CardDetailModal({ card, onClose, onVerifyPress }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
+  const bookmark = useLandmarkBookmark(card?.landmarkId ?? null);
 
   useEffect(() => {
     setDetail(null);
@@ -38,7 +39,6 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
 
   const gradeKey = tierToGrade(detail?.cardTier) ?? card.grade ?? tierToGrade(card.cardTier) ?? null;
   const grade = gradeKey ? GRADE_CONFIG[gradeKey] : null;
-  const frameSource = gradeKey ? CardAssets.frames[gradeKey.toUpperCase()] : null;
   const obtained = detail?.acquired ?? card.obtained;
   const name = detail?.cardName ?? card.name;
   const imageUrl = detail?.cardUrl ?? card.imageUrl ?? null;
@@ -53,6 +53,22 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
           <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={8}>
             <Ionicons name="close" size={18} color="#FFFFFF" />
           </TouchableOpacity>
+          {card.landmarkId != null && (
+            <TouchableOpacity
+              style={[styles.closeBtn, styles.heartBtn]}
+              onPress={bookmark.toggle}
+              disabled={bookmark.pending}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={bookmark.bookmarked ? '찜 해제' : '찜하기'}
+            >
+              <Ionicons
+                name={bookmark.bookmarked ? 'heart' : 'heart-outline'}
+                size={18}
+                color={bookmark.bookmarked ? theme.colors.error : '#FFFFFF'}
+              />
+            </TouchableOpacity>
+          )}
 
           {/* 히어로 이미지 */}
           <View style={styles.hero}>
@@ -60,13 +76,8 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
               <>
                 <PhotoPlaceholder uri={imageUrl} variant="hero" />
                 {imageUrl ? <View style={styles.heroShade} /> : null}
-                {frameSource && (
-                  <Image
-                    source={frameSource}
-                    style={StyleSheet.absoluteFillObject}
-                    resizeMode="stretch"
-                    pointerEvents="none"
-                  />
+                {grade && (
+                  <View pointerEvents="none" style={[styles.heroFrame, { borderColor: grade.border }]} />
                 )}
                 <View style={styles.heroTextWrap}>
                   {grade && (
@@ -97,6 +108,11 @@ export default function CardDetailModal({ card, onClose, onVerifyPress }) {
 
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             {loading && <ActivityIndicator size="small" color={theme.colors.primary} />}
+            {bookmark.errorMessage && (
+              <CustomText variant="Caption" color={theme.colors.error}>
+                {bookmark.errorMessage}
+              </CustomText>
+            )}
             {/* 별점 + 희귀도 (등급 있을 때) + 수집 상태 */}
             <View style={styles.ratingRow}>
               {grade ? (
@@ -212,8 +228,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  heartBtn: {
+    right: 54,
+  },
   hero: {
     height: 200,
+  },
+  heroFrame: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 3,
+    borderTopLeftRadius: theme.rounded.xl,
+    borderTopRightRadius: theme.rounded.xl,
   },
   heroShade: {
     ...StyleSheet.absoluteFillObject,

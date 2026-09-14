@@ -33,6 +33,7 @@ import { KOREA_PROVINCES } from './koreaProvinces';
 import { NEIGHBOR_COUNTRIES } from './neighborCountries';
 import { getPathBounds } from './svgBounds';
 import { projectToNationalSvg } from './geoProjection';
+import { parsePathPolygons, stagePointToViewBox, findRegionAt } from '../../utils/mapHitTest';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const EASE_STANDARD = Easing.bezier(...theme.motion.easeStandard);
@@ -45,6 +46,12 @@ const BEAM_SIZE = 132; // 방향 빔 오버레이 한 변 (마커 중심 기준)
 
 // 전국 지도 viewBox 파싱 (실측 17개 시·도)
 const [, , VB_W, VB_H] = KOREA_PROVINCES.viewBox.split(' ').map(Number);
+
+// 탭 위치 판정용 시·도 도형 (앱 실행 중 한 번만 파싱)
+const PROVINCE_POLYGONS = KOREA_PROVINCES.regions.map((region) => ({
+  name: region.name,
+  polygons: parsePathPolygons(region.d),
+}));
 
 // 배경(바다 + 주변국) 레이어의 확장 viewBox — 남한 지도와 같은 좌표계
 const BG_VB = { x: -600, y: -500, w: VB_W + 1200, h: VB_H + 850 };
@@ -139,7 +146,7 @@ function UserLocationMarker({ cx, cy, unit }) {
 }
 
 /** 전국 지도 — 17개 시·도 실측 지형, 방문률 단계 색상, 탭 시 상세 지도로 드릴다운 */
-function NationalMap({ regions, onSelectProvince, userCenter, highlightRegion }) {
+function NationalMap({ regions, userCenter, highlightRegion }) {
   return (
     <Svg
       width="100%"
@@ -158,7 +165,6 @@ function NationalMap({ regions, onSelectProvince, userCenter, highlightRegion })
             stroke={highlighted ? theme.colors.primary : theme.colors.white}
             strokeWidth={highlighted ? 3 : 1.2}
             opacity={highlightRegion && !highlighted ? 0.45 : 1}
-            onPress={() => onSelectProvince(region.name)}
           />
         );
       })}
@@ -567,7 +573,36 @@ const KoreaMap = forwardRef(function KoreaMap(
       runOnJS(notifyUserGesture)();
     });
 
-  const gestures = Gesture.Simultaneous(pinch, pan, rotate, doubleTap);
+  // 지역 탭 — Path.onPress 는 확대·이동 제스처에 터치를 빼앗겨 안드로이드에서 호출되지 않으므로
+  // 탭 좌표를 지도 좌표로 되돌려 직접 판정한다. 더블탭(초기화)과는 서로 배타적으로 동작한다.
+  const handleMapTap = (x, y, currentTx, currentTy, currentRotation, currentScale) => {
+    if (province || transitionTo || !stageSize.w || !stageSize.h) return;
+    const point = stagePointToViewBox(
+      { x, y },
+      {
+        stageW: stageSize.w,
+        stageH: stageSize.h,
+        viewW: VB_W,
+        viewH: VB_H,
+        tx: currentTx,
+        ty: currentTy,
+        rotation: currentRotation,
+        scale: currentScale,
+      }
+    );
+    const name = findRegionAt(PROVINCE_POLYGONS, point.x, point.y);
+    if (name) selectProvince(name);
+  };
+
+  const singleTap = Gesture.Tap()
+    .maxDuration(300)
+    .onEnd((e, success) => {
+      'worklet';
+      if (!success) return;
+      runOnJS(handleMapTap)(e.x, e.y, tx.value, ty.value, rotation.value, scale.value);
+    });
+
+  const gestures = Gesture.Simultaneous(pinch, pan, rotate, Gesture.Exclusive(doubleTap, singleTap));
 
   const zoomStyle = useAnimatedStyle(() => ({
     transform: [
@@ -635,7 +670,6 @@ const KoreaMap = forwardRef(function KoreaMap(
                 <SeaBackground stageSize={stageSize} />
                 <NationalMap
                   regions={regions}
-                  onSelectProvince={selectProvince}
                   userCenter={userCenter}
                   highlightRegion={transitionTo}
                 />

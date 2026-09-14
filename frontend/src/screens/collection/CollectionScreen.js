@@ -6,6 +6,7 @@ import CustomText from '../../components/common/CustomText';
 import theme from '../../theme/theme';
 import { fetchNationwideMap } from '../../api/regions';
 import { formatPercent, toPercentValue } from '../../utils/percent';
+import { formatLandmarkProgress } from '../../utils/landmarkProgress';
 import CardDetailModal from './components/CardDetailModal';
 import MyCardsTab from './components/MyCardsTab';
 import PhotoPlaceholder from './components/PhotoPlaceholder';
@@ -22,9 +23,18 @@ const REGION_FILTERS = [
 ];
 
 /** 도감 — 지역 도감 / 카드 목록 2개 서브탭 (실 API). 전국 지도는 홈 탭이 담당한다. */
-export default function CollectionScreen({ navigation }) {
+export default function CollectionScreen({ navigation, route }) {
   const [subTab, setSubTab] = useState('region');
   const [selectedCard, setSelectedCard] = useState(null);
+
+  // 마이 탭의 "더보기"·"수집한 카드"처럼 다른 화면에서 특정 서브탭을 지정해 들어오는 경우
+  const requestedTab = route?.params?.initialTab;
+  useEffect(() => {
+    if (SUB_TABS.some((tab) => tab.key === requestedTab)) {
+      setSubTab(requestedTab);
+      navigation.setParams({ initialTab: undefined });
+    }
+  }, [requestedTab, navigation]);
 
   const openVerify = () => {
     setSelectedCard(null);
@@ -197,7 +207,9 @@ function RegionTab({ onSelectRegion }) {
             {complete && <Ionicons name="trophy" size={12} color={theme.colors.success} />}
           </View>
           <CustomText variant="Caption" color={theme.colors.textSecondary} style={styles.regionMeta}>
-            {item.visited ? '방문한 지역' : '아직 방문 전'}
+            {[item.visited ? '방문한 지역' : '아직 방문 전', formatLandmarkProgress(item) && `카드 ${formatLandmarkProgress(item)}`]
+              .filter(Boolean)
+              .join(' · ')}
           </CustomText>
           <View style={styles.regionProgressTrack}>
             <View

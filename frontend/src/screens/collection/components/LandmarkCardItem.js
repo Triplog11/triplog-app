@@ -1,22 +1,20 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomText from '../../../components/common/CustomText';
 import theme from '../../../theme/theme';
 import { GRADE_CONFIG, tierToGrade } from '../../../data/collection';
-import { CardAssets } from '../../../assets';
 import PhotoPlaceholder from './PhotoPlaceholder';
 
 /**
  * 도감 그리드의 랜드마크 카드 한 장.
  * card: {name, region?, grade?, cardTier?, imageUrl?, obtained, date?}
- * 획득: 사진(cardUrl) + 등급 보더/프레임/뱃지 + 획득일 / 미획득: ??? + 자물쇠
+ * 획득: 사진(cardUrl) + 등급 보더/뱃지 + 획득일 / 미획득: ??? + 자물쇠
  */
 export default function LandmarkCardItem({ card, wishlisted, onPress }) {
   // 지역 상세의 랜드마크 목록에는 등급이 없다 → grade는 있을 때만 사용
   const gradeKey = card.grade ?? tierToGrade(card.cardTier);
   const grade = gradeKey ? GRADE_CONFIG[gradeKey] : null;
-  const frameSource = gradeKey ? CardAssets.frames[gradeKey.toUpperCase()] : null;
   const { obtained } = card;
 
   return (
@@ -27,17 +25,9 @@ export default function LandmarkCardItem({ card, wishlisted, onPress }) {
     >
       <View style={styles.thumbWrap}>
         {obtained ? (
-          <>
-            <PhotoPlaceholder uri={card.imageUrl} variant="card" />
-            {frameSource && (
-              <Image
-                source={frameSource}
-                style={StyleSheet.absoluteFillObject}
-                resizeMode="stretch"
-                pointerEvents="none"
-              />
-            )}
-          </>
+          // 등급 테두리는 카드 자체의 borderColor 로 표시한다.
+          // 테두리 PNG 를 사진 위에 늘려 덮으면 안드로이드에서 이미지가 확대되어 왼쪽·위만 굵게 보였다.
+          <PhotoPlaceholder uri={card.imageUrl} variant="card" />
         ) : (
           <View style={styles.lockedThumb}>
             <Ionicons name="lock-closed" size={24} color={theme.colors.textMuted} />
