@@ -66,6 +66,7 @@ public class ReviewFacadeService {
     private static final int RANK_DISPLAY_ORDER = 95;
 
     private final ReviewService reviewService;
+    private final ReviewIdempotencyService reviewIdempotencyService;
     private final LandmarkService landmarkService;
     private final UsersCardLandmarkService usersCardLandmarkService;
     private final ImageService imageService;
@@ -98,6 +99,14 @@ public class ReviewFacadeService {
             String idempotencyKey
     ) {
         String requestKey = validateIdempotencyKey(idempotencyKey);
+        // 리뷰나 방문 로그를 만들기 전에 처리 권한을 확보해야 모든 후속 효과를 막을 수 있습니다.
+        Optional<CreateReviewResponse> previousResponse = reviewIdempotencyService.claim(
+                usersId, requestKey, request, files
+        );
+        if (previousResponse.isPresent()) {
+            // 정상 재시도에는 최초 응답을 그대로 반환하고 아래의 인증 흐름을 다시 실행하지 않습니다.
+            return previousResponse.get();
+        }
         TourismContent content = tourismContentService.findOptionalById(request.getTourismContentId())
                 .orElseThrow(() -> new ReviewException(TOURISM_CONTENT_NOT_FOUND));
         Optional<Landmark> landmark = landmarkService.findByTourismContentId(content.getTourismContentId());
@@ -201,9 +210,12 @@ public class ReviewFacadeService {
                 missionCompletions
         );
 
-        return CreateReviewResponse.toDto(
+        CreateReviewResponse response = CreateReviewResponse.toDto(
                 reward.rewards(), reward.totalXp(), reward.totalScore()
         );
+        // 최초 응답도 같은 트랜잭션에 저장해 인증 결과와 멱등성 기록의 커밋 시점을 동일하게 가져갑니다.
+        reviewIdempotencyService.complete(usersId, requestKey, response);
+        return response;
     }
 
     /**

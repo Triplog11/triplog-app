@@ -157,6 +157,11 @@ public class ReviewController {
                             schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
                                     value = "{\"status\":404,\"message\":\"관광 콘텐츠 정보를 찾을 수 없습니다.\"}"))),
+            @ApiResponse(responseCode = "409", description = "동일한 멱등성 키가 다른 요청에 사용되었습니다.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(
+                                    value = "{\"status\":409,\"message\":\"동일한 Idempotency-Key가 다른 요청에 사용되었습니다.\"}"))),
             @ApiResponse(responseCode = "429", description = "이전 방문 인증 요청 후 5초가 지나지 않았습니다.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class),
@@ -173,7 +178,7 @@ public class ReviewController {
             @Parameter(description = "방문 인증 요청 데이터", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
             @Valid @RequestPart("request") CreateRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @Parameter(description = "중복 보상 방지 요청 키", example = "review-20260824-550e8400")
+            @Parameter(description = "방문 인증 요청 전체의 중복 처리 방지 키", example = "review-20260824-550e8400")
             @RequestHeader("Idempotency-Key") String idempotencyKey
     ) {
         return ResponseEntity.ok(reviewFacadeService.createReview(

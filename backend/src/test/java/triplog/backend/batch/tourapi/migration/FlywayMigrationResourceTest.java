@@ -61,6 +61,23 @@ class FlywayMigrationResourceTest {
     }
 
     @Test
+    @DisplayName("방문 인증 멱등성 마이그레이션이 UTF-8 BOM 없이 패키징된다")
+    void 방문_인증_멱등성_마이그레이션이_UTF8_BOM_없이_패키징된다() throws IOException {
+        // Given
+        String migrationPath = "db/migration/V2__add_review_idempotency.sql";
+
+        // When
+        byte[] migrationBytes = readClasspathResourceBytes(migrationPath);
+        String migration = new String(migrationBytes, StandardCharsets.UTF_8);
+
+        // Then
+        assertThat(hasUtf8Bom(migrationBytes)).isFalse();
+        assertThat(migration)
+                .contains("CREATE TABLE review_idempotency")
+                .contains("UNIQUE KEY uk_review_idempotency_users_key (users_id, idempotency_key)");
+    }
+
+    @Test
     @DisplayName("V1에 V2부터 V4까지의 스키마 변경이 포함된다")
     void V1에_V2부터_V4까지의_스키마_변경이_포함된다() throws IOException {
         // Given
