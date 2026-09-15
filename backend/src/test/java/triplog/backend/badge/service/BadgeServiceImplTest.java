@@ -199,6 +199,7 @@ class BadgeServiceImplTest {
         assertThat(response.badgeId()).isEqualTo(1L);
         assertThat(response.badgeGroup()).isEqualTo(1);
         assertThat(response.badgeOperator()).isEqualTo(">=");
+        assertThat(response.badgeDescription()).isEqualTo("여행 기록을 1회 작성하세요.");
         assertThat(response.acquired()).isTrue();
         assertThat(response.representative()).isFalse();
     }
@@ -230,6 +231,8 @@ class BadgeServiceImplTest {
         BadgeResponse.BadgeListResponse badgeResponse = (BadgeResponse.BadgeListResponse) response;
         assertThat(badgeResponse.items()).hasSize(1);
         assertThat(badgeResponse.items().getFirst().acquired()).isTrue();
+        assertThat(badgeResponse.items().getFirst().badgeDescription())
+                .isEqualTo("여행 기록을 1회 작성하세요.");
         verify(badgeRepository).findBadges("user-id", "REVIEW", null, pageable);
     }
 

@@ -106,6 +106,7 @@ public class BadgeController {
                                       "badgeGroup": 1,
                                       "badgeType": "REVIEW",
                                       "badgeTarget": "REVIEW_COUNT",
+                                      "badgeDescription": "여행 기록을 1회 작성하세요.",
                                       "badgeOperator": ">=",
                                       "badgeValue": 1,
                                       "acquired": true,
@@ -169,6 +170,7 @@ public class BadgeController {
                                                 "badgeUrl": "https://cdn.triplog.com/badges/first-step.png",
                                                 "badgeType": "REVIEW",
                                                 "badgeTarget": "REVIEW_COUNT",
+                                                "badgeDescription": "여행 기록을 1회 작성하세요.",
                                                 "badgeValue": 1,
                                                 "acquired": true,
                                                 "representative": false

@@ -184,8 +184,12 @@ class RegionServiceImplTest {
         assertThat(response.getRegions().get(0).getLegalDistrictCode()).isEqualTo("110");
         assertThat(response.getRegions().get(0).getVisited()).isTrue();
         assertThat(response.getRegions().get(0).getCompleted()).isTrue();
+        assertThat(response.getRegions().get(0).getAcquiredLandmarkCount()).isEqualTo(4L);
+        assertThat(response.getRegions().get(0).getTotalLandmarkCount()).isEqualTo(4L);
         assertThat(response.getRegions().get(0).getCompletionRate()).isEqualTo(100.0);
         assertThat(response.getRegions().get(1).getVisited()).isFalse();
+        assertThat(response.getRegions().get(1).getAcquiredLandmarkCount()).isZero();
+        assertThat(response.getRegions().get(1).getTotalLandmarkCount()).isEqualTo(3L);
         assertThat(response.getRegions().get(1).getCompletionRate()).isEqualTo(0.0);
     }
 
