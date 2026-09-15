@@ -27,6 +27,7 @@ import triplog.backend.notification.service.NotificationEvent;
 import triplog.backend.region.entity.Region;
 import triplog.backend.region.service.RegionService;
 import triplog.backend.review.dto.request.ReviewRequest.CreateRequest;
+import triplog.backend.review.dto.response.ReviewResponse.CreateReviewResponse;
 import triplog.backend.review.entity.Review;
 import triplog.backend.reviewlog.service.ReviewLogService;
 import triplog.backend.stats.service.ActivityRewardInfo;
@@ -61,6 +62,7 @@ class ReviewFacadeServiceTest {
     private static final String IDEMPOTENCY_KEY = "review-request-1";
 
     @Mock private ReviewService reviewService;
+    @Mock private ReviewIdempotencyService reviewIdempotencyService;
     @Mock private LandmarkService landmarkService;
     @Mock private UsersCardLandmarkService usersCardLandmarkService;
     @Mock private ImageService imageService;
@@ -82,6 +84,7 @@ class ReviewFacadeServiceTest {
     void setUp() {
         reviewFacadeService = new ReviewFacadeService(
                 reviewService,
+                reviewIdempotencyService,
                 landmarkService,
                 usersCardLandmarkService,
                 imageService,
@@ -96,6 +99,43 @@ class ReviewFacadeServiceTest {
                 badgeService,
                 appellationService,
                 notificationService
+        );
+    }
+
+    @Test
+    @DisplayName("동일한 멱등성 키의 재요청이면 최초 응답을 반환하고 인증을 다시 처리하지 않는다")
+    void createReview_ReturnsPreviousResponseForDuplicateRequest() {
+        // Given
+        CreateRequest request = new CreateRequest(
+                1L, "41", "110", "수원화성 방문", "방문 완료", 5.0F
+        );
+        CreateReviewResponse previousResponse = CreateReviewResponse.toDto(
+                List.of(new ActivityRewardInfo(
+                        null, "REVIEW_CREATE", "여행 기록 작성 보상", 15, 0
+                )),
+                15,
+                0
+        );
+        given(reviewIdempotencyService.claim(
+                USERS_ID, IDEMPOTENCY_KEY, request, null
+        )).willReturn(Optional.of(previousResponse));
+
+        // When
+        CreateReviewResponse response = reviewFacadeService.createReview(
+                USERS_ID, request, null, IDEMPOTENCY_KEY
+        );
+
+        // Then
+        assertThat(response).isSameAs(previousResponse);
+        verify(reviewService, org.mockito.Mockito.never()).createReview(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()
+        );
+        verify(reviewIdempotencyService, org.mockito.Mockito.never()).complete(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any()
         );
     }
 

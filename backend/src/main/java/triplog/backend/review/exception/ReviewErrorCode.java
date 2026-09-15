@@ -31,7 +31,13 @@ public enum ReviewErrorCode implements BaseErrorCode {
     INVALID_PAGE_REQUEST(HttpStatus.BAD_REQUEST, "페이지 번호와 크기를 확인해주세요."),
 
     /** 멱등성 키가 비어 있거나 허용 길이를 초과한 경우입니다. */
-    INVALID_IDEMPOTENCY_KEY(HttpStatus.BAD_REQUEST, "Idempotency-Key를 1자 이상 100자 이하로 입력해주세요.");
+    INVALID_IDEMPOTENCY_KEY(HttpStatus.BAD_REQUEST, "Idempotency-Key를 1자 이상 100자 이하로 입력해주세요."),
+
+    /** 같은 멱등성 키가 다른 요청 내용에 재사용된 경우입니다. */
+    IDEMPOTENCY_KEY_CONFLICT(HttpStatus.CONFLICT, "동일한 Idempotency-Key가 다른 요청에 사용되었습니다."),
+
+    /** 멱등성 요청 또는 최초 응답을 정상적으로 처리하지 못한 경우입니다. */
+    IDEMPOTENCY_PROCESSING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "방문 인증 요청의 중복 방지 처리에 실패했습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

@@ -104,6 +104,48 @@ class ReviewCreateRateLimitInterceptorTest {
         assertThat(response.getContentAsString()).contains("\"status\":429");
     }
 
+    @Test
+    @DisplayName("5초 제한 중이어도 동일한 멱등성 키의 재요청은 허용한다")
+    void sameIdempotencyKeyDuringCooldownIsAllowed() throws Exception {
+        // Given
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/reviews");
+        request.addHeader("Idempotency-Key", "review-request-1");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        given(valueOperations.setIfAbsent(
+                KEY, "review-request-1", Duration.ofSeconds(5)
+        )).willReturn(false);
+        given(valueOperations.get(KEY)).willReturn("review-request-1");
+
+        // When
+        boolean result = interceptor.preHandle(request, response, new Object());
+
+        // Then
+        assertThat(result).isTrue();
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("5초 제한 중 다른 멱등성 키의 요청은 차단한다")
+    void differentIdempotencyKeyDuringCooldownIsRejected() throws Exception {
+        // Given
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/reviews");
+        request.addHeader("Idempotency-Key", "review-request-2");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        given(valueOperations.setIfAbsent(
+                KEY, "review-request-2", Duration.ofSeconds(5)
+        )).willReturn(false);
+        given(valueOperations.get(KEY)).willReturn("review-request-1");
+        given(stringRedisTemplate.getExpire(KEY, TimeUnit.SECONDS)).willReturn(3L);
+
+        // When
+        boolean result = interceptor.preHandle(request, response, new Object());
+
+        // Then
+        assertThat(result).isFalse();
+        assertThat(response.getStatus()).isEqualTo(429);
+        assertThat(response.getHeader("Retry-After")).isEqualTo("3");
+    }
+
     /**
      * POST가 아닌 요청은 방문 인증 등록 제한 대상에서 제외되는지 검증합니다.
      *
