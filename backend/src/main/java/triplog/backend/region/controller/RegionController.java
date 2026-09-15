@@ -124,6 +124,8 @@ public class RegionController {
                                           "legalDistrictCode": "110",
                                           "visited": true,
                                           "completed": true,
+                                          "acquiredLandmarkCount": 3,
+                                          "totalLandmarkCount": 3,
                                           "completionRate": 100.0
                                         }
                                       ]

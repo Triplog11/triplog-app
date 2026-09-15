@@ -27,6 +27,43 @@ public final class BadgeResponse {
         return value != null && value == 1;
     }
 
+    /** 배지의 내부 조건을 사용자에게 표시할 설명으로 변환합니다. */
+    private static String toDescription(String badgeName, String badgeTarget, Integer badgeValue) {
+        if (badgeValue == null) {
+            return badgeName + " 조건을 달성하세요.";
+        }
+        if (badgeTarget.startsWith("PROVINCE_LANDMARK_RATE_")) {
+            String provinceName = badgeName.endsWith(" 탐험가")
+                    ? badgeName.substring(0, badgeName.length() - " 탐험가".length())
+                    : badgeName;
+            return provinceName + " 지역 랜드마크의 " + badgeValue + "%를 획득하세요.";
+        }
+        return switch (badgeTarget) {
+            case "VISIT_COUNT" -> "관광지를 " + badgeValue + "곳 방문하세요.";
+            case "REVIEW_COUNT" -> "여행 기록을 " + badgeValue + "회 작성하세요.";
+            case "LANDMARK_COUNT" -> "랜드마크를 " + badgeValue + "곳 획득하세요.";
+            case "CARD_COUNT" -> "랜드마크 카드를 " + badgeValue + "장 획득하세요.";
+            case "REGION_VISIT_COUNT" -> "지역을 " + badgeValue + "곳 방문하세요.";
+            case "REGION_CONQUEST_COUNT" -> "지역을 " + badgeValue + "곳 정복하세요.";
+            case "LANDMARK_COMPLETION_RATE" ->
+                    "전체 랜드마크의 " + badgeValue + "%를 획득하세요.";
+            case "CARD_COMPLETION_RATE" ->
+                    "전체 랜드마크 카드의 " + badgeValue + "%를 획득하세요.";
+            case "CONTENT_DISTINCT_VISIT_DATE_COUNT" ->
+                    "같은 관광지를 서로 다른 날짜에 " + badgeValue + "회 방문하세요.";
+            case "NEW_REGION_STREAK" ->
+                    "새로운 지역을 연속 " + badgeValue + "회 방문하세요.";
+            case "WEEKEND_VISIT_COUNT" ->
+                    "주말에 관광지를 " + badgeValue + "회 방문하세요.";
+            case "PHOTO_REVIEW_COUNT" ->
+                    "사진이 포함된 여행 기록을 " + badgeValue + "회 작성하세요.";
+            case "PROVINCE_VISIT_COUNT" -> "시·도를 " + badgeValue + "곳 방문하세요.";
+            case "PROVINCE_COMPLETION_RATE" ->
+                    "전국 시·도의 " + badgeValue + "%를 방문하세요.";
+            default -> badgeName + " 조건을 달성하세요.";
+        };
+    }
+
     /**
      * 대표 배지 변경 결과입니다.
      *
@@ -70,6 +107,7 @@ public final class BadgeResponse {
      * @param badgeGroup 배지 그룹
      * @param badgeType 배지 조건 유형
      * @param badgeTarget 배지 조건 대상
+     * @param badgeDescription 사용자 표시용 배지 조건 설명
      * @param badgeOperator 배지 조건 연산자
      * @param badgeValue 배지 조건 기준값
      * @param acquired 사용자 획득 여부
@@ -83,6 +121,7 @@ public final class BadgeResponse {
             @Schema(description = "배지 그룹", example = "1", nullable = true) Integer badgeGroup,
             @Schema(description = "배지 타입", example = "REVIEW") String badgeType,
             @Schema(description = "배지 대상", example = "REVIEW_COUNT") String badgeTarget,
+            @Schema(description = "배지 조건 설명", example = "여행 기록을 1회 작성하세요.") String badgeDescription,
             @Schema(description = "조건 연산자", example = ">=") String badgeOperator,
             @Schema(description = "배지 조건값", example = "1", nullable = true) Integer badgeValue,
             @Schema(description = "로그인 사용자의 획득 여부", example = "true") Boolean acquired,
@@ -97,7 +136,9 @@ public final class BadgeResponse {
         public static BadgeDetailResponse toDto(BadgeDetailQueryResult result) {
             return new BadgeDetailResponse(
                     result.badgeId(), result.badgeName(), result.badgeUrl(), result.badgeGroup(),
-                    result.badgeType(), result.badgeTarget(), result.badgeOperator(), result.badgeValue(),
+                    result.badgeType(), result.badgeTarget(),
+                    toDescription(result.badgeName(), result.badgeTarget(), result.badgeValue()),
+                    result.badgeOperator(), result.badgeValue(),
                     toBoolean(result.acquired()), toBoolean(result.representative()));
         }
     }
@@ -140,6 +181,7 @@ public final class BadgeResponse {
      * @param badgeUrl 배지 이미지 URL
      * @param badgeType 배지 조건 유형
      * @param badgeTarget 배지 조건 대상
+     * @param badgeDescription 사용자 표시용 배지 조건 설명
      * @param badgeValue 배지 조건 기준값
      * @param acquired 사용자 획득 여부
      * @param representative 대표 배지 여부
@@ -151,6 +193,7 @@ public final class BadgeResponse {
             @Schema(description = "배지 이미지 URL", example = "https://cdn.triplog.com/badges/first-step.png") String badgeUrl,
             @Schema(description = "배지 타입", example = "REVIEW") String badgeType,
             @Schema(description = "배지 대상", example = "REVIEW_COUNT") String badgeTarget,
+            @Schema(description = "배지 조건 설명", example = "여행 기록을 1회 작성하세요.") String badgeDescription,
             @Schema(description = "배지 조건값", example = "1", nullable = true) Integer badgeValue,
             @Schema(description = "로그인 사용자의 획득 여부", example = "true") Boolean acquired,
             @Schema(description = "대표 배지 여부", example = "false") Boolean representative
@@ -160,7 +203,9 @@ public final class BadgeResponse {
          */
         private static BadgeItem toDto(BadgeQueryResult result) {
             return new BadgeItem(result.badgeId(), result.badgeName(), result.badgeUrl(),
-                    result.badgeType(), result.badgeTarget(), result.badgeValue(),
+                    result.badgeType(), result.badgeTarget(),
+                    toDescription(result.badgeName(), result.badgeTarget(), result.badgeValue()),
+                    result.badgeValue(),
                     toBoolean(result.acquired()), toBoolean(result.representative()));
         }
     }

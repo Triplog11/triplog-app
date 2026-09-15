@@ -79,7 +79,14 @@ public class RegionResponse {
                     completedRegionCount++;
                 }
 
-                regionItems.add(RegionMapItem.toDto(region, visited, completed, completionRate));
+                regionItems.add(RegionMapItem.toDto(
+                        region,
+                        visited,
+                        completed,
+                        visitedLandmarks,
+                        totalLandmarks,
+                        completionRate
+                ));
             }
 
             double overallCompletionRate = totalRegionCount > 0
@@ -235,11 +242,18 @@ public class RegionResponse {
         @Schema(description = "완료 여부", example = "true")
         private final Boolean completed;
 
+        @Schema(description = "획득한 랜드마크 수", example = "2")
+        private final Long acquiredLandmarkCount;
+
+        @Schema(description = "전체 랜드마크 수", example = "3")
+        private final Long totalLandmarkCount;
+
         @Schema(description = "지역 완료율 (0~100)", example = "100.0")
         private final Double completionRate;
 
         public static RegionMapItem toDto(Region region, boolean visited,
-                                          boolean completed, double completionRate) {
+                                          boolean completed, long acquiredLandmarkCount,
+                                          long totalLandmarkCount, double completionRate) {
             return new RegionMapItem(
                     region.getRegionId(),
                     region.getRegionName(),
@@ -247,6 +261,8 @@ public class RegionResponse {
                     region.getLegalDistrictCode(),
                     visited,
                     completed,
+                    acquiredLandmarkCount,
+                    totalLandmarkCount,
                     completionRate
             );
         }
