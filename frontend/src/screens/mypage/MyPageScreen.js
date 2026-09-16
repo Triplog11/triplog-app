@@ -36,12 +36,22 @@ export default function MyPageScreen({ navigation }) {
     ]);
   };
 
+  // 도감 탭의 카드 목록 서브탭으로 바로 이동한다
+  const openCardList = () => {
+    navigation.navigate('Collection', { screen: 'CollectionMain', params: { initialTab: 'card' } });
+  };
+
   const countOrDash = (value, unit = '개') => (value != null ? `${value.toLocaleString()}${unit}` : '--');
   const statItems = [
     { key: 'regions', label: '방문 지역', value: countOrDash(summary?.visitedRegionCount) },
     { key: 'certs', label: '인증 횟수', value: countOrDash(summary?.totalCertificationCount, '회') },
-    { key: 'badges', label: '획득한 뱃지', value: countOrDash(summary?.acquiredBadgeCount) },
-    { key: 'cards', label: '수집한 카드', value: countOrDash(summary?.collectedCardCount, '장') },
+    {
+      key: 'badges',
+      label: '획득한 뱃지',
+      value: countOrDash(summary?.acquiredBadgeCount),
+      onPress: () => navigation.navigate('BadgeList'),
+    },
+    { key: 'cards', label: '수집한 카드', value: countOrDash(summary?.collectedCardCount, '장'), onPress: openCardList },
   ];
 
   return (
@@ -87,7 +97,14 @@ export default function MyPageScreen({ navigation }) {
         {/* 통계 2×2 */}
         <View style={styles.statGrid}>
           {statItems.map((stat) => (
-            <View key={stat.key} style={styles.statCard}>
+            <TouchableOpacity
+              key={stat.key}
+              style={styles.statCard}
+              onPress={stat.onPress}
+              disabled={!stat.onPress}
+              activeOpacity={0.8}
+              accessibilityRole={stat.onPress ? 'button' : undefined}
+            >
               <View style={styles.statRow}>
                 <Ionicons name="checkmark-circle" size={22} color={theme.colors.primary} />
                 <View style={styles.statTextGroup}>
@@ -98,8 +115,11 @@ export default function MyPageScreen({ navigation }) {
                     {stat.value}
                   </CustomText>
                 </View>
+                {stat.onPress && (
+                  <Ionicons name="chevron-forward" size={14} color={theme.colors.textMuted} style={styles.statChevron} />
+                )}
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -107,7 +127,7 @@ export default function MyPageScreen({ navigation }) {
           cards={cards.items}
           loading={cards.loading}
           errorMessage={cards.errorMessage}
-          onMorePress={() => navigation.navigate('Collection')}
+          onMorePress={openCardList}
         />
 
         <TravelLogSection
@@ -251,7 +271,11 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   statTextGroup: {
+    flex: 1,
     gap: 2,
+  },
+  statChevron: {
+    alignSelf: 'center',
   },
   groupLabel: {
     fontWeight: 'bold',
